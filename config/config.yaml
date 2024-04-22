@@ -8,3 +8,23 @@ dirs:
   processed: processed
   final: final
   models: models
+  plots: plots
+
+random_seed: 703
+verbose: false
+
+# Retriever parameters
+id: intfloat/multilingual-e5-large
+num_documents_to_retrieve: 3
+
+# LLM parameters
+temperature: 0.0
+streaming: true
+max_retries: 3
+
+# GUI parameters
+host: localhost
+port: 7800
+share: false
+password_protected: true
+answer_store: answer_store.yaml
