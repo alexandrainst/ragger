@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ragger"
-description = "A package used to for RAG applications."
+description = "A repository for general-purpose RAG applications."
 version = "0.0.0"
 authors = [
     "Dan Saattrup Nielsen <dan.nielsen@alexandra.dk>",
