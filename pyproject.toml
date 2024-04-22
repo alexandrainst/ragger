@@ -4,6 +4,7 @@ description = "A package used to for RAG applications."
 version = "0.0.0"
 authors = [
     "Dan Saattrup Nielsen <dan.nielsen@alexandra.dk>",
+    "Anders Jess Pedersen <anders.j.pedersen@alexandra.dk>",
 ]
 readme = "README.md"
 license = "Proprietary"
@@ -28,7 +29,6 @@ click = ">=8.1.7"
 ruff = ">=0.3.2"
 mypy = ">=1.9.0"
 nbstripout = ">=0.7.1"
-pylic = "^3.5.0"
 
 [[tool.poetry.source]]
 name = "pypi"
