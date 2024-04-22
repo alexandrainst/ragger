@@ -69,9 +69,6 @@ extend-select = [
 "__init__.py" = [
     "F401",
 ]
-"src/scripts/your_script.py" = [
-    "I",
-]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = false
