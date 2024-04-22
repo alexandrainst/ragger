@@ -47,4 +47,4 @@ class EmbeddingStore(ABC):
 class NumpyEmbeddingStore(EmbeddingStore):
     """An embedding store that fetches embeddings from a NumPy file."""
 
-    raise NotImplementedError
+    pass

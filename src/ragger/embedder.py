@@ -37,4 +37,4 @@ class Embedder(ABC):
 class E5Embedder(Embedder):
     """An embedder that uses an E5 model to embed documents."""
 
-    raise NotImplementedError
+    pass

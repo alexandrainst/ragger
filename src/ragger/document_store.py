@@ -26,4 +26,4 @@ class DocumentStore(ABC):
 class JsonlDocumentStore(DocumentStore):
     """A document store that fetches documents from a JSONL file."""
 
-    raise NotImplementedError
+    pass

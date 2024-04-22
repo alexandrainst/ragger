@@ -38,4 +38,4 @@ class Generator(ABC):
 class OpenAIGenerator(Generator):
     """A generator that uses an OpenAI model to generate answers."""
 
-    raise NotImplementedError
+    pass

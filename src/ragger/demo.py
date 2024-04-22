@@ -20,4 +20,4 @@ class Demo:
 
     def launch(self) -> None:
         """Launch the demo."""
-        raise NotImplementedError
+        pass
