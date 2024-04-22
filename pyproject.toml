@@ -33,7 +33,6 @@ nbstripout = ">=0.7.1"
 [[tool.poetry.source]]
 name = "pypi"
 
-
 [tool.ruff]
 target-version = "py311"
 line-length = 88
