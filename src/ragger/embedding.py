@@ -26,15 +26,22 @@ class Embedder:
     """Embedder class of documents.
 
     Args:
-        cfg: The Hydra configuration.
+        cfg:
+            The Hydra configuration.
 
     Attributes:
-        cfg: The Hydra configuration.
-        embedding_dim: The embedding dimension.
-        documents: A dictionary of groups and their documents.
-        embeddings: A dictionary of documents and their embeddings.
-        device: The device to use for the embedding model.
-        embedder: The SentenceTransformer object for embedding.
+        cfg:
+            The Hydra configuration.
+        embedding_dim:
+            The embedding dimension.
+        documents:
+            A dictionary of groups and their documents.
+        embeddings:
+            A dictionary of documents and their embeddings.
+        device:
+            The device to use for the embedding model.
+        embedder:
+            The SentenceTransformer object for embedding.
     """
 
     def __init__(self, cfg: DictConfig) -> None:
@@ -102,9 +109,12 @@ class Embedder:
         """This returns the most relevant documents to the query.
 
         Args:
-            query: A query.
-            num_documents: The number of documents to return.
-            groups: The groups to search for relevant documents.
+            query:
+                A query.
+            num_documents:
+                The number of documents to return.
+            groups:
+                The groups to search for relevant documents.
 
         Returns:
             A list of documents.
@@ -177,7 +187,8 @@ class Embedder:
         """This loads the embeddings store from disk.
 
         Args:
-            path: The path to the zip file to load the embeddings store from.
+            path:
+                The path to the zip file to load the embeddings store from.
 
         Returns:
             An Embedder object.
@@ -198,7 +209,8 @@ class Embedder:
         The precise preparation depends on the embedding model.
 
         Args:
-            passages: A list of documents.
+            passages:
+                A list of documents.
 
         Returns:
             A list of prepared documents.
@@ -229,7 +241,8 @@ class Embedder:
         The precise preparation depends on the embedding model.
 
         Args:
-            query: A query.
+            query:
+                A query.
 
         Returns:
             A prepared query.

@@ -19,7 +19,8 @@ def build_gui(cfg: DictConfig) -> gr.Blocks:
     """Builds a gui for the bot.
 
     Args:
-        cfg: The Hydra configuration object.
+        cfg:
+            The Hydra configuration object.
 
     Returns:
         The gui.
@@ -32,7 +33,8 @@ def build_gui(cfg: DictConfig) -> gr.Blocks:
         """Ask the bot a question.
 
         Args:
-            history: The chat history.
+            history:
+                The chat history.
 
         Yields:
             The chat history.

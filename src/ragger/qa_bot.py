@@ -20,12 +20,16 @@ class QABot:
     """The main question-answering model, wrapping all the other modules.
 
     Args:
-        cfg: The configuration dictionary.
+        cfg:
+            The configuration dictionary.
 
     Attributes:
-        cfg: The configuration dictionary.
-        embedder: The Embedder object.
-        qas: A dictionary of questions and their answers.
+        cfg:
+            The configuration dictionary.
+        embedder:
+            The Embedder object.
+        qas:
+            A dictionary of questions and their answers.
     """
 
     def __init__(self, cfg: DictConfig) -> None:
