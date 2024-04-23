@@ -58,7 +58,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         super().__init__(config)
         self.embedding_dim = self._get_embedding_dimension()
-        self.embeddings = np.empty(shape=(self.embedding_dim,))
+        self.embeddings = np.array([]).reshape(0, self.embedding_dim)
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -80,7 +80,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
     def reset(self) -> None:
         """This resets the embeddings store."""
-        self.embeddings = np.empty(shape=(self.embedding_dim,))
+        self.embeddings = np.array([]).reshape(0, self.embedding_dim)
 
     def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
