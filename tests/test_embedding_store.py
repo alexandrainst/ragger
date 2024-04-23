@@ -30,7 +30,7 @@ class TestNumpyEmbeddingStore:
         yield store
 
     @pytest.fixture(scope="class")
-    def embeddings(self, embedding_store) -> list[np.array]:
+    def embeddings(self, embedding_store) -> list[np.ndarray]:
         """Initialise a list of documents for testing."""
         return [
             np.ones(shape=(embedding_store.embedding_dim,)),
