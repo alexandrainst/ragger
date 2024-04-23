@@ -72,7 +72,7 @@ python src/scripts/run_demo.py generator.openai.temperature=1.0
 
 You can easily switch between different document stores, embedders, embedding stores or
 generators, using the `type` variable in the configuration. For instance, to change
-from the OpenAI generator to (an at the moment non-existing) Open Source generator, we
+from the OpenAI generator to an (at the moment non-existing) Open Source generator, we
 can run the script as follows:
 
 ```
