@@ -4,7 +4,7 @@
 A package used to for RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-72%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
