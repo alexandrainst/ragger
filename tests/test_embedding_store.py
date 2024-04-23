@@ -17,15 +17,20 @@ class TestNumpyEmbeddingStore:
         """Initialise a NumpyEmbeddingStore for testing."""
         config = DictConfig(
             dict(
-                num_documents_to_retrieve=2,
-                embedder_id="intfloat/multilingual-e5-large",
+                embedding_store=dict(numpy=dict(num_documents_to_retrieve=2)),
+                embedder=dict(
+                    e5=dict(
+                        model_id="intfloat/multilingual-e5-small",
+                        document_text_field="text",
+                    )
+                ),
             )
         )
         store = NumpyEmbeddingStore(config=config)
         yield store
 
     @pytest.fixture(scope="class")
-    def embeddings(self, embedding_store) -> list[np.array]:
+    def embeddings(self, embedding_store) -> list[np.ndarray]:
         """Initialise a list of documents for testing."""
         return [
             np.ones(shape=(embedding_store.embedding_dim,)),

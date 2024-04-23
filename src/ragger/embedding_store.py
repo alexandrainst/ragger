@@ -66,7 +66,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Returns:
             The embedding dimension.
         """
-        model_config = AutoConfig.from_pretrained(self.config.embedder_id)
+        model_config = AutoConfig.from_pretrained(self.config.embedder.e5.model_id)
         return model_config.hidden_size
 
     def add_embeddings(self, embeddings: list[np.ndarray]) -> None:
@@ -89,7 +89,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         `embeddings.npy`.
 
         Args:
-            path: 
+            path:
                 The path to the embeddings store in.
         """
         path = Path(path)
@@ -122,11 +122,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 If the number of documents in the store is less than the number of
                 documents to retrieve.
         """
-        if self.embeddings.shape[0] < self.config.num_documents_to_retrieve:
+        num_docs = self.config.embedding_store.numpy.num_documents_to_retrieve
+        if self.embeddings.shape[0] < num_docs:
             raise ValueError(
                 "The number of documents in the store is less than the number of "
                 "documents to retrieve."
             )
         scores = self.embeddings @ embedding
-        top_indices = np.argsort(scores)[::-1][: self.config.num_documents_to_retrieve]
-        return top_indices
+        top_indices = np.argsort(scores)[::-1][:num_docs]
+        return top_indices.tolist()
