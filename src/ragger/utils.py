@@ -1,7 +1,7 @@
 """Utility constants and functions used in the project."""
 
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 Index = str
 
@@ -18,6 +18,8 @@ class Embedding(BaseModel):
 
     id: Index
     embedding: np.ndarray
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class GeneratedAnswer(BaseModel):

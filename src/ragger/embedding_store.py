@@ -62,9 +62,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         super().__init__(config)
         self.embedding_dim = self._get_embedding_dimension()
-        self._embeddings = np.zeros((0, self.embedding_dim))
-        self._index_to_row_id: dict[Index, int] = defaultdict()
-        self._row_id_to_index: dict[int, Index] = defaultdict()
+        self.embeddings = np.zeros((0, self.embedding_dim))
+        self.index_to_row_id: dict[Index, int] = defaultdict()
+        self.row_id_to_index: dict[int, Index] = defaultdict()
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -82,27 +82,24 @@ class NumpyEmbeddingStore(EmbeddingStore):
             embeddings:
                 A list of embeddings to add to the store.
         """
-        for embedding in embeddings:
-            if embedding.id in self._index_to_row_id:
-                # Update the embedding at the corresponding row, if index is in the
-                # index to row id dictionary.
-                self._embeddings[self._index_to_row_id[embedding.id], :] = (
-                    embedding.embedding
-                )
-            else:
-                # Add the embedding to the embeddings array and update the index to row
-                # id dictionary.
-                self._embeddings = np.vstack(
-                    [self._embeddings, np.array(embedding.embedding)]
-                )
-                self._index_to_row_id[embedding.id] = len(self._embeddings)
-                self._row_id_to_index[len(self._embeddings)] = embedding.id
+        embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
+        if any(embedding.id in self.index_to_row_id for embedding in embeddings):
+            raise ValueError("Some embeddings already exist in the store.")
+
+        self.embeddings = np.vstack([self.embeddings, embedding_matrix])
+        for i, embedding in enumerate(embeddings):
+            self.index_to_row_id[embedding.id] = (
+                self.embeddings.shape[0] - len(embeddings) + i
+            )
+            self.row_id_to_index[self.embeddings.shape[0] - len(embeddings) + i] = (
+                embedding.id
+            )
 
     def reset(self) -> None:
         """This resets the embeddings store."""
-        self._embeddings = np.zeros((0, self.embedding_dim))
-        self._index_to_row_id = defaultdict()
-        self._row_id_to_index = defaultdict()
+        self.embeddings = np.zeros((0, self.embedding_dim))
+        self.index_to_row_id = defaultdict()
+        self.row_id_to_index = defaultdict()
 
     def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
@@ -116,10 +113,10 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         path = Path(path)
         array_file = io.BytesIO()
-        np.save(file=array_file, _embeddings=self._embeddings)
+        np.save(file=array_file, arr=self.embeddings)
 
-        index_to_row_id = json.dumps(self._index_to_row_id).encode("utf-8")
-        row_id_to_index = json.dumps(self._row_id_to_index).encode("utf-8")
+        index_to_row_id = json.dumps(self.index_to_row_id).encode("utf-8")
+        row_id_to_index = json.dumps(self.row_id_to_index).encode("utf-8")
 
         with zipfile.ZipFile(path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr("embeddings.npy", data=array_file.getvalue())
@@ -141,9 +138,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
             row_id_to_index = json.loads(row_id_to_index_encoded.decode("utf-8"))
             array_file = io.BytesIO(zf.read("embeddings.npy"))
             embeddings = np.load(file=array_file, allow_pickle=False)
-        self._embeddings = embeddings
-        self._index_to_row_id = index_to_row_id
-        self._row_id_to_index = row_id_to_index
+        self.embeddings = embeddings
+        self.index_to_row_id = index_to_row_id
+        self.row_id_to_index = row_id_to_index
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
@@ -161,12 +158,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 documents to retrieve.
         """
         num_docs = self.config.embedding_store.numpy.num_documents_to_retrieve
-        if self._embeddings.shape[0] < num_docs:
+        if self.embeddings.shape[0] < num_docs:
             raise ValueError(
                 "The number of documents in the store is less than the number of "
                 "documents to retrieve."
             )
-        scores = self._embeddings @ embedding
+        scores = self.embeddings @ embedding
         top_indices = np.argsort(scores)[::-1][:num_docs]
-        nearest_neighbours = [self._row_id_to_index[i] for i in top_indices.to_list()]
+        nearest_neighbours = [self.row_id_to_index[i] for i in top_indices]
         return nearest_neighbours
