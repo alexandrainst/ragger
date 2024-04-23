@@ -9,30 +9,36 @@ dirs:
   final: final
   models: models
 
-# DocumentStore parameters
-document_store_type: jsonl
-document_store_filename: document_store.jsonl
+document_store:
+  type: jsonl
+  jsonl:
+    filename: document_store.jsonl
 
-# EmbeddingStore parameters
-embedding_store_type: numpy
+embedding_store:
+  type: numpy
+  numpy:
+    null
 
-# Embedder parameters
-embedder_type: e5
-embedder_id: intfloat/multilingual-e5-large
-num_documents_to_retrieve: 3
+embedder:
+  type: e5
+  e5:
+    model_id: intfloat/multilingual-e5-large
+    num_documents_to_retrieve: 3
 
-# Generator parameters
-generator_type: openai
-temperature: 0.0
-streaming: true
-max_retries: 3
+generator:
+  type: openai
+  openai:
+    temperature: 0.0
+    streaming: true
+    max_retries: 3
+    timeout: 60
 
-# Demo parameters
-host: localhost
-port: 7800
-share: false
-password_protected: true
-answer_store: answer_store.yaml
+demo:
+  host: localhost
+  port: 7800
+  share: false
+  password_protected: true
+  answer_store: answer_store.yaml
 
 # Miscellaneous parameters
 random_seed: 703
