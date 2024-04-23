@@ -130,6 +130,5 @@ class E5Embedder(Embedder):
         Returns:
             A prepared query.
         """
-        # Add question marks at the end of the question, if not already present
         query = "query: " + re.sub(r"^query: ", "", query)
         return query
