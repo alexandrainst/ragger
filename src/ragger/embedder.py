@@ -42,6 +42,19 @@ class Embedder(ABC):
         """
         ...
 
+    @abstractmethod
+    def embed_query(self, query: str) -> np.ndarray:
+        """Embed a query.
+
+        Args:
+            query:
+                A query.
+
+        Returns:
+            The embedding of the query.
+        """
+        ...
+
 
 class E5Embedder(Embedder):
     """An embedder that uses an E5 model to embed documents."""

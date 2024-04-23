@@ -35,8 +35,12 @@ class DocumentStore(ABC):
         ...
 
     @abstractmethod
-    def __len__(self) -> int:
-        """Return the number of documents in the store."""
+    def get_all_documents(self) -> list[Document]:
+        """Fetch all documents from the store.
+
+        Returns:
+            A list of all documents in the store.
+        """
         ...
 
 
@@ -79,6 +83,10 @@ class JsonlDocumentStore(DocumentStore):
             raise KeyError(f"Document with ID {index!r} not found")
         return self._documents[index]
 
-    def __len__(self) -> int:
-        """Return the number of documents in the store."""
-        return len(self._documents)
+    def get_all_documents(self) -> list[Document]:
+        """Fetch all documents from the store.
+
+        Returns:
+            A list of all documents in the store.
+        """
+        return list(self._documents.values())
