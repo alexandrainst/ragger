@@ -28,9 +28,11 @@ embedder:
 generator:
   type: openai
   openai:
+    api_key_variable_name: OPENAI_API_KEY
+    model: gpt-4-turbo-2024-04-09
     temperature: 0.0
-    streaming: true
-    max_retries: 3
+    max_tokens: 256
+    stream: true
     timeout: 60
 
 demo:

@@ -26,12 +26,14 @@ class TestJsonlDocumentStore:
             file.flush()
 
             # Create a JsonlDocumentStore using the temporary file
-            config = DictConfig(dict(document_store_filename=file.name))
+            config = DictConfig(
+                dict(document_store=dict(jsonl=dict(filename=file.name)))
+            )
             store = JsonlDocumentStore(config=config)
             yield store
         del store
 
-    def is_document_store(self):
+    def test_is_document_store(self):
         """Test that the JsonlDocumentStore is a DocumentStore."""
         assert issubclass(JsonlDocumentStore, DocumentStore)
 
