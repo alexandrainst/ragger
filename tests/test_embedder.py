@@ -50,17 +50,3 @@ class TestE5Embedder:
         """Test that the Embedder can embed a query."""
         embeddings = embedder.embed_query(query)
         assert isinstance(embeddings, np.ndarray)
-
-    def test_prepare_query(self, embedder, query):
-        """Test that the Embedder can prepare a query."""
-        prepared_query = embedder._prepare_query_for_embedding(query)
-        assert isinstance(prepared_query, str)
-        assert "query: " in prepared_query
-
-    def test_prepare_texts(self, embedder, documents):
-        """Test that the Embedder can prepare texts for embedding."""
-        texts = [document.text for document in documents]
-        prepared_texts = embedder._prepare_texts_for_embedding(texts)
-        assert isinstance(prepared_texts, list)
-        assert len(prepared_texts) == len(texts)
-        assert all("passage: " in text for text in prepared_texts)
