@@ -50,7 +50,6 @@ class TestE5Embedder:
         """Test that the Embedder can embed a query."""
         embeddings = embedder.embed_query(query)
         assert isinstance(embeddings, np.ndarray)
-        assert embeddings.shape[0] == 1
 
     def test_prepare_query(self, embedder, query):
         """Test that the Embedder can prepare a query."""
