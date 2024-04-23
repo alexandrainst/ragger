@@ -10,3 +10,10 @@ class Document(BaseModel):
 
     id: Index
     text: str
+
+
+class GeneratedAnswer(BaseModel):
+    """A generated answer to a question."""
+
+    answer: str
+    sources: list[Index]

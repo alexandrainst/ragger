@@ -13,9 +13,10 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 from openai.types.chat.completion_create_params import ResponseFormat
+from pydantic import ValidationError
 
 from .prompts import RAG_ANSWER_PROMPT, RAG_SYSTEM_PROMPT
-from .utils import Document
+from .utils import Document, GeneratedAnswer
 
 load_dotenv()
 
@@ -36,7 +37,7 @@ class Generator(ABC):
         self.config = config
 
     @abstractmethod
-    def generate(self, query: str, documents: list[Document]) -> str:
+    def generate(self, query: str, documents: list[Document]) -> GeneratedAnswer:
         """Generate an answer from a query and relevant documents.
 
         Args:
@@ -67,7 +68,7 @@ class OpenAIGenerator(Generator):
             api_key=api_key.strip('"'), timeout=self.config.generator.openai.timeout
         )
 
-    def generate(self, query: str, documents: list[Document]) -> str:
+    def generate(self, query: str, documents: list[Document]) -> GeneratedAnswer:
         """Generate an answer from a query and relevant documents.
 
         Args:
@@ -104,9 +105,9 @@ class OpenAIGenerator(Generator):
                 f"Could not decode JSON from model output: {generated_output}"
             )
 
-        answer = generated_dict["answer"]
-        source_ids = generated_dict["sources"]
-        logger.info(f"Generated answer: {answer} (sources: {source_ids})")
+        try:
+            generated_obj = GeneratedAnswer.model_validate(generated_dict)
+        except ValidationError:
+            raise ValueError(f"Could not validate model output: {generated_dict}")
 
-        final_answer = f"{answer} (kilder: {', '.join(source_ids)})"
-        return final_answer
+        return generated_obj
