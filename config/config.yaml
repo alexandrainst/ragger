@@ -13,6 +13,10 @@ dirs:
 random_seed: 703
 verbose: false
 
+# Embedder parameters
+document_text_field: text
+embedding_model_id: intfloat/multilingual-e5-large
+
 # Retriever parameters
 id: intfloat/multilingual-e5-large
 num_documents_to_retrieve: 3
