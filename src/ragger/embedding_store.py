@@ -89,7 +89,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
         `embeddings.npy`.
 
         Args:
-            path: The path to the embeddings store in.
+            path: 
+                The path to the embeddings store in.
         """
         path = Path(path)
         np.save(file=path, arr=self.embeddings)
