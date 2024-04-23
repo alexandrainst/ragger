@@ -1,17 +1,13 @@
-"""Utility functions for the project."""
+"""Utility constants and functions used in the project."""
 
-import torch
+from dataclasses import dataclass
+
+Index = str
 
 
-def get_device() -> str:
-    """This returns the device to use for the project.
+@dataclass
+class Document:
+    """A document to be stored in a document store."""
 
-    Returns:
-        The device to use for the project.
-    """
-    if torch.cuda.is_available():
-        return "cuda"
-    elif torch.backends.mps.is_available():
-        return "mps"
-    else:
-        return "cpu"
+    id: Index
+    text: str

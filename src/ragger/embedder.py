@@ -1,69 +1,85 @@
-"""Embedding of documents."""
+"""Embed documents using a pre-trained model."""
 
 import logging
 import os
 import re
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 import numpy as np
+import torch
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
 
-from .utils import get_device
+from .utils import Document
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
 
 logger = logging.getLogger(__name__)
 
 
-class Embedder:
-    """Embedder class of documents.
+class Embedder(ABC):
+    """An abstract embedder, which embeds documents using a pre-trained model."""
 
-    Args:
-        cfg:
-            The Hydra configuration.
-
-    Attributes:
-        cfg:
-            The Hydra configuration.
-        device:
-            The device to use for the embedding model.
-        embedder:
-            The SentenceTransformer object for embedding.
-    """
-
-    def __init__(self, cfg: DictConfig) -> None:
-        """Initialises the Embedder object.
+    def __init__(self, config: DictConfig) -> None:
+        """Initialise the embedder.
 
         Args:
-            cfg:
+            config:
                 The Hydra configuration.
         """
-        self.cfg = cfg
-        self.device = get_device()
-        self.embedder = SentenceTransformer(
-            model_name_or_path=cfg.poc1.embedding_model.id, device=self.device
-        )
-        logger.info(f"Embedder initialized with {self.cfg.embedding_model.id}")
+        self.config = config
 
-    def embed_documents(self, documents: list[dict[str, str]]) -> None:
-        """Embed documents.
+    @abstractmethod
+    def embed_documents(self, documents: list[Document]) -> np.ndarray:
+        """Embed a list of documents.
 
         Args:
             documents:
-                A list of documents.
+                A list of documents to embed.
+
+        Returns:
+            An array of embeddings, where each row corresponds to a document.
+        """
+        ...
+
+
+class E5Embedder(Embedder):
+    """An embedder that uses an E5 model to embed documents."""
+
+    def __init__(self, config: DictConfig) -> None:
+        """Initialise the E5 embedder.
+
+        Args:
+            config:
+                The Hydra configuration.
+        """
+        super().__init__(config)
+        self.embedder = SentenceTransformer(self.config.embedder_id)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    def embed_documents(self, documents: list[Document]) -> np.ndarray:
+        """Embed a list of documents using an E5 model.
+
+        Args:
+            documents:
+                A list of documents to embed.
+
+        Returns:
+            An array of embeddings, where each row corresponds to a document.
         """
         # Load the embeddings from disk if they exist
-        fname = self.cfg.embedding_model_id.replace("/", "--") + ".zip"
-        embeddings_path = Path(self.cfg.dirs.data) / self.cfg.dirs.processed / fname
+        fname = self.config.embedding_model_id.replace("/", "--") + ".zip"
+        embeddings_path = (
+            Path(self.config.dirs.data) / self.config.dirs.processed / fname
+        )
         if embeddings_path.exists():
             logger.info(f"Loading embeddings from {embeddings_path}")
             self.embedder.load(path=embeddings_path)
             return
 
         # Prepare the texts for embedding
-        texts = [document[self.cfg.document_text_field] for document in documents]
+        texts = [document.text for document in documents]
         prepared_texts = self._prepare_texts_for_embedding(texts=texts)
 
         # Embed the texts
@@ -72,7 +88,6 @@ class Embedder:
             normalize_embeddings=True,
             convert_to_numpy=True,
             show_progress_bar=False,
-            device=self.device,
         )
         assert isinstance(embeddings, np.ndarray)
         return embeddings
@@ -124,8 +139,8 @@ class Embedder:
             A prepared query.
         """
         # Add question marks at the end of the question, if not already present
-        query = re.sub(r"[。\?]$", "？", query).strip()
-        if not query.endswith("？"):
-            query += "？"
+        query = re.sub(r"[。\?]$", "?", query).strip()
+        if not query.endswith("?"):
+            query += "?"
 
         return query
