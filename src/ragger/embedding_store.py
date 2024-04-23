@@ -58,7 +58,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         super().__init__(config)
         self.embedding_dim = self._get_embedding_dimension()
-        self.embeddings = np.array([]).reshape(0, self.embedding_dim)
+        self.embeddings = np.zeros((0, self.embedding_dim))
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -80,7 +80,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
     def reset(self) -> None:
         """This resets the embeddings store."""
-        self.embeddings = np.array([]).reshape(0, self.embedding_dim)
+        self.embeddings = np.zeros((0, self.embedding_dim))
 
     def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
@@ -115,7 +115,17 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         Returns:
             A list of indices of the nearest neighbours.
+
+        Raises:
+            ValueError:
+                If the number of documents in the store is less than the number of
+                documents to retrieve.
         """
+        if self.embeddings.shape[0] < self.config.num_documents_to_retrieve:
+            raise ValueError(
+                "The number of documents in the store is less than the number of "
+                "documents to retrieve."
+            )
         scores = self.embeddings @ embedding
-        top_indices = np.argsort(scores)[::-1][:self.config.num_documents_to_retrieve]
+        top_indices = np.argsort(scores)[::-1][: self.config.num_documents_to_retrieve]
         return top_indices
