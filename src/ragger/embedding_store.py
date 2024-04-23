@@ -1,5 +1,8 @@
 """Store and fetch embeddings from a database."""
 
+import io
+import json
+import zipfile
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
@@ -62,7 +65,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self._embeddings = np.zeros((0, self.embedding_dim))
         self._index_to_row_id: dict[Index, int] = defaultdict()
         self._row_id_to_index: dict[int, Index] = defaultdict()
-        self.embeddings: list[Embedding] = list()
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -87,9 +89,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 self._embeddings[self._index_to_row_id[embedding.id], :] = (
                     embedding.embedding
                 )
-
-                # Update the embedding in the embeddings list.
-                self.embeddings[self._index_to_row_id[embedding.id]] = embedding
             else:
                 # Add the embedding to the embeddings array and update the index to row
                 # id dictionary.
@@ -98,14 +97,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 )
                 self._index_to_row_id[embedding.id] = len(self._embeddings)
                 self._row_id_to_index[len(self._embeddings)] = embedding.id
-                self.embeddings.append(embedding)
 
     def reset(self) -> None:
         """This resets the embeddings store."""
         self._embeddings = np.zeros((0, self.embedding_dim))
         self._index_to_row_id = defaultdict()
         self._row_id_to_index = defaultdict()
-        self.embeddings = list()
 
     def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
@@ -118,7 +115,16 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 The path to the embeddings store in.
         """
         path = Path(path)
-        np.savez_compressed(file=path, _embeddings=self._embeddings)
+        array_file = io.BytesIO()
+        np.save(file=array_file, _embeddings=self._embeddings)
+
+        index_to_row_id = json.dumps(self._index_to_row_id).encode("utf-8")
+        row_id_to_index = json.dumps(self._row_id_to_index).encode("utf-8")
+
+        with zipfile.ZipFile(path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("embeddings.npy", data=array_file.getvalue())
+            zf.writestr("index_to_row_id.json", data=index_to_row_id)
+            zf.writestr("row_id_to_index.json", data=row_id_to_index)
 
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
@@ -128,9 +134,16 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 The path to the zip file to load the embeddings store from.
         """
         path = Path(path)
-        embeddings = np.load(file=path, allow_pickle=False)
-        assert self.embedding_dim == embeddings.shape[1]
-        self.embeddings = embeddings
+        with zipfile.ZipFile(file=path, mode="r") as zf:
+            index_to_row_id_encoded = zf.read("index_to_row_id.json")
+            index_to_row_id = json.loads(index_to_row_id_encoded.decode("utf-8"))
+            row_id_to_index_encoded = zf.read("row_id_to_index.json")
+            row_id_to_index = json.loads(row_id_to_index_encoded.decode("utf-8"))
+            array_file = io.BytesIO(zf.read("embeddings.npy"))
+            embeddings = np.load(file=array_file, allow_pickle=False)
+        self._embeddings = embeddings
+        self._index_to_row_id = index_to_row_id
+        self._row_id_to_index = row_id_to_index
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
