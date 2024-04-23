@@ -9,7 +9,7 @@ from ragger.embedder import E5Embedder, Embedder
 from ragger.utils import Document
 
 
-class TestEmbedder:
+class TestE5Embedder:
     """Tests for the `Embedder` class."""
 
     @pytest.fixture(scope="class")
