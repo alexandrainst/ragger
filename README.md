@@ -36,21 +36,19 @@ The general structure of the repository is based on the following classes:
 
 - The `RagSystem` class in the `rag_system` module is the main entry point for the RAG
   system, and orchestrates all the other parts.
-- The `Demo` class in the `demo` module wraps the `RagSystem` in a Gradio demo that can
-  be accessed in the browser.
 - The `DocumentStore` class in the `document_store` module is a database with documents.
 - The `Embedder` class in the `embedder` module converts documents to embeddings.
 - The `EmbeddingStore` class in the `embedding_store` module is a database with
   embeddings.
 - The `Generator` class in the `generator` module generates answers from a query and a
   list of relevant documents.
+- The `Demo` class in the `demo` module wraps the `RagSystem` in a Gradio demo that can
+  be accessed in the browser.
 
 The `DocumentStore`, `Embedder`, `EmbeddingStore` and `Generator` classes are all
 abstract, and can be subclassed to a concrete implementation, which depends on the
 concrete use case. Here are the currently supported concrete classes:
 
-- `Embedder`:
-    1. `E5Embedder`, which embeds the documents using an E5 sentence transformer model.
 - `DocumentStore`:
     1. `JsonlDocumentStore`, which assumes the document store is a single JSONL file on
        disk, which is loaded into memory.
@@ -70,4 +68,13 @@ temperature of the OpenAI model to 1, you can run the demo as
 
 ```
 python src/scripts/run_demo.py generator.openai.temperature=1.0
+```
+
+You can easily switch between different document stores, embedders, embedding stores or
+generators, using the `type` variable in the configuration. For instance, to change
+from the OpenAI generator to (an at the moment non-existing) Open Source generator, we
+can run the script as follows:
+
+```
+python src/scripts/run_demo.py generator.type=open_source
 ```
