@@ -4,7 +4,6 @@ import logging
 import os
 import re
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -68,16 +67,6 @@ class E5Embedder(Embedder):
         Returns:
             An array of embeddings, where each row corresponds to a document.
         """
-        # Load the embeddings from disk if they exist
-        fname = self.config.embedding_model_id.replace("/", "--") + ".zip"
-        embeddings_path = (
-            Path(self.config.dirs.data) / self.config.dirs.processed / fname
-        )
-        if embeddings_path.exists():
-            logger.info(f"Loading embeddings from {embeddings_path}")
-            self.embedder.load(path=embeddings_path)
-            return
-
         # Prepare the texts for embedding
         texts = [document.text for document in documents]
         prepared_texts = self._prepare_texts_for_embedding(texts=texts)
