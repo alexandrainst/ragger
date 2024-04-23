@@ -11,6 +11,7 @@ dirs:
 
 # DocumentStore parameters
 document_store_type: jsonl
+document_store_filename: document_store.jsonl
 
 # EmbeddingStore parameters
 embedding_store_type: numpy
