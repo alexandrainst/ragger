@@ -84,7 +84,12 @@ class OpenAIGenerator(Generator):
             ChatCompletionSystemMessageParam(role="system", content=RAG_SYSTEM_PROMPT),
             ChatCompletionUserMessageParam(
                 role="user",
-                content=RAG_ANSWER_PROMPT.format(documents=documents, query=query),
+                content=RAG_ANSWER_PROMPT.format(
+                    documents=json.dumps(
+                        [document.model_dump() for document in documents]
+                    ),
+                    query=query,
+                ),
             ),
         ]
         model_output = self.client.chat.completions.create(
