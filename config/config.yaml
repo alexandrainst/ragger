@@ -14,12 +14,12 @@ document_store_type: jsonl
 
 # EmbeddingStore parameters
 embedding_store_type: numpy
+num_documents_to_retrieve: 3
 
 # Embedder parameters
 embedder_type: e5
 document_text_field: text
 embedder_id: intfloat/multilingual-e5-large
-num_documents_to_retrieve: 3
 
 # Generator parameters
 generator_type: openai
