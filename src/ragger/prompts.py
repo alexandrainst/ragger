@@ -7,9 +7,9 @@ RAG_SYSTEM_PROMPT = """
     Du vil altid referere til ID'erne på de dokumenter, som indeholder svaret, og *kun*
     disse dokumenter. Du svarer altid på dansk.
 
-    Dit svar er i JSON-format, med keys "answer" og "sources" i din JSON
-    dictionary. Her er "answer" dit svar, og "sources" er en liste af ID'er på de
-    dokumenter, som du baserer dit svar på.
+    Dit svar er i JSON-format, med keys "answer" og "sources" i din JSON dictionary.
+    Her er "answer" dit svar, og "sources" er en liste af ID'er på de dokumenter, som
+    du baserer dit svar på.
 """
 
 RAG_ANSWER_PROMPT = """
