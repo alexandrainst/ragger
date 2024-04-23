@@ -10,7 +10,7 @@ import torch
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
 
-from .utils import Document
+from .utils import Document, Embedding
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -57,7 +57,7 @@ class E5Embedder(Embedder):
         self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    def embed_documents(self, documents: list[Document]) -> np.ndarray:
+    def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
 
         Args:
@@ -65,7 +65,7 @@ class E5Embedder(Embedder):
                 A list of documents to embed.
 
         Returns:
-            An array of embeddings, where each row corresponds to a document.
+            A list of embeddings, where each row corresponds to a document.
         """
         # Prepare the texts for embedding
         texts = [document.text for document in documents]
@@ -78,8 +78,10 @@ class E5Embedder(Embedder):
             convert_to_numpy=True,
             show_progress_bar=False,
         )
-        assert isinstance(embeddings, np.ndarray)
-        return embeddings
+        return [
+            Embedding(id=document.id, embedding=embedding)
+            for document, embedding in zip(documents, embeddings)
+        ]
 
     def embed_query(self, query: str) -> np.ndarray:
         """Embed a query.
