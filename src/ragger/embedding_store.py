@@ -1,6 +1,5 @@
 """Store and fetch embeddings from a database."""
 
-import io
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -93,8 +92,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             path: The path to the embeddings store in.
         """
         path = Path(path)
-        array_file = io.BytesIO()
-        np.savez_compressed(file=array_file, **self.embeddings)
+        np.savez_compressed(file=path, **self.embeddings)
 
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
