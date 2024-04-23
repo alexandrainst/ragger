@@ -113,7 +113,10 @@ class E5Embedder(Embedder):
         Returns:
             The prepared texts.
         """
-        return texts
+        passages = [
+            "passage: " + re.sub(r"^passage: ", "", passage) for passage in texts
+        ]
+        return passages
 
     def _prepare_query_for_embedding(self, query: str) -> str:
         """This prepares a query for embedding.
@@ -128,8 +131,5 @@ class E5Embedder(Embedder):
             A prepared query.
         """
         # Add question marks at the end of the question, if not already present
-        query = re.sub(r"[。\?]$", "?", query).strip()
-        if not query.endswith("?"):
-            query += "?"
-
+        query = "query: " + re.sub(r"^query: ", "", query)
         return query

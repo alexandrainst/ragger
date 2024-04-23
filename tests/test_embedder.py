@@ -55,7 +55,7 @@ class TestE5Embedder:
         """Test that the Embedder can prepare a query."""
         prepared_query = embedder._prepare_query_for_embedding(query)
         assert isinstance(prepared_query, str)
-        assert "?" in prepared_query
+        assert "query: " in prepared_query
 
     def test_prepare_texts(self, embedder, documents):
         """Test that the Embedder can prepare texts for embedding."""
@@ -63,3 +63,4 @@ class TestE5Embedder:
         prepared_texts = embedder._prepare_texts_for_embedding(texts)
         assert isinstance(prepared_texts, list)
         assert len(prepared_texts) == len(texts)
+        assert all("passage: " in text for text in prepared_texts)
