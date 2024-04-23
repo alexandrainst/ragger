@@ -54,7 +54,7 @@ class E5Embedder(Embedder):
                 The Hydra configuration.
         """
         super().__init__(config)
-        self.embedder = SentenceTransformer(self.config.embedder_id)
+        self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def embed_documents(self, documents: list[Document]) -> np.ndarray:

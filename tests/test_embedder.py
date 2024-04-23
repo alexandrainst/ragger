@@ -15,7 +15,16 @@ class TestE5Embedder:
     @pytest.fixture(scope="class")
     def embedder(self) -> Generator[E5Embedder, None, None]:
         """Initialise an Embedder for testing."""
-        config = DictConfig(dict(embedder_id="intfloat/multilingual-e5-large"))
+        config = DictConfig(
+            dict(
+                embedder=dict(
+                    e5=dict(
+                        model_id="intfloat/multilingual-e5-small",
+                        document_text_field="text",
+                    )
+                )
+            )
+        )
         embedder = E5Embedder(config=config)
         yield embedder
 
