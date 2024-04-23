@@ -92,7 +92,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             path: The path to the embeddings store in.
         """
         path = Path(path)
-        np.savez_compressed(file=path, **self.embeddings)
+        np.save(file=path, arr=self.embeddings)
 
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
