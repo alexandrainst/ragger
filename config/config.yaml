@@ -17,13 +17,13 @@ document_store:
 embedding_store:
   type: numpy
   numpy:
-    null
+    num_documents_to_retrieve: 3
 
 embedder:
   type: e5
   e5:
     model_id: intfloat/multilingual-e5-large
-    num_documents_to_retrieve: 3
+    document_text_field: text
 
 generator:
   type: openai
@@ -42,6 +42,5 @@ demo:
   password_protected: true
   answer_store: answer_store.yaml
 
-# Miscellaneous parameters
 random_seed: 703
 verbose: false
