@@ -116,8 +116,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Returns:
             A list of indices of the nearest neighbours.
         """
-        # Get the top-k documents
-        num_documents = self.config.num_documents_to_retrieve
         scores = self.embeddings @ embedding
-        top_indices = np.argsort(scores)[::-1][:num_documents]
+        top_indices = np.argsort(scores)[::-1][:self.config.num_documents_to_retrieve]
         return top_indices
