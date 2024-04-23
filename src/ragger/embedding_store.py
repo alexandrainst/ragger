@@ -79,12 +79,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         self.embeddings = np.vstack([self.embeddings, np.array(embeddings)])
 
-    def reset(self) -> "NumpyEmbeddingStore":
+    def reset(self) -> None:
         """This resets the embeddings store."""
         self.embeddings = np.empty(shape=(self.embedding_dim,))
-        return self
 
-    def save(self, path: Path | str) -> "NumpyEmbeddingStore":
+    def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
 
         This will store the embeddings in `npy`-file, called
@@ -96,22 +95,18 @@ class NumpyEmbeddingStore(EmbeddingStore):
         path = Path(path)
         array_file = io.BytesIO()
         np.savez_compressed(file=array_file, **self.embeddings)
-        return self
 
-    def load(self, path: Path | str) -> "NumpyEmbeddingStore":
+    def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
 
         Args:
             path:
                 The path to the zip file to load the embeddings store from.
-
-        Returns:
-            An Embedder object.
         """
         path = Path(path)
-        self.embeddings = np.load(file=path, allow_pickle=False)
-        assert self.embedding_dim == self.embeddings.shape[1]
-        return self
+        embeddings = np.load(file=path, allow_pickle=False)
+        assert self.embedding_dim == embeddings.shape[1]
+        self.embeddings = embeddings
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
