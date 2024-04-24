@@ -47,6 +47,7 @@ class Demo:
             title="RAG System",
             description="En demo af et RAG system.",
             api_name="RAG System",
+            allow_flagging="never",
         )
         auth = (
             (self.config.demo.username, self.config.demo.password)
