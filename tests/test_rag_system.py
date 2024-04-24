@@ -7,7 +7,7 @@ from typing import Generator
 import pytest
 from omegaconf import DictConfig
 from ragger.rag_system import RagSystem
-from ragger.utils import GeneratedAnswer
+from ragger.utils import Document
 
 
 class TestRagSystem:
@@ -78,18 +78,19 @@ class TestRagSystem:
 
     def test_answer(self, valid_rag_system):
         """Test that the RagSystem can answer a query."""
-        answer = valid_rag_system.answer("Hvad hedder den hvide og sorte kat?")
-        assert answer.answer
-        assert answer.sources
-        assert isinstance(answer.answer, str)
-        assert isinstance(answer.sources, list)
-        for index in answer.sources:
-            assert isinstance(index, str)
-        assert len(answer.sources) == 2
-        expected_answer = GeneratedAnswer(
-            answer="Den sorte og hvide kat hedder Sutsko.", sources=["2"]
+        answer, documents = valid_rag_system.answer("Hvad farve har Sutsko?")
+        assert answer
+        assert documents
+        assert isinstance(answer, str)
+        assert isinstance(documents, list)
+        for document in documents:
+            assert isinstance(document, Document)
+        expected_answer = (
+            "Sutsko er sort og hvid.",
+            [Document(id="2", text="Den sorte og hvide kat hedder Sutsko.")],
         )
-        assert answer == expected_answer.answer
+        assert answer == expected_answer[0]
+        assert documents == expected_answer[1]
 
     def test_error_if_invalid_config(self, invalid_config):
         """Test that the RagSystem raises an error if the configuration is invalid."""
