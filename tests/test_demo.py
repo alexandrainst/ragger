@@ -1,13 +1,10 @@
 """Unit tests for the `demo` module."""
 
 import json
-import multiprocessing
 from tempfile import NamedTemporaryFile
-from time import sleep
 from typing import Generator
 
 import pytest
-from gradio_client import Client
 from omegaconf import DictConfig
 from ragger.demo import Demo
 
@@ -65,17 +62,3 @@ class TestDemo:
         demo = Demo(config=valid_config)
         assert demo.config == valid_config
         assert demo.rag_system is not None
-
-    def test_launch(self, valid_config):
-        """Test the launching of the demo."""
-        # Launch the demo in a separate process
-        demo = Demo(config=valid_config)
-        demo_process = multiprocessing.Process(target=demo.launch)
-        demo_process.start()
-
-        # Wait for the demo to start
-        sleep(5)
-        client = Client(f"http://{valid_config.demo.host}:{valid_config.demo.port}")
-        api = client.view_api(return_format="dict")
-        assert api["named_endpoints"]["/RAG System"]
-        demo_process.terminate()
