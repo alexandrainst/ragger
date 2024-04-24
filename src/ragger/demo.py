@@ -32,21 +32,20 @@ class Demo:
             Returns:
                 The generated answer.
             """
-            answer, documents = self.rag_system.answer(query)
-            sources_quote = "'".join(document.text for document in documents)
-            sources_ids_str = ", ".join(document.id for document in documents)
-            return (
-                f"Model answer:\n\t {answer},\n\n"
-                f"Based on the following text:\n\t '{sources_quote}',\n\n"
-                f"Source for the text:\n\t {sources_ids_str}"
+            answer, documents = self.rag_system.answer(query=query)
+            doc_str = "tekster" if len(documents) > 1 else "tekst"
+            answer += f"\n\nDette er baseret på følgende {doc_str}:\n\n"
+            answer += "\n\n".join(
+                f'=== {document.id} ===\n"{document.text}"' for document in documents
             )
+            return answer
 
         self.demo = gr.Interface(
             fn=generate,
-            inputs=gr.Textbox(lines=2, label="Query"),
-            outputs=gr.Textbox(label="Answer"),
+            inputs=gr.Textbox(lines=2, label="Spørgsmål"),
+            outputs=gr.Textbox(label="Svar"),
             title="RAG System",
-            description="A demo of the RAG system.",
+            description="En demo af et RAG system.",
             api_name="RAG System",
         )
         auth = (
