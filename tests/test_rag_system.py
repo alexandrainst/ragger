@@ -7,7 +7,7 @@ from typing import Generator
 import pytest
 from omegaconf import DictConfig
 from ragger.rag_system import RagSystem
-from ragger.utils import Document, GeneratedAnswer
+from ragger.utils import GeneratedAnswer
 
 
 class TestRagSystem:
@@ -78,16 +78,14 @@ class TestRagSystem:
 
     def test_answer(self, valid_rag_system):
         """Test that the RagSystem can answer a query."""
-        answer, documents = valid_rag_system.answer(
-            "Hvad hedder den hvide og sorte kat?"
-        )
-        assert answer
-        assert documents
-        assert isinstance(answer, str)
-        assert isinstance(documents, list)
-        for document in documents:
-            assert isinstance(document, Document)
-        assert len(documents) == 2
+        answer = valid_rag_system.answer("Hvad hedder den hvide og sorte kat?")
+        assert answer.answer
+        assert answer.sources
+        assert isinstance(answer.answer, str)
+        assert isinstance(answer.sources, list)
+        for index in answer.sources:
+            assert isinstance(index, str)
+        assert len(answer.sources) == 2
         expected_answer = GeneratedAnswer(
             answer="Den sorte og hvide kat hedder Sutsko.", sources=["2"]
         )
