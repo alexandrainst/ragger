@@ -12,7 +12,7 @@ dirs:
 document_store:
   type: jsonl
   jsonl:
-    filename: document_store.jsonl
+    filename: ${dirs.processed}/document_store.jsonl
 
 embedding_store:
   type: numpy
@@ -32,14 +32,16 @@ generator:
     model: gpt-4-turbo-2024-04-09
     temperature: 0.0
     max_tokens: 256
-    stream: true
+    stream: false
     timeout: 60
 
 demo:
   host: localhost
-  port: 7800
+  port: 7860
   share: false
-  password_protected: true
+  password_protected: false
+  username: admin
+  password: admin
   answer_store: answer_store.yaml
 
 random_seed: 703

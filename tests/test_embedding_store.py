@@ -31,7 +31,7 @@ class TestNumpyEmbeddingStore:
         yield store
 
     @pytest.fixture(scope="class")
-    def embeddings(self, embedding_store) -> list[np.ndarray]:
+    def embeddings(self, embedding_store) -> list[Embedding]:
         """Initialise a list of documents for testing."""
         return [
             Embedding(
