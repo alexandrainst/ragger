@@ -1,13 +1,17 @@
 """Store and fetch embeddings from a database."""
 
+import io
+import json
+import zipfile
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
 from omegaconf import DictConfig
 from transformers import AutoConfig
 
-from .utils import Index
+from .utils import Embedding, Index
 
 
 class EmbeddingStore(ABC):
@@ -23,7 +27,7 @@ class EmbeddingStore(ABC):
         self.config = config
 
     @abstractmethod
-    def add_embeddings(self, embeddings: list[np.ndarray]) -> None:
+    def add_embeddings(self, embeddings: list[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
@@ -59,6 +63,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
         super().__init__(config)
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
+        self.index_to_row_id: dict[Index, int] = defaultdict()
+
+    @property
+    def row_id_to_index(self) -> dict[int, Index]:
+        """Return a mapping of row IDs to indices."""
+        return {row_id: index for index, row_id in self.index_to_row_id.items()}
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -69,43 +79,90 @@ class NumpyEmbeddingStore(EmbeddingStore):
         model_config = AutoConfig.from_pretrained(self.config.embedder.e5.model_id)
         return model_config.hidden_size
 
-    def add_embeddings(self, embeddings: list[np.ndarray]) -> None:
+    def add_embeddings(self, embeddings: list[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
             embeddings:
                 A list of embeddings to add to the store.
+
+        Raises:
+            ValueError:
+                If any of the embeddings already exist in the store.
         """
-        self.embeddings = np.vstack([self.embeddings, np.array(embeddings)])
+        embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
+        already_existing_indices = [
+            embedding.id
+            for embedding in embeddings
+            if embedding.id in self.index_to_row_id
+        ]
+        if already_existing_indices:
+            already_existing_indices_str = "\n".join(already_existing_indices)
+            raise ValueError(
+                (
+                    "The following embeddings already exist in the store: "
+                    f"{already_existing_indices_str}"
+                )
+            )
+
+        self.embeddings = np.vstack([self.embeddings, embedding_matrix])
+        for i, embedding in enumerate(embeddings):
+            self.index_to_row_id[embedding.id] = (
+                self.embeddings.shape[0] - len(embeddings) + i
+            )
 
     def reset(self) -> None:
         """This resets the embeddings store."""
         self.embeddings = np.zeros((0, self.embedding_dim))
+        self.index_to_row_id = defaultdict()
+        self.row_id_to_index
 
     def save(self, path: Path | str) -> None:
-        """This saves the embeddings store to disk.
+        """This saves the embeddings store to disk in a .zip-file.
 
         This will store the embeddings in `npy`-file, called
         `embeddings.npy`.
 
         Args:
             path:
-                The path to the embeddings store in.
+                The path to the embeddings store in. This should be a .zip-file.
+                This .zip-file will contain the embeddings matrix in a .npy-file,
+                called `embeddings.npy`, and the row ID to index mapping in a
+                .json-file, called `index_to_row_id.json`.
+
+        Raises:
+            ValueError:
+                If the path is not a .zip-file.
         """
         path = Path(path)
-        np.save(file=path, arr=self.embeddings)
+        if path.suffix != ".zip":
+            raise ValueError("The path must be a .zip-file.")
+
+        array_file = io.BytesIO()
+        np.save(file=array_file, arr=self.embeddings)
+
+        index_to_row_id = json.dumps(self.index_to_row_id).encode("utf-8")
+
+        with zipfile.ZipFile(path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr("embeddings.npy", data=array_file.getvalue())
+            zf.writestr("index_to_row_id.json", data=index_to_row_id)
 
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
 
         Args:
             path:
-                The path to the zip file to load the embeddings store from.
+                The path to the zip file to load the embedding store from.
         """
         path = Path(path)
-        embeddings = np.load(file=path, allow_pickle=False)
-        assert self.embedding_dim == embeddings.shape[1]
+        with zipfile.ZipFile(file=path, mode="r") as zf:
+            index_to_row_id_encoded = zf.read("index_to_row_id.json")
+            index_to_row_id = json.loads(index_to_row_id_encoded.decode("utf-8"))
+            array_file = io.BytesIO(zf.read("embeddings.npy"))
+            embeddings = np.load(file=array_file, allow_pickle=False)
         self.embeddings = embeddings
+        self.index_to_row_id = index_to_row_id
+        self.row_id_to_index
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
@@ -130,4 +187,5 @@ class NumpyEmbeddingStore(EmbeddingStore):
             )
         scores = self.embeddings @ embedding
         top_indices = np.argsort(scores)[::-1][:num_docs]
-        return top_indices.tolist()
+        nearest_neighbours = [self.row_id_to_index[i] for i in top_indices]
+        return nearest_neighbours

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from omegaconf import DictConfig
 from ragger.embedder import E5Embedder, Embedder
-from ragger.utils import Document
+from ragger.utils import Document, Embedding
 
 
 class TestE5Embedder:
@@ -52,8 +52,10 @@ class TestE5Embedder:
     def test_embed(self, embedder, documents):
         """Test that the Embedder can embed text."""
         embeddings = embedder.embed_documents(documents)
-        assert isinstance(embeddings, np.ndarray)
-        assert embeddings.shape[0] == len(documents)
+        assert isinstance(embeddings, list)
+        for embedding in embeddings:
+            assert isinstance(embedding, Embedding)
+        assert len(embeddings) == len(documents)
 
     def test_embed_query(self, embedder, query):
         """Test that the Embedder can embed a query."""

@@ -1,6 +1,7 @@
 """Utility constants and functions used in the project."""
 
-from pydantic import BaseModel
+import numpy as np
+from pydantic import BaseModel, ConfigDict
 
 Index = str
 
@@ -10,6 +11,15 @@ class Document(BaseModel):
 
     id: Index
     text: str
+
+
+class Embedding(BaseModel):
+    """An embedding of a document."""
+
+    id: Index
+    embedding: np.ndarray
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class GeneratedAnswer(BaseModel):

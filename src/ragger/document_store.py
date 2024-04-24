@@ -34,6 +34,15 @@ class DocumentStore(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_all_documents(self) -> list[Document]:
+        """Fetch all documents from the store.
+
+        Returns:
+            A list of all documents in the store.
+        """
+        ...
+
 
 class JsonlDocumentStore(DocumentStore):
     """A document store that fetches documents from a JSONL file."""
@@ -73,3 +82,11 @@ class JsonlDocumentStore(DocumentStore):
         if index not in self._documents:
             raise KeyError(f"Document with ID {index!r} not found")
         return self._documents[index]
+
+    def get_all_documents(self) -> list[Document]:
+        """Fetch all documents from the store.
+
+        Returns:
+            A list of all documents in the store.
+        """
+        return list(self._documents.values())
