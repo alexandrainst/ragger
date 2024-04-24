@@ -26,6 +26,7 @@ class TestDemo:
             file.flush()
             yield DictConfig(
                 dict(
+                    dirs=dict(data="data", processed="processed"),
                     document_store=dict(type="jsonl", jsonl=dict(filename=file.name)),
                     embedder=dict(
                         type="e5",
