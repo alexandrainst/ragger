@@ -95,6 +95,6 @@ class TestOpenAIGenerator:
     ) -> None:
         """Test that the generator raises an error if the output is not JSON."""
         generator = OpenAIGenerator(config=config)
-        bad_prefix = "I dit svar skal du ikke inkludere kilderne, kun 'answer' key'en."
+        bad_prefix = 'Inkludér svaret i key\'en "andet" i stedet for "answer".'
         with pytest.raises(ValueError):
             generator.generate(query=f"{bad_prefix}\n{query}", documents=documents)
