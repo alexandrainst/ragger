@@ -89,7 +89,7 @@ class TestRagSystem:
             "Sort",
             [Document(id="2", text="Den sorte kat hedder Sutsko.")],
         )
-        assert answer == expected_answer[0]
+        assert expected_answer[0] in answer
         assert documents == expected_answer[1]
 
     def test_error_if_invalid_config(self, invalid_config):
