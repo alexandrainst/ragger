@@ -1,9 +1,12 @@
 """A Gradio demo of the RAG system."""
 
+import typing
 from typing import Generator
 
 import gradio as gr
 from omegaconf import DictConfig
+
+from ragger.utils import Document, format_answer
 
 from .rag_system import RagSystem
 
@@ -106,16 +109,20 @@ class Demo:
         human_message: str = history[-1][0] if history[-1][0] else ""
         empty_exhange: Exchange = (None, "")
         history.append(empty_exhange)
-        answer, documents = self.rag_system.answer(query=human_message)
-        match len(documents):
-            case 0:
-                answer = self.config.demo.no_documents_reply
-            case 1:
-                answer += "\n\nKilde:\n\n"
-            case _:
-                answer += "\n\nKilder:\n\n"
-        answer += "\n\n".join(
-            f'===  {document.id}  ===\n"{document.text}"' for document in documents
+        answer_or_stream = self.rag_system.answer(query=human_message)
+        if isinstance(answer_or_stream, typing.Generator):
+            generated_answer = ""
+            documents: list[Document] = []
+            for generated_answer, documents in answer_or_stream:
+                assert isinstance(generated_answer, str)
+                history[-1] = (None, generated_answer)
+                yield history
+        else:
+            generated_answer, documents = answer_or_stream
+        generated_answer = format_answer(
+            answer=generated_answer,
+            documents=documents,
+            no_documents_reply=self.config.demo.no_documents_reply,
         )
-        history[-1] = (None, answer)
+        history[-1] = (None, generated_answer)
         yield history

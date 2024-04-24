@@ -48,7 +48,7 @@ demo:
   description: |
     En robot, der kan svare på alle dine spørgsmål!
 
-    Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend'.
+    Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend' eller Enter knappen.
   input_box_placeholder: >
     Skriv dit spørgsmål her
   submit_button_value: >

@@ -1,7 +1,7 @@
 version: 1
 formatters:
   simple:
-    format: "%(asctime)s ⋅ %(message)s"
+    format: "[%(name)s] %(asctime)s ⋅ %(message)s"
     datefmt: "%Y-%m-%d %H:%M:%S"
     level: info
 handlers:
