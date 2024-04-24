@@ -12,7 +12,7 @@ dirs:
 document_store:
   type: jsonl
   jsonl:
-    filename: document_store.jsonl
+    filename: ${dirs.raw}/document_store.jsonl
 
 embedding_store:
   type: numpy
