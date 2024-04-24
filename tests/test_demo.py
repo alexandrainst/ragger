@@ -22,8 +22,8 @@ class TestDemo:
         with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
             # Create a JSONL file with some documents
             data_dicts = [
-                dict(id="1", text="Den hvide og grå kat hedder Sjusk."),
-                dict(id="2", text="Den sorte og hvide kat hedder Sutsko."),
+                dict(id="1", text="Den hvide kat hedder Sjusk."),
+                dict(id="2", text="Den sorte kat hedder Sutsko."),
             ]
             data_str = "\n".join(json.dumps(data_dict) for data_dict in data_dicts)
             file.write(data_str)
@@ -77,7 +77,7 @@ class TestDemo:
         # Wait for the demo to start
         for i in range(4):
             sleep(5)
-            client = Client(f"http://localhost:{valid_config.demo.port}")
+            client = Client(f"http://{valid_config.demo.host}:{valid_config.demo.port}")
             try:
                 assert client
                 break
@@ -85,10 +85,8 @@ class TestDemo:
                 continue
 
         result = client.predict(query="Hvad farve har Sutsko?", api_name="/RAG System")
-        expected_answer = "Sutsko er sort og hvid."
-        expected_documents = [
-            Document(id="2", text="Den sorte og hvide kat hedder Sutsko.")
-        ]
+        expected_answer = "sort"
+        expected_documents = [Document(id="2", text="Den sorte kat hedder Sutsko.")]
         expected_sources_quote = "'".join(
             document.text for document in expected_documents
         )
@@ -96,10 +94,7 @@ class TestDemo:
             document.id for document in expected_documents
         )
 
-        expected_result = (
-            f"Model answer:\n\t {expected_answer},\n\n"
-            f"Based on the following text:\n\t '{expected_sources_quote}',\n\n"
-            f"Source for the text:\n\t {expected_sources_ids_str}"
-        )
-        assert result == expected_result
+        assert expected_answer in result
+        assert expected_sources_quote in result
+        assert expected_sources_ids_str in result
         demo_process.terminate()

@@ -37,9 +37,11 @@ generator:
 
 demo:
   host: localhost
-  port: 7800
+  port: 7860
   share: false
-  password_protected: true
+  password_protected: false
+  username: admin
+  password: admin
   answer_store: answer_store.yaml
 
 random_seed: 703

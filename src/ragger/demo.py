@@ -49,7 +49,17 @@ class Demo:
             description="A demo of the RAG system.",
             api_name="RAG System",
         )
-        self.demo.launch()
+        auth = (
+            (self.config.demo.username, self.config.demo.password)
+            if self.config.demo.password_protected
+            else None
+        )
+        self.demo.launch(
+            server_name=self.config.demo.host,
+            server_port=self.config.demo.port,
+            share=self.config.demo.share,
+            auth=auth,
+        )
 
     def close(self) -> None:
         """Close the demo."""
