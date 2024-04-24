@@ -64,7 +64,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
-        self.row_id_to_index: dict[int, Index] = defaultdict()
+        
+@property
+def row_id_to_index(self) -> dict[int, Index]:
+    """Return a mapping of row IDs to indices."""
+    return {row_id: index for index, row_id in self.index_to_row_id.items()}
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
