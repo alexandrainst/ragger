@@ -75,16 +75,11 @@ class TestDemo:
         demo_process.start()
 
         # Wait for the demo to start
-        for i in range(4):
-            sleep(5)
-            client = Client(f"http://{valid_config.demo.host}:{valid_config.demo.port}")
-            try:
-                assert client
-                break
-            except AssertionError:
-                continue
+        sleep(5)
+        client = Client(f"http://{valid_config.demo.host}:{valid_config.demo.port}")
 
-        result = client.predict(query="Hvad farve har Sutsko?", api_name="/RAG System")
+        job = client.submit(query="Hvad farve har Sutsko?", api_name="/RAG System")
+        result = job.result(timeout=60)
         expected_answer = "sort"
         expected_documents = [Document(id="2", text="Den sorte kat hedder Sutsko.")]
         expected_sources_quote = "'".join(
