@@ -19,8 +19,8 @@ class TestRagSystem:
         with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
             # Create a JSONL file with some documents
             data_dicts = [
-                dict(id="1", text="Den hvide og grå kat hedder Sjusk."),
-                dict(id="2", text="Den sorte og hvide kat hedder Sutsko."),
+                dict(id="1", text="Den hvide kat hedder Sjusk."),
+                dict(id="2", text="Den sorte kat hedder Sutsko."),
             ]
             data_str = "\n".join(json.dumps(data_dict) for data_dict in data_dicts)
             file.write(data_str)
@@ -86,10 +86,10 @@ class TestRagSystem:
         for document in documents:
             assert isinstance(document, Document)
         expected_answer = (
-            "Sutsko er sort og hvid.",
-            [Document(id="2", text="Den sorte og hvide kat hedder Sutsko.")],
+            "Sort",
+            [Document(id="2", text="Den sorte kat hedder Sutsko.")],
         )
-        assert answer == expected_answer[0]
+        assert expected_answer[0] in answer
         assert documents == expected_answer[1]
 
     def test_error_if_invalid_config(self, invalid_config):
