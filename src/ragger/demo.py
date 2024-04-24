@@ -41,10 +41,17 @@ class Demo:
                 f"Source for the text:\n\t {sources_ids_str}"
             )
 
-        gr.Interface(
+        self.demo = gr.Interface(
             fn=generate,
             inputs=gr.Textbox(lines=2, label="Query"),
             outputs=gr.Textbox(label="Answer"),
             title="RAG System",
             description="A demo of the RAG system.",
-        ).launch()
+            api_name="RAG System",
+        )
+        self.demo.launch()
+
+    def close(self) -> None:
+        """Close the demo."""
+        if self.demo:
+            self.demo.close()
