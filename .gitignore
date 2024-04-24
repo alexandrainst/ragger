@@ -104,6 +104,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/document_store.jsonl
 data/final/*
 !data/final/.gitkeep
 
