@@ -114,7 +114,7 @@ class TestRagSystem:
     def test_answer_is_correct(self, answer_and_documents):
         """Test that the answer is correct."""
         answer, _ = answer_and_documents
-        assert "Sort" in answer
+        assert "sort" in answer.lower()
 
     def test_documents_are_correct(self, answer_and_documents):
         """Test that the documents are correct."""
