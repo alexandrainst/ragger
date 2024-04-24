@@ -81,6 +81,13 @@ class TestNumpyEmbeddingStore:
         assert embedding_store.embeddings.shape == (0, embedding_store.embedding_dim)
         embedding_store.reset()
 
+    def test_indices_already_in_store(self, embedding_store, embeddings):
+        """Test that an error is raised when indices are already in the store."""
+        embedding_store.add_embeddings(embeddings)
+        with pytest.raises(ValueError):
+            embedding_store.add_embeddings(embeddings)
+        embedding_store.reset()
+
     def test_save_load(self, embedding_store, embeddings):
         """Test that the NumpyEmbeddingStore can be saved."""
         embedding_store.add_embeddings(embeddings)
