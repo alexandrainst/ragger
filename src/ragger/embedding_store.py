@@ -64,11 +64,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
-        
-@property
-def row_id_to_index(self) -> dict[int, Index]:
-    """Return a mapping of row IDs to indices."""
-    return {row_id: index for index, row_id in self.index_to_row_id.items()}
+
+    @property
+    def row_id_to_index(self) -> dict[int, Index]:
+        """Return a mapping of row IDs to indices."""
+        return {row_id: index for index, row_id in self.index_to_row_id.items()}
 
     def _get_embedding_dimension(self) -> int:
         """This returns the embedding dimension for the embedding model.
@@ -85,25 +85,37 @@ def row_id_to_index(self) -> dict[int, Index]:
         Args:
             embeddings:
                 A list of embeddings to add to the store.
+
+        Raises:
+            ValueError:
+                If any of the embeddings already exist in the store.
         """
         embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
-        if any(embedding.id in self.index_to_row_id for embedding in embeddings):
-            raise ValueError("Some embeddings already exist in the store.")
+        already_existing_indices = [
+            embedding.id
+            for embedding in embeddings
+            if embedding.id in self.index_to_row_id
+        ]
+        if already_existing_indices:
+            already_existing_indices_str = "\n".join(already_existing_indices)
+            raise ValueError(
+                (
+                    "The following embeddings already exist in the store: "
+                    f"{already_existing_indices_str}"
+                )
+            )
 
         self.embeddings = np.vstack([self.embeddings, embedding_matrix])
         for i, embedding in enumerate(embeddings):
             self.index_to_row_id[embedding.id] = (
                 self.embeddings.shape[0] - len(embeddings) + i
             )
-            self.row_id_to_index[self.embeddings.shape[0] - len(embeddings) + i] = (
-                embedding.id
-            )
 
     def reset(self) -> None:
         """This resets the embeddings store."""
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id = defaultdict()
-        self.row_id_to_index = defaultdict()
+        self.row_id_to_index
 
     def save(self, path: Path | str) -> None:
         """This saves the embeddings store to disk.
@@ -120,12 +132,10 @@ def row_id_to_index(self) -> dict[int, Index]:
         np.save(file=array_file, arr=self.embeddings)
 
         index_to_row_id = json.dumps(self.index_to_row_id).encode("utf-8")
-        row_id_to_index = json.dumps(self.row_id_to_index).encode("utf-8")
 
         with zipfile.ZipFile(path, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             zf.writestr("embeddings.npy", data=array_file.getvalue())
             zf.writestr("index_to_row_id.json", data=index_to_row_id)
-            zf.writestr("row_id_to_index.json", data=row_id_to_index)
 
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
@@ -138,13 +148,11 @@ def row_id_to_index(self) -> dict[int, Index]:
         with zipfile.ZipFile(file=path, mode="r") as zf:
             index_to_row_id_encoded = zf.read("index_to_row_id.json")
             index_to_row_id = json.loads(index_to_row_id_encoded.decode("utf-8"))
-            row_id_to_index_encoded = zf.read("row_id_to_index.json")
-            row_id_to_index = json.loads(row_id_to_index_encoded.decode("utf-8"))
             array_file = io.BytesIO(zf.read("embeddings.npy"))
             embeddings = np.load(file=array_file, allow_pickle=False)
         self.embeddings = embeddings
         self.index_to_row_id = index_to_row_id
-        self.row_id_to_index = row_id_to_index
+        self.row_id_to_index
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
