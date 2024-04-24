@@ -32,29 +32,33 @@ class RagSystem:
         This builds the underlying embedding store and can be called whenever the data
         needs to be updated.
         """
-        if self.config.document_store.type == "jsonl":
-            self.document_store = JsonlDocumentStore(self.config)
-        else:
-            raise ValueError("DocumentStore type not supported")
+        match type_ := self.config.document_store.type:
+            case "jsonl":
+                self.document_store = JsonlDocumentStore(config=self.config)
+            case _:
+                raise ValueError(f"The DocumentStore type {type_!r} is not supported")
 
-        if self.config.embedder.type == "e5":
-            self.embedder = E5Embedder(self.config)
-        else:
-            raise ValueError("Embedder type not supported")
+        match type_ := self.config.embedder.type:
+            case "e5":
+                self.embedder = E5Embedder(config=self.config)
+            case _:
+                raise ValueError(f"The Embedder type {type_!r} is not supported")
 
-        if self.config.embedding_store.type == "numpy":
-            self.embedding_store = NumpyEmbeddingStore(self.config)
-        else:
-            raise ValueError("EmbeddingStore store type not supported")
+        match type_ := self.config.embedding_store.type:
+            case "numpy":
+                self.embedding_store = NumpyEmbeddingStore(config=self.config)
+            case _:
+                raise ValueError(f"The EmbeddingStore type {type_!r} is not supported")
 
-        # Get all documents from the document store
+        match type_ := self.config.generator.type:
+            case "openai":
+                self.generator = OpenAIGenerator(config=self.config)
+            case _:
+                raise ValueError(f"The Generator type {type_!r} is not supported")
+
         documents = self.document_store.get_all_documents()
-
-        # Embed all documents
-        embeddings = self.embedder.embed_documents(documents)
-
-        # Add all embeddings to the embedding store
-        self.embedding_store.add_embeddings(embeddings)
+        embeddings = self.embedder.embed_documents(documents=documents)
+        self.embedding_store.add_embeddings(embeddings=embeddings)
 
     def answer(self, query: str) -> tuple[str, list[Document]]:
         """Answer a query.
@@ -66,26 +70,14 @@ class RagSystem:
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        if self.config.generator.type == "openai":
-            self.generator = OpenAIGenerator(self.config)
-        else:
-            raise ValueError("Generator type not supported")
-
-        # Embed the query
         query_embedding = self.embedder.embed_query(query)
-
-        # Get the nearest neighbours to the query embedding
         nearest_neighbours = self.embedding_store.get_nearest_neighbours(
             query_embedding
         )
+        generated_answer = self.generator.generate(
+            query=query, documents=[self.document_store[i] for i in nearest_neighbours]
+        )
 
-        # Get the supporting documents
-        supporting_documents = [self.document_store[i] for i in nearest_neighbours]
-
-        # Generate the answer
-        generated_answer = self.generator.generate(query, supporting_documents)
-
-        # Extract documents from the generated answer source indices
         return (
             generated_answer.answer,
             [self.document_store[i] for i in generated_answer.sources],
