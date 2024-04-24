@@ -83,11 +83,10 @@ class RagSystem:
         supporting_documents = [self.document_store[i] for i in nearest_neighbours]
 
         # Generate the answer
-        # generated_answer = self.generator.generate_answer(query, supporting_documents)
+        generated_answer = self.generator.generate(query, supporting_documents)
 
         # Extract documents from the generated answer source indices
-        return ("bla", supporting_documents)
-        #   return (
-        #       generated_answer.answer,
-        #       [supporting_documents[i] for i in generated_answer.source_indices],
-        #   )
+        return (
+            generated_answer.answer,
+            [self.document_store[i] for i in generated_answer.sources],
+        )
