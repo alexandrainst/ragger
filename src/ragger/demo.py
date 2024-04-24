@@ -1,7 +1,6 @@
 """A Gradio demo of the RAG system."""
 
 import typing
-from typing import Generator
 
 import gradio as gr
 from omegaconf import DictConfig
@@ -96,7 +95,7 @@ class Demo:
         history = history + [(text, None)]
         return history, gr.Textbox(value="")
 
-    def ask(self, history: History) -> Generator[History, None, None]:
+    def ask(self, history: History) -> typing.Generator[History, None, None]:
         """Ask the bot a question.
 
         Args:
