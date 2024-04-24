@@ -118,16 +118,26 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.row_id_to_index
 
     def save(self, path: Path | str) -> None:
-        """This saves the embeddings store to disk.
+        """This saves the embeddings store to disk in a .zip-file.
 
         This will store the embeddings in `npy`-file, called
         `embeddings.npy`.
 
         Args:
             path:
-                The path to the embeddings store in.
+                The path to the embeddings store in. This should be a .zip-file.
+                This .zip-file will contain the embeddings matrix in a .npy-file,
+                called `embeddings.npy`, and the row ID to index mapping in a
+                .json-file, called `index_to_row_id.json`.
+
+        Raises:
+            ValueError:
+                If the path is not a .zip-file.
         """
         path = Path(path)
+        if path.suffix != ".zip":
+            raise ValueError("The path must be a .zip-file.")
+
         array_file = io.BytesIO()
         np.save(file=array_file, arr=self.embeddings)
 
