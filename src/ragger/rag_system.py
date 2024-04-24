@@ -77,7 +77,6 @@ class RagSystem:
         generated_answer = self.generator.generate(
             query=query, documents=[self.document_store[i] for i in nearest_neighbours]
         )
-
         return (
             generated_answer.answer,
             [self.document_store[i] for i in generated_answer.sources],

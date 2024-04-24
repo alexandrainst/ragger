@@ -17,7 +17,7 @@ document_store:
 embedding_store:
   type: numpy
   numpy:
-    num_documents_to_retrieve: 3
+    num_documents_to_retrieve: 5
 
 embedder:
   type: e5
@@ -42,7 +42,20 @@ demo:
   password_protected: false
   username: admin
   password: admin
-  answer_store: answer_store.yaml
+  theme: monochrome
+  title: >
+    RAG Bot
+  description: |
+    En robot, der kan svare på alle dine spørgsmål!
+
+    Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend'.
+  input_box_placeholder: >
+    Skriv dit spørgsmål her
+  submit_button_value: >
+    Indsend
+  no_documents_reply: >
+    Jeg er desværre ikke i stand til at svare på dit spørgsmål ud fra den viden, som
+    jeg har til rådighed. Beklager!
 
 random_seed: 703
 verbose: false
