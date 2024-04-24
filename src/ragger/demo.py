@@ -33,10 +33,9 @@ class Demo:
                 The generated answer.
             """
             answer, documents = self.rag_system.answer(query=query)
-            doc_str = "tekster" if len(documents) > 1 else "tekst"
-            answer += f"\n\nDette er baseret på følgende {doc_str}:\n\n"
+            answer += f"\n\n{'Kilder' if len(documents) > 1 else 'Kilde'}:\n\n"
             answer += "\n\n".join(
-                f'=== {document.id} ===\n"{document.text}"' for document in documents
+                f'===  {document.id}  ===\n"{document.text}"' for document in documents
             )
             return answer
 
