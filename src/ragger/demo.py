@@ -1,5 +1,7 @@
 """A Gradio demo of the RAG system."""
 
+import os
+
 import gradio as gr
 from omegaconf import DictConfig
 
@@ -17,6 +19,8 @@ class Demo:
                 The Hydra configuration.
         """
         self.config = config
+        if "PYTEST_CURRENT_TEST" in os.environ:
+            self.config.generator.openai.stream = False
         self.rag_system = RagSystem(config=config)
 
     def launch(self) -> None:
