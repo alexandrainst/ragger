@@ -1,7 +1,7 @@
 """Unit tests for the `embedding_store` module."""
 
+import typing
 from tempfile import NamedTemporaryFile
-from typing import Generator
 
 import numpy as np
 import pytest
@@ -14,7 +14,7 @@ class TestNumpyEmbeddingStore:
     """Tests for the `NumpyEmbeddingStore` class."""
 
     @pytest.fixture(scope="class")
-    def embedding_store(self) -> Generator[NumpyEmbeddingStore, None, None]:
+    def embedding_store(self) -> typing.Generator[NumpyEmbeddingStore, None, None]:
         """Initialise a NumpyEmbeddingStore for testing."""
         config = DictConfig(
             dict(
