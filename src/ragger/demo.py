@@ -1,7 +1,5 @@
 """A Gradio demo of the RAG system."""
 
-import os
-
 import gradio as gr
 from omegaconf import DictConfig
 
@@ -19,8 +17,6 @@ class Demo:
                 The Hydra configuration.
         """
         self.config = config
-        if "PYTEST_CURRENT_TEST" in os.environ:
-            self.config.generator.openai.stream = False
         self.rag_system = RagSystem(config=config)
 
     def launch(self) -> None:
@@ -53,7 +49,6 @@ class Demo:
             description="A demo of the RAG system.",
             api_name="RAG System",
         )
-        self.demo.queue()
         auth = (
             (self.config.demo.username, self.config.demo.password)
             if self.config.demo.password_protected

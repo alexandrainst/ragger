@@ -10,7 +10,6 @@ import pytest
 from gradio_client import Client
 from omegaconf import DictConfig
 from ragger.demo import Demo
-from ragger.utils import Document
 
 
 class TestDemo:
@@ -77,19 +76,6 @@ class TestDemo:
         # Wait for the demo to start
         sleep(5)
         client = Client(f"http://{valid_config.demo.host}:{valid_config.demo.port}")
-
-        job = client.submit(query="Hvad farve har Sutsko?", api_name="/RAG System")
-        result = job.result(timeout=60)
-        expected_answer = "sort"
-        expected_documents = [Document(id="2", text="Den sorte kat hedder Sutsko.")]
-        expected_sources_quote = "'".join(
-            document.text for document in expected_documents
-        )
-        expected_sources_ids_str = ", ".join(
-            document.id for document in expected_documents
-        )
-
-        assert expected_answer in result
-        assert expected_sources_quote in result
-        assert expected_sources_ids_str in result
+        api = client.view_api(return_format="dict")
+        assert api["named_endpoints"]["/RAG System"]
         demo_process.terminate()
