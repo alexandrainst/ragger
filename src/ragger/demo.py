@@ -49,6 +49,7 @@ class Demo:
             description="A demo of the RAG system.",
             api_name="RAG System",
         )
+        self.demo.queue()
         auth = (
             (self.config.demo.username, self.config.demo.password)
             if self.config.demo.password_protected
