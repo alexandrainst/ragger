@@ -87,7 +87,7 @@ class TestRagSystem:
             assert isinstance(document, Document)
         expected_answer = (
             "Sort",
-            [Document(id="2", text="Den sorte og hvide kat hedder Sutsko.")],
+            [Document(id="2", text="Den sorte kat hedder Sutsko.")],
         )
         assert answer == expected_answer[0]
         assert documents == expected_answer[1]
