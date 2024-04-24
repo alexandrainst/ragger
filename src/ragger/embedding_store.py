@@ -152,7 +152,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         Args:
             path:
-                The path to the zip file to load the embeddings store from.
+                The path to the zip file to load the embedding store from.
         """
         path = Path(path)
         with zipfile.ZipFile(file=path, mode="r") as zf:
