@@ -62,8 +62,7 @@ class TestRagSystem:
     @pytest.fixture(scope="class")
     def valid_rag_system(self, valid_config) -> Generator[RagSystem, None, None]:
         """Initialise a RagSystem for testing."""
-        system = RagSystem(config=valid_config)
-        yield system
+        yield RagSystem(config=valid_config)
 
     def test_initialisation(self, valid_rag_system):
         """Test that the RagSystem can be initialised."""
