@@ -68,9 +68,9 @@ class TestRagSystem:
         yield RagSystem(config=valid_config)
 
     @pytest.fixture(scope="class")
-    def compiled_rag_system(self, valid_rag_system):
+    def compiled_rag_system(self, valid_config) -> Generator[RagSystem, None, None]:
         """A compiled RagSystem for testing."""
-        rag_system = deepcopy(valid_rag_system)
+        rag_system = RagSystem(config=valid_config)
         rag_system.compile()
         yield rag_system
 
