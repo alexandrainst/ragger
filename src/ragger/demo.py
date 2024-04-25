@@ -52,11 +52,17 @@ class Demo:
                 value=self.config.demo.submit_button_value, variant="primary"
             )
             submit_button.click(
-                self.add_text, [chatbot, input_box], [chatbot, input_box], queue=False
-            ).then(self.ask, chatbot, chatbot)
+                fn=self.add_text,
+                inputs=[chatbot, input_box],
+                outputs=[chatbot, input_box],
+                queue=False,
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
             input_box.submit(
-                self.add_text, [chatbot, input_box], [chatbot, input_box], queue=False
-            ).then(self.ask, chatbot, chatbot)
+                fn=self.add_text,
+                inputs=[chatbot, input_box],
+                outputs=[chatbot, input_box],
+                queue=False,
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
         return demo
 
     def launch(self) -> None:
