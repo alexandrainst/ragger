@@ -1,6 +1,6 @@
 """Unit tests for the `embedder` module."""
 
-from typing import Generator
+import typing
 
 import numpy as np
 import pytest
@@ -13,7 +13,7 @@ class TestE5Embedder:
     """Tests for the `Embedder` class."""
 
     @pytest.fixture(scope="class")
-    def embedder(self) -> Generator[E5Embedder, None, None]:
+    def embedder(self) -> typing.Generator[E5Embedder, None, None]:
         """Initialise an Embedder for testing."""
         config = DictConfig(
             dict(

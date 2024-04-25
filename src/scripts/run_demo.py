@@ -1,8 +1,10 @@
-"""Script to run a local demo.
+"""Script to run a local Gradio demo.
 
 Usage:
     python src/scripts/run_demo.py <key>=<value> <key>=<value> ...
 """
+
+import logging
 
 import hydra
 from dotenv import load_dotenv
@@ -14,12 +16,13 @@ load_dotenv()
 
 @hydra.main(config_path="../../config", config_name="config", version_base=None)
 def main(config: DictConfig) -> None:
-    """Run the GUI.
+    """Run the Gradio demo.
 
     Args:
         config:
             The Hydra configuration.
     """
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
     demo = Demo(config=config)
     demo.launch()
 

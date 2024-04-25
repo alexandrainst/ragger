@@ -12,42 +12,6 @@ class TestOpenAIGenerator:
     """Tests for the `OpenAIGenerator` class."""
 
     @pytest.fixture(scope="class")
-    def config(self) -> typing.Generator[DictConfig, None, None]:
-        """A configuration used for testing the OpenAIGenerator."""
-        yield DictConfig(
-            dict(
-                generator=dict(
-                    openai=dict(
-                        api_key_variable_name="OPENAI_API_KEY",
-                        model="gpt-3.5-turbo",
-                        temperature=0.0,
-                        stream=False,
-                        timeout=60,
-                        max_tokens=128,
-                    )
-                )
-            )
-        )
-
-    @pytest.fixture(scope="class")
-    def config_with_few_max_tokens(self) -> typing.Generator[DictConfig, None, None]:
-        """A configuration where the maximum number of tokens is very low."""
-        yield DictConfig(
-            dict(
-                generator=dict(
-                    openai=dict(
-                        api_key_variable_name="OPENAI_API_KEY",
-                        model="gpt-3.5-turbo",
-                        temperature=0.0,
-                        stream=False,
-                        timeout=60,
-                        max_tokens=1,
-                    )
-                )
-            )
-        )
-
-    @pytest.fixture(scope="class")
     def documents(self) -> typing.Generator[list[Document], None, None]:
         """Some documents for testing the OpenAIGenerator."""
         yield [
@@ -68,9 +32,7 @@ class TestOpenAIGenerator:
         """Test that the generator is initialised correctly."""
         assert OpenAIGenerator(config=config)
 
-    def test_generate(
-        self, config: DictConfig, query: str, documents: list[Document]
-    ) -> None:
+    def test_generate(self, config, query, documents) -> None:
         """Test that the generator generates an answer."""
         generator = OpenAIGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
@@ -79,22 +41,28 @@ class TestOpenAIGenerator:
         )
         assert answer == expected
 
-    def test_error_if_not_json(
-        self,
-        config_with_few_max_tokens: DictConfig,
-        query: str,
-        documents: list[Document],
-    ) -> None:
+    def test_streaming(self, config, query, documents):
+        """Test that the generator streams answers."""
+        config.generator.openai.stream = True
+        generator = OpenAIGenerator(config=config)
+        answer = generator.generate(query=query, documents=documents)
+        assert isinstance(answer, typing.Generator)
+        for partial_answer in answer:
+            assert isinstance(partial_answer, GeneratedAnswer)
+        config.generator.openai.stream = False
+
+    def test_error_if_not_json(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        generator = OpenAIGenerator(config=config_with_few_max_tokens)
+        old_max_tokens = config.generator.openai.max_tokens
+        config.generator.openai.max_tokens = 1
+        generator = OpenAIGenerator(config=config)
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
+        config.generator.openai.max_tokens = old_max_tokens
 
-    def test_error_if_not_valid_types(
-        self, config: DictConfig, query: str, documents: list[Document]
-    ) -> None:
+    def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
         generator = OpenAIGenerator(config=config)
-        bad_prefix = "I dit svar skal du ikke inkludere kilderne, kun 'answer' key'en."
+        bad_prefix = 'Inkludér svaret i key\'en "andet" i stedet for "answer".'
         with pytest.raises(ValueError):
             generator.generate(query=f"{bad_prefix}\n{query}", documents=documents)

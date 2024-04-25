@@ -1,9 +1,11 @@
 """A Gradio demo of the RAG system."""
 
-from typing import Generator
+import typing
 
 import gradio as gr
 from omegaconf import DictConfig
+
+from ragger.utils import Document, format_answer
 
 from .rag_system import RagSystem
 
@@ -50,11 +52,17 @@ class Demo:
                 value=self.config.demo.submit_button_value, variant="primary"
             )
             submit_button.click(
-                self.add_text, [chatbot, input_box], [chatbot, input_box], queue=False
-            ).then(self.ask, chatbot, chatbot)
+                fn=self.add_text,
+                inputs=[chatbot, input_box],
+                outputs=[chatbot, input_box],
+                queue=False,
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
             input_box.submit(
-                self.add_text, [chatbot, input_box], [chatbot, input_box], queue=False
-            ).then(self.ask, chatbot, chatbot)
+                fn=self.add_text,
+                inputs=[chatbot, input_box],
+                outputs=[chatbot, input_box],
+                queue=False,
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
         return demo
 
     def launch(self) -> None:
@@ -93,7 +101,7 @@ class Demo:
         history = history + [(text, None)]
         return history, gr.Textbox(value="")
 
-    def ask(self, history: History) -> Generator[History, None, None]:
+    def ask(self, history: History) -> typing.Generator[History, None, None]:
         """Ask the bot a question.
 
         Args:
@@ -106,16 +114,20 @@ class Demo:
         human_message: str = history[-1][0] if history[-1][0] else ""
         empty_exhange: Exchange = (None, "")
         history.append(empty_exhange)
-        answer, documents = self.rag_system.answer(query=human_message)
-        match len(documents):
-            case 0:
-                answer = self.config.demo.no_documents_reply
-            case 1:
-                answer += "\n\nKilde:\n\n"
-            case _:
-                answer += "\n\nKilder:\n\n"
-        answer += "\n\n".join(
-            f'===  {document.id}  ===\n"{document.text}"' for document in documents
+        answer_or_stream = self.rag_system.answer(query=human_message)
+        if isinstance(answer_or_stream, typing.Generator):
+            generated_answer = ""
+            documents: list[Document] = []
+            for generated_answer, documents in answer_or_stream:
+                assert isinstance(generated_answer, str)
+                history[-1] = (None, generated_answer)
+                yield history
+        else:
+            generated_answer, documents = answer_or_stream
+        generated_answer = format_answer(
+            answer=generated_answer,
+            documents=documents,
+            no_documents_reply=self.config.demo.no_documents_reply,
         )
-        history[-1] = (None, answer)
+        history[-1] = (None, generated_answer)
         yield history

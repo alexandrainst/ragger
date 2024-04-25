@@ -1,6 +1,6 @@
 """Unit tests for the `document_store` module."""
 
-from typing import Generator
+import typing
 
 import pytest
 from ragger.document_store import DocumentStore, JsonlDocumentStore
@@ -10,9 +10,11 @@ class TestJsonlDocumentStore:
     """Tests for the `JsonlDocumentStore` class."""
 
     @pytest.fixture(scope="class")
-    def document_store(self, valid_config) -> Generator[JsonlDocumentStore, None, None]:
+    def document_store(
+        self, config
+    ) -> typing.Generator[JsonlDocumentStore, None, None]:
         """Initialise a JsonlDocumentStore for testing."""
-        store = JsonlDocumentStore(config=valid_config)
+        store = JsonlDocumentStore(config=config)
         yield store
 
     def test_is_document_store(self):

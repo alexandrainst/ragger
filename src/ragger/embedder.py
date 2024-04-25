@@ -14,8 +14,6 @@ from .utils import Document, Embedding
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-logger = logging.getLogger(__name__)
-
 
 class Embedder(ABC):
     """An abstract embedder, which embeds documents using a pre-trained model."""
@@ -30,7 +28,7 @@ class Embedder(ABC):
         self.config = config
 
     @abstractmethod
-    def embed_documents(self, documents: list[Document]) -> np.ndarray:
+    def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents.
 
         Args:
@@ -67,6 +65,7 @@ class E5Embedder(Embedder):
                 The Hydra configuration.
         """
         super().__init__(config)
+        logging.getLogger("sentence_transformers").setLevel(logging.CRITICAL)
         self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -91,6 +90,7 @@ class E5Embedder(Embedder):
             convert_to_numpy=True,
             show_progress_bar=False,
         )
+        assert isinstance(embeddings, np.ndarray)
         return [
             Embedding(id=document.id, embedding=embedding)
             for document, embedding in zip(documents, embeddings)
@@ -114,6 +114,7 @@ class E5Embedder(Embedder):
             show_progress_bar=False,
             device=self.device,
         )[0]
+        assert isinstance(query_embedding, np.ndarray)
         return query_embedding
 
     def _prepare_texts_for_embedding(self, texts: list[str]) -> list[str]:

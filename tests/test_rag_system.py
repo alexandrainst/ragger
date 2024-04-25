@@ -1,10 +1,9 @@
 """Unit tests for the `rag_system` module."""
 
+import typing
 from copy import deepcopy
-from typing import Generator
 
 import pytest
-from omegaconf import DictConfig
 from ragger.rag_system import RagSystem
 from ragger.utils import Document
 
@@ -13,22 +12,9 @@ class TestRagSystem:
     """Tests for the `RagSystem` class."""
 
     @pytest.fixture(scope="class")
-    def invalid_config(self, valid_config) -> Generator[DictConfig, None, None]:
-        """An invalid configuration for testing the RagSystem."""
-        config = deepcopy(valid_config)
-        config.document_store.type = "invalid-type"
-        config.generator.type = "invalid-type"
-        yield config
-
-    @pytest.fixture(scope="class")
-    def valid_rag_system(self, valid_config) -> Generator[RagSystem, None, None]:
-        """Initialise a RagSystem for testing."""
-        yield RagSystem(config=valid_config)
-
-    @pytest.fixture(scope="class")
-    def compiled_rag_system(self, valid_config) -> Generator[RagSystem, None, None]:
+    def compiled_rag_system(self, config) -> typing.Generator[RagSystem, None, None]:
         """A compiled RagSystem for testing."""
-        rag_system = RagSystem(config=valid_config)
+        rag_system = RagSystem(config=config)
         rag_system.compile()
         yield rag_system
 
@@ -37,9 +23,9 @@ class TestRagSystem:
         """An answer and supporting documents for testing."""
         yield compiled_rag_system.answer("Hvad farve har Sutsko?")
 
-    def test_initialisation(self, valid_rag_system):
+    def test_initialisation(self, config):
         """Test that the RagSystem can be initialised."""
-        assert valid_rag_system
+        assert RagSystem(config=config)
 
     def test_compile(self, compiled_rag_system):
         """Test that the RagSystem can be compiled."""
@@ -79,7 +65,10 @@ class TestRagSystem:
         _, documents = answer_and_documents
         assert documents == [Document(id="2", text="Den sorte kat hedder Sutsko.")]
 
-    def test_error_if_invalid_config(self, invalid_config):
+    def test_error_if_invalid_config(self, config):
         """Test that the RagSystem raises an error if the configuration is invalid."""
+        invalid_config = deepcopy(config)
+        invalid_config.document_store.type = "invalid-type"
+        invalid_config.generator.type = "invalid-type"
         with pytest.raises(ValueError):
             RagSystem(config=invalid_config)

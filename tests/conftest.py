@@ -1,15 +1,15 @@
 """Test fixtures used throughout the test suite."""
 
 import json
+import typing
 from tempfile import NamedTemporaryFile
-from typing import Generator
 
 import pytest
 from omegaconf import DictConfig
 
 
 @pytest.fixture(scope="session")
-def valid_config() -> Generator[DictConfig, None, None]:
+def config() -> typing.Generator[DictConfig, None, None]:
     """A valid Hydra configuration."""
     with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
         data_dicts = [
