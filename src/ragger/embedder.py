@@ -1,6 +1,5 @@
 """Embed documents using a pre-trained model."""
 
-import logging
 import os
 import re
 from abc import ABC, abstractmethod
@@ -65,7 +64,6 @@ class E5Embedder(Embedder):
                 The Hydra configuration.
         """
         super().__init__(config)
-        logging.getLogger("sentence_transformers").setLevel(logging.CRITICAL)
         self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
