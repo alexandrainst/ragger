@@ -5,7 +5,6 @@ import re
 from abc import ABC, abstractmethod
 
 import numpy as np
-import torch
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
 
@@ -65,7 +64,6 @@ class E5Embedder(Embedder):
         """
         super().__init__(config)
         self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
@@ -110,7 +108,6 @@ class E5Embedder(Embedder):
             normalize_embeddings=True,
             convert_to_numpy=True,
             show_progress_bar=False,
-            device=self.device,
         )[0]
         assert isinstance(query_embedding, np.ndarray)
         return query_embedding
