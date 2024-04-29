@@ -31,7 +31,7 @@ jobs:
 
       - name: Install pipx on Ubuntu
         run: python3 -m pip install --upgrade --user pipx
-        if: runner.os == "Linux"
+        if: ${{ runner.os }} == "Linux"
 
       - name: Install Poetry
         run: pipx install poetry
