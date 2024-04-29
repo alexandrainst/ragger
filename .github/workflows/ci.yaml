@@ -29,8 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install pipx
-        run: make install-pipx
+      - name: Install pipx on Ubuntu
+        run: python3 -m pip install --upgrade --user pipx
+        if: runner.os == "Linux"
 
       - name: Install Poetry
         run: pipx install poetry
