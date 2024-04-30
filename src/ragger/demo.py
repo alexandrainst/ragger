@@ -30,7 +30,7 @@ class Demo:
         self.config = config
         self.rag_system = RagSystem(config=config)
         self.retrieved_documents: list[Document] = []
-        if self.config.demo.feedback_mode == "strict_feedback":
+        if self.config.demo.feedback_mode in ["strict_feedback", "feedback"]:
             self.db_path = Path(config.dirs.data) / config.demo.db_path
             self.connection = sqlite3.connect(self.db_path)
             if not self.connection.execute(
@@ -39,15 +39,11 @@ class Demo:
                 self.connection.execute(
                     (
                         "CREATE TABLE feedback (query text, response text,"
-                        "liked boolean, document_ids, document_texts text)"
+                        "liked integer, document_ids text)"
                     )
                 )
                 self.connection.commit()
             self.connection.close()
-        elif self.config.demo.feedback_mode == "feedback":
-            raise NotImplementedError(
-                "Non forced feedback mode 'feedback' is not yet implemented."
-            )
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -73,6 +69,7 @@ class Demo:
             submit_button = gr.Button(
                 value=self.config.demo.submit_button_value, variant="primary"
             )
+
             submit_button.click(
                 fn=self.add_text,
                 inputs=[chatbot, input_box, submit_button],
@@ -117,6 +114,7 @@ class Demo:
                 outputs=[directions],
                 queue=False,
             )
+
         return demo
 
     def launch(self) -> None:
@@ -139,9 +137,8 @@ class Demo:
         if self.demo:
             self.demo.close()
 
-    @staticmethod
     def add_text(
-        history: History, input_text: str, button_text: str
+        self, history: History, input_text: str, button_text: str
     ) -> tuple[History, dict, dict]:
         """Add the text to the chat history.
 
@@ -158,11 +155,14 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        return (
-            history,
-            gr.update(value="", interactive=False, visible=False),
-            gr.update(value=button_text, interactive=False, visible=False),
-        )
+        if self.config.demo.feedback_mode == "strict_feedback":
+            return (
+                history,
+                gr.update(value="", interactive=False, visible=False),
+                gr.update(value=button_text, interactive=False, visible=False),
+            )
+
+        return (history, gr.update(value=""), gr.update(value=button_text))
 
     def ask(self, history: History) -> typing.Generator[History, None, None]:
         """Ask the bot a question.
@@ -204,21 +204,19 @@ class Demo:
             history: The chat history.
         """
         retrieved_document_data = {}
-        for key in ["id", "text"]:
-            retrieved_document_data[key] = str(
-                [json.dumps(document.key) for document in self.retrieved_documents]
-            )
+        retrieved_document_data["id"] = json.dumps(
+            [getattr(document, "id") for document in self.retrieved_documents]
+        )
         record = {
             "query": history[-2][0],
             "response": history[-1][1],
-            "liked": data.liked,
+            "liked": int(data.liked),
         } | retrieved_document_data
 
         # Add the record to the table "feedback" in the database.
         self.connection = sqlite3.connect(self.db_path)
         self.connection.execute(
-            ("INSERT INTO feedback VALUES " "(:query, :response, :liked, :id, :text)"),
-            record,
+            ("INSERT INTO feedback VALUES " "(:query, :response, :liked, :id)"), record
         )
         self.connection.commit()
         self.connection.close()
