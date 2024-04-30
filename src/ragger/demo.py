@@ -210,9 +210,10 @@ class Demo:
             data: The like data.
             history: The chat history.
         """
-        retrieved_document_data = {}
-        retrieved_document_data["id"] = json.dumps(
-            [getattr(document, "id") for document in self.retrieved_documents]
+        retrieved_document_data = dict(
+            id=json.dumps(
+                [getattr(document, "id") for document in self.retrieved_documents]
+            ),
         )
         record = {
             "query": history[-2][0],
