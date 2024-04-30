@@ -15,7 +15,7 @@ from ragger.utils import Document, format_answer
 load_dotenv()
 
 
-@hydra.main(config_path="../../config", config_name="config", version_base=None)
+@hydra.main(config_path="../../config", config_name="ragger_config", version_base=None)
 def main(config: DictConfig) -> None:
     """Run the CLI.
 
