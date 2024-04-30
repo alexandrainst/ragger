@@ -42,7 +42,7 @@ demo:
   password_protected: false
   username: admin
   password: admin
-  feedback_mode: "strict_feedback"
+  mode: "strict-feedback"
   db_path: ${dirs.final}/feedback.db
   theme: monochrome
   title: >

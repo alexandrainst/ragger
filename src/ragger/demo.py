@@ -30,7 +30,12 @@ class Demo:
         self.config = config
         self.rag_system = RagSystem(config=config)
         self.retrieved_documents: list[Document] = []
-        if self.config.demo.feedback_mode in ["strict_feedback", "feedback"]:
+        if self.config.demo.mode not in ["strict_feedback", "feedback", "no_feedback"]:
+            raise ValueError(
+                "The feedback mode must be one of 'strict_feedback'"
+                ", 'feedback', or 'no_feedback'."
+            )
+        if self.config.demo.mode in ["strict_feedback", "feedback"]:
             self.db_path = Path(config.dirs.data) / config.demo.db_path
             self.connection = sqlite3.connect(self.db_path)
             if not self.connection.execute(
@@ -155,7 +160,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.demo.feedback_mode == "strict_feedback":
+        if self.config.demo.mode == "strict_feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
