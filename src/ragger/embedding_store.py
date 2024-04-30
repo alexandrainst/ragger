@@ -92,6 +92,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
             ValueError:
                 If any of the embeddings already exist in the store.
         """
+        if not embeddings:
+            return
+
         embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
         already_existing_indices = [
             embedding.id
