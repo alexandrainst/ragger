@@ -118,7 +118,6 @@ class Demo:
                             "</center></b>"
                         )
                     ),
-                    inputs=None,
                     outputs=[directions],
                     queue=False,
                 )
