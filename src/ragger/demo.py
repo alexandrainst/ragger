@@ -108,7 +108,6 @@ class Demo:
                         gr.update(interactive=True, visible=True),
                         gr.update(interactive=True, visible=True),
                     ),
-                    inputs=None,
                     outputs=[input_box, submit_button],
                     queue=False,
                 ).then(
