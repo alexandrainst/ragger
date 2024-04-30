@@ -5,7 +5,7 @@ ENV DEMO_PORT=7860
 EXPOSE $DEMO_PORT
 
 # Install poetry
-RUN pip install "poetry==1.7.1"
+RUN pip install "poetry==1.8.2"
 
 # Move the files into the container
 WORKDIR /project
