@@ -1,6 +1,8 @@
 """A Gradio demo of the RAG system."""
 
+import sqlite3
 import typing
+from pathlib import Path
 
 import gradio as gr
 from omegaconf import DictConfig
@@ -26,6 +28,24 @@ class Demo:
         """
         self.config = config
         self.rag_system = RagSystem(config=config)
+        if self.config.demo.feedback_mode == "strict_feedback":
+            self.db_path = Path(config.dirs.data) / config.demo.db_path
+            self.connection = sqlite3.connect(self.db_path)
+            if not self.connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
+            ).fetchone():
+                self.connection.execute(
+                    (
+                        "CREATE TABLE feedback (query text, response text,"
+                        "liked boolean, sources text)"
+                    )
+                )
+                self.connection.commit()
+            self.connection.close()
+        elif self.config.demo.feedback_mode == "feedback":
+            raise NotImplementedError(
+                "Non forced feedback mode 'feedback' is not yet implemented."
+            )
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -37,7 +57,7 @@ class Demo:
             theme=self.config.demo.theme, title=self.config.demo.title
         ) as demo:
             gr.components.HTML(f"<center><h1>{self.config.demo.title}</h1></center>")
-            gr.components.HTML(
+            directions = gr.components.HTML(
                 f"<center>{self.config.demo.description}</center>", label="p"
             )
             chatbot = gr.Chatbot([], elem_id="chatbot", bubble_full_width=False)
@@ -56,7 +76,15 @@ class Demo:
                 inputs=[chatbot, input_box],
                 outputs=[chatbot, input_box],
                 queue=False,
-            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot).then(
+                fn=lambda: gr.update(
+                    value=f"<center>{self.config.demo.feedback}</center>"
+                ),
+                inputs=None,
+                outputs=[directions],
+                queue=False,
+            )
+
             input_box.submit(
                 fn=self.add_text,
                 inputs=[chatbot, input_box],
