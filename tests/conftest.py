@@ -31,27 +31,21 @@ def config() -> typing.Generator[DictConfig, None, None]:
         yield DictConfig(
             dict(
                 dirs=dict(data="data", raw="raw", processed="processed", final="final"),
-                document_store=dict(name="jsonl", jsonl=dict(filename=file.name)),
+                document_store=dict(name="jsonl", filename=file.name),
                 embedder=dict(
                     name="e5",
-                    e5=dict(
-                        model_id="intfloat/multilingual-e5-small",
-                        document_text_field="text",
-                    ),
+                    model_id="intfloat/multilingual-e5-small",
+                    document_text_field="text",
                 ),
-                embedding_store=dict(
-                    name="numpy", numpy=dict(num_documents_to_retrieve=3)
-                ),
+                embedding_store=dict(name="numpy", num_documents_to_retrieve=3),
                 generator=dict(
                     name="openai",
-                    openai=dict(
-                        api_key_variable_name="OPENAI_API_KEY",
-                        model="gpt-3.5-turbo",
-                        temperature=0.0,
-                        stream=False,
-                        timeout=60,
-                        max_tokens=128,
-                    ),
+                    api_key_variable_name="OPENAI_API_KEY",
+                    model="gpt-3.5-turbo",
+                    temperature=0.0,
+                    stream=False,
+                    timeout=60,
+                    max_tokens=128,
                 ),
                 demo=dict(
                     name="danish",
