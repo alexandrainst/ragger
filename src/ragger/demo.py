@@ -224,7 +224,7 @@ class Demo:
         # Add the record to the table "feedback" in the database.
         self.connection = sqlite3.connect(self.db_path)
         self.connection.execute(
-            ("INSERT INTO feedback VALUES " "(:query, :response, :liked, :id)"), record
+            ("INSERT INTO feedback VALUES (:query, :response, :liked, :id)"), record
         )
         self.connection.commit()
         self.connection.close()
