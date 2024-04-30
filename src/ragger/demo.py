@@ -103,7 +103,7 @@ class Demo:
                     outputs=[directions],
                     queue=False,
                 )
-                chatbot.like(fn=self.vote, inputs=chatbot, outputs=None).then(
+                chatbot.like(fn=self.vote, inputs=chatbot).then(
                     fn=lambda: (
                         gr.update(interactive=True, visible=True),
                         gr.update(interactive=True, visible=True),
