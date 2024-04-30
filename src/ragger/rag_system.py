@@ -37,29 +37,29 @@ class RagSystem:
         This builds the underlying embedding store and can be called whenever the data
         needs to be updated.
         """
-        match type_ := self.config.document_store.type:
+        match name := self.config.document_store.name:
             case "jsonl":
                 self.document_store = JsonlDocumentStore(config=self.config)
             case _:
-                raise ValueError(f"The DocumentStore type {type_!r} is not supported")
+                raise ValueError(f"The DocumentStore type {name!r} is not supported")
 
-        match type_ := self.config.embedder.type:
+        match name := self.config.embedder.name:
             case "e5":
                 self.embedder = E5Embedder(config=self.config)
             case _:
-                raise ValueError(f"The Embedder type {type_!r} is not supported")
+                raise ValueError(f"The Embedder type {name!r} is not supported")
 
-        match type_ := self.config.embedding_store.type:
+        match name := self.config.embedding_store.name:
             case "numpy":
                 self.embedding_store = NumpyEmbeddingStore(config=self.config)
             case _:
-                raise ValueError(f"The EmbeddingStore type {type_!r} is not supported")
+                raise ValueError(f"The EmbeddingStore type {name!r} is not supported")
 
-        match type_ := self.config.generator.type:
+        match name := self.config.generator.name:
             case "openai":
                 self.generator = OpenAIGenerator(config=self.config)
             case _:
-                raise ValueError(f"The Generator type {type_!r} is not supported")
+                raise ValueError(f"The Generator type {name!r} is not supported")
 
         documents = self.document_store.get_all_documents()
         embeddings = self.embedder.embed_documents(documents=documents)
@@ -131,7 +131,7 @@ class RagSystem:
                     yield format_answer(
                         answer=answer,
                         documents=documents,
-                        no_documents_reply=self.config.demo.no_documents_reply,
+                        no_documents_reply=self.config.no_documents_reply,
                     )
 
             return streamer()
@@ -139,5 +139,5 @@ class RagSystem:
         return format_answer(
             answer=answer,
             documents=documents,
-            no_documents_reply=self.config.demo.no_documents_reply,
+            no_documents_reply=self.config.no_documents_reply,
         )

@@ -63,7 +63,9 @@ class E5Embedder(Embedder):
                 The Hydra configuration.
         """
         super().__init__(config)
-        self.embedder = SentenceTransformer(self.config.embedder.e5.model_id)
+        self.embedder = SentenceTransformer(
+            self.config.embedder.model_id, cache_folder=self.config.dirs.models
+        )
 
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
