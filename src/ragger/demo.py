@@ -61,7 +61,7 @@ class Demo:
         ) as demo:
             gr.components.HTML(f"<center><h1>{self.config.demo.title}</h1></center>")
             directions = gr.components.HTML(
-                f"<center>{self.config.demo.description}</center>", label="p"
+                f"<b><center>{self.config.demo.description}</b></center>", label="p"
             )
             chatbot = gr.Chatbot([], elem_id="chatbot", bubble_full_width=False)
             with gr.Row():
@@ -74,51 +74,57 @@ class Demo:
             submit_button = gr.Button(
                 value=self.config.demo.submit_button_value, variant="primary"
             )
-
-            submit_button.click(
+            submit_button_has_added_text_and_asked = submit_button.click(
                 fn=self.add_text,
                 inputs=[chatbot, input_box, submit_button],
                 outputs=[chatbot, input_box, submit_button],
                 queue=False,
-            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot).then(
-                fn=lambda: gr.update(
-                    value=f"<center>{self.config.demo.feedback}</center>"
-                ),
-                inputs=None,
-                outputs=[directions],
-                queue=False,
-            )
-
-            input_box.submit(
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
+            input_box_has_added_text_and_asked = input_box.submit(
                 fn=self.add_text,
                 inputs=[chatbot, input_box, submit_button],
                 outputs=[chatbot, input_box, submit_button],
                 queue=False,
-            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot).then(
-                fn=lambda: gr.update(
-                    value=f"<center>{self.config.demo.feedback}</center>"
-                ),
-                inputs=None,
-                outputs=[directions],
-                queue=False,
-            )
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            chatbot.like(fn=self.vote, inputs=chatbot, outputs=None).then(
-                fn=lambda: (
-                    gr.update(interactive=True, visible=True),
-                    gr.update(interactive=True, visible=True),
-                ),
-                inputs=None,
-                outputs=[input_box, submit_button],
-                queue=False,
-            ).then(
-                fn=lambda: gr.update(
-                    value=f"<center>{self.config.demo.thank_you_feedback}</center>"
-                ),
-                inputs=None,
-                outputs=[directions],
-                queue=False,
-            )
+            if self.config.demo.mode in ["strict_feedback", "feedback"]:
+                submit_button_has_added_text_and_asked.then(
+                    fn=lambda: gr.update(
+                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                    ),
+                    inputs=None,
+                    outputs=[directions],
+                    queue=False,
+                )
+
+                input_box_has_added_text_and_asked.then(
+                    fn=lambda: gr.update(
+                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                    ),
+                    inputs=None,
+                    outputs=[directions],
+                    queue=False,
+                )
+                chatbot.like(fn=self.vote, inputs=chatbot, outputs=None).then(
+                    fn=lambda: (
+                        gr.update(interactive=True, visible=True),
+                        gr.update(interactive=True, visible=True),
+                    ),
+                    inputs=None,
+                    outputs=[input_box, submit_button],
+                    queue=False,
+                ).then(
+                    fn=lambda: gr.update(
+                        value=(
+                            "<b><center>"
+                            f"{self.config.demo.thank_you_feedback}"
+                            "</center></b>"
+                        )
+                    ),
+                    inputs=None,
+                    outputs=[directions],
+                    queue=False,
+                )
 
         return demo
 
