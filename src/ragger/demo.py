@@ -100,7 +100,6 @@ class Demo:
                     fn=lambda: gr.update(
                         value=f"<b><center>{self.config.demo.feedback}</center></b>"
                     ),
-                    inputs=None,
                     outputs=[directions],
                     queue=False,
                 )
