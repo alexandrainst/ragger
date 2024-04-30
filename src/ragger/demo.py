@@ -30,13 +30,13 @@ class Demo:
         self.config = config
         self.rag_system = RagSystem(config=config)
         self.retrieved_documents: list[Document] = []
-        if self.config.mode not in ["strict_feedback", "feedback", "no_feedback"]:
+        if self.config.demo.mode not in ["strict_feedback", "feedback", "no_feedback"]:
             raise ValueError(
                 "The feedback mode must be one of 'strict_feedback'"
                 ", 'feedback', or 'no_feedback'."
             )
-        if self.config.mode in ["strict_feedback", "feedback"]:
-            self.db_path = Path(config.dirs.data) / config.db_path
+        if self.config.demo.mode in ["strict_feedback", "feedback"]:
+            self.db_path = Path(config.dirs.data) / config.demo.db_path
             self.connection = sqlite3.connect(self.db_path)
             if not self.connection.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
@@ -56,21 +56,23 @@ class Demo:
         Returns:
             The demo.
         """
-        with gr.Blocks(theme=self.config.theme, title=self.config.title) as demo:
-            gr.components.HTML(f"<center><h1>{self.config.title}</h1></center>")
+        with gr.Blocks(
+            theme=self.config.demo.theme, title=self.config.demo.title
+        ) as demo:
+            gr.components.HTML(f"<center><h1>{self.config.demo.title}</h1></center>")
             directions = gr.components.HTML(
-                f"<b><center>{self.config.description}</b></center>", label="p"
+                f"<b><center>{self.config.demo.description}</b></center>", label="p"
             )
             chatbot = gr.Chatbot([], elem_id="chatbot", bubble_full_width=False)
             with gr.Row():
                 input_box = gr.Textbox(
                     scale=4,
                     show_label=False,
-                    placeholder=self.config.input_box_placeholder,
+                    placeholder=self.config.demo.input_box_placeholder,
                     container=False,
                 )
             submit_button = gr.Button(
-                value=self.config.submit_button_value, variant="primary"
+                value=self.config.demo.submit_button_value, variant="primary"
             )
             submit_button_has_added_text_and_asked = submit_button.click(
                 fn=self.add_text,
@@ -85,10 +87,10 @@ class Demo:
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            if self.config.mode in ["strict_feedback", "feedback"]:
+            if self.config.demo.mode in ["strict_feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.feedback}</center></b>"
+                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
                     ),
                     outputs=[directions],
                     queue=False,
@@ -96,7 +98,7 @@ class Demo:
 
                 input_box_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.feedback}</center></b>"
+                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
                     ),
                     outputs=[directions],
                     queue=False,
@@ -112,7 +114,7 @@ class Demo:
                     fn=lambda: gr.update(
                         value=(
                             "<b><center>"
-                            f"{self.config.thank_you_feedback}"
+                            f"{self.config.demo.thank_you_feedback}"
                             "</center></b>"
                         )
                     ),
@@ -126,14 +128,14 @@ class Demo:
         """Launch the demo."""
         self.demo = self.build_demo()
         auth = (
-            (self.config.username, self.config.password)
-            if self.config.password_protected
+            (self.config.demo.username, self.config.demo.password)
+            if self.config.demo.password_protected
             else None
         )
         self.demo.queue().launch(
-            server_name=self.config.host,
-            server_port=self.config.port,
-            share=self.config.share,
+            server_name=self.config.demo.host,
+            server_port=self.config.demo.port,
+            share=self.config.demo.share,
             auth=auth,
         )
 
@@ -160,7 +162,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.mode == "strict_feedback":
+        if self.config.demo.mode == "strict_feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
@@ -195,7 +197,7 @@ class Demo:
         generated_answer = format_answer(
             answer=generated_answer,
             documents=documents,
-            no_documents_reply=self.config.no_documents_reply,
+            no_documents_reply=self.config.demo.no_documents_reply,
         )
         self.retrieved_documents = documents
         history[-1] = (None, generated_answer)

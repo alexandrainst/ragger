@@ -131,7 +131,7 @@ class RagSystem:
                     yield format_answer(
                         answer=answer,
                         documents=documents,
-                        no_documents_reply=self.config.no_documents_reply,
+                        no_documents_reply=self.config.demo.no_documents_reply,
                     )
 
             return streamer()
@@ -139,5 +139,5 @@ class RagSystem:
         return format_answer(
             answer=answer,
             documents=documents,
-            no_documents_reply=self.config.no_documents_reply,
+            no_documents_reply=self.config.demo.no_documents_reply,
         )

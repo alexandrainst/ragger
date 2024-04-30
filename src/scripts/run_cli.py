@@ -25,7 +25,7 @@ def main(config: DictConfig) -> None:
     """
     rag_system = RagSystem(config=config)
     while True:
-        query = input(f"{config.input_box_placeholder.strip()}: ")
+        query = input(f"{config.demo.input_box_placeholder.strip()}: ")
         answer_or_stream = rag_system.answer(query=query)
         if isinstance(answer_or_stream, typing.Generator):
             generated_answer = ""
@@ -37,7 +37,7 @@ def main(config: DictConfig) -> None:
         answer = format_answer(
             answer=generated_answer,
             documents=documents,
-            no_documents_reply=config.no_documents_reply,
+            no_documents_reply=config.demo.no_documents_reply,
         )
         print(answer)
         print()
