@@ -169,7 +169,7 @@ class Demo:
                 gr.update(value=button_text, interactive=False, visible=False),
             )
 
-        return (history, gr.update(value=""), gr.update(value=button_text))
+        return history, gr.update(value=""), gr.update(value=button_text)
 
     def ask(self, history: History) -> typing.Generator[History, None, None]:
         """Ask the bot a question.
