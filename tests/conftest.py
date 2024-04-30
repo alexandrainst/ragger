@@ -11,7 +11,10 @@ from omegaconf import DictConfig
 @pytest.fixture(scope="session")
 def config() -> typing.Generator[DictConfig, None, None]:
     """A valid Hydra configuration."""
-    with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
+    with (
+        NamedTemporaryFile(mode="w", suffix=".jsonl") as file,
+        NamedTemporaryFile(mode="w", suffix=".db") as db_file,
+    ):
         data_dicts = [
             dict(id="1", text="Den hvide kat hedder Sjusk."),
             dict(id="2", text="Den sorte kat hedder Sutsko."),
@@ -22,6 +25,8 @@ def config() -> typing.Generator[DictConfig, None, None]:
         data_str = "\n".join(json.dumps(data_dict) for data_dict in data_dicts)
         file.write(data_str)
         file.flush()
+
+        db_file_path = db_file.name
 
         yield DictConfig(
             dict(
@@ -49,7 +54,12 @@ def config() -> typing.Generator[DictConfig, None, None]:
                     ),
                 ),
                 demo=dict(
-                    host="localhost", port=7860, share=False, password_protected=False
+                    host="localhost",
+                    port=7860,
+                    share=False,
+                    password_protected=False,
+                    mode="no_feedback",
+                    db_path=db_file_path,
                 ),
             )
         )
