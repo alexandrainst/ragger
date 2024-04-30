@@ -30,7 +30,13 @@ def config() -> typing.Generator[DictConfig, None, None]:
 
         yield DictConfig(
             dict(
-                dirs=dict(data="data", raw="raw", processed="processed", final="final"),
+                dirs=dict(
+                    data="data",
+                    raw="raw",
+                    processed="processed",
+                    final="final",
+                    models="models",
+                ),
                 document_store=dict(name="jsonl", filename=file.name),
                 embedder=dict(
                     name="e5",
