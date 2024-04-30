@@ -16,7 +16,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: [self-hosted, self-hosted-ubuntu-latest]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: jpetrucciani/ruff-check@main
 
   pytest:
@@ -27,13 +27,13 @@ jobs:
             python-version: ["3.11"]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install Poetry
         run: pipx install poetry==1.8.2
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
