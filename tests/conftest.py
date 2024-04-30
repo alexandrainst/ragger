@@ -31,19 +31,19 @@ def config() -> typing.Generator[DictConfig, None, None]:
         yield DictConfig(
             dict(
                 dirs=dict(data="data", raw="raw", processed="processed", final="final"),
-                document_store=dict(type="jsonl", jsonl=dict(filename=file.name)),
+                document_store=dict(name="jsonl", jsonl=dict(filename=file.name)),
                 embedder=dict(
-                    type="e5",
+                    name="e5",
                     e5=dict(
                         model_id="intfloat/multilingual-e5-small",
                         document_text_field="text",
                     ),
                 ),
                 embedding_store=dict(
-                    type="numpy", numpy=dict(num_documents_to_retrieve=3)
+                    name="numpy", numpy=dict(num_documents_to_retrieve=3)
                 ),
                 generator=dict(
-                    type="openai",
+                    name="openai",
                     openai=dict(
                         api_key_variable_name="OPENAI_API_KEY",
                         model="gpt-3.5-turbo",
@@ -54,6 +54,7 @@ def config() -> typing.Generator[DictConfig, None, None]:
                     ),
                 ),
                 demo=dict(
+                    name="danish",
                     host="localhost",
                     port=7860,
                     share=False,
