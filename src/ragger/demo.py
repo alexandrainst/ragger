@@ -1,5 +1,6 @@
 """A Gradio demo of the RAG system."""
 
+import json
 import sqlite3
 import typing
 from pathlib import Path
@@ -28,6 +29,7 @@ class Demo:
         """
         self.config = config
         self.rag_system = RagSystem(config=config)
+        self.retrieved_documents: list[Document] = []
         if self.config.demo.feedback_mode == "strict_feedback":
             self.db_path = Path(config.dirs.data) / config.demo.db_path
             self.connection = sqlite3.connect(self.db_path)
@@ -37,7 +39,7 @@ class Demo:
                 self.connection.execute(
                     (
                         "CREATE TABLE feedback (query text, response text,"
-                        "liked boolean, sources text)"
+                        "liked boolean, document_ids, document_texts text)"
                     )
                 )
                 self.connection.commit()
@@ -73,8 +75,8 @@ class Demo:
             )
             submit_button.click(
                 fn=self.add_text,
-                inputs=[chatbot, input_box],
-                outputs=[chatbot, input_box],
+                inputs=[chatbot, input_box, submit_button],
+                outputs=[chatbot, input_box, submit_button],
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot).then(
                 fn=lambda: gr.update(
@@ -87,10 +89,34 @@ class Demo:
 
             input_box.submit(
                 fn=self.add_text,
-                inputs=[chatbot, input_box],
-                outputs=[chatbot, input_box],
+                inputs=[chatbot, input_box, submit_button],
+                outputs=[chatbot, input_box, submit_button],
                 queue=False,
-            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
+            ).then(fn=self.ask, inputs=chatbot, outputs=chatbot).then(
+                fn=lambda: gr.update(
+                    value=f"<center>{self.config.demo.feedback}</center>"
+                ),
+                inputs=None,
+                outputs=[directions],
+                queue=False,
+            )
+
+            chatbot.like(fn=self.vote, inputs=chatbot, outputs=None).then(
+                fn=lambda: (
+                    gr.update(interactive=True, visible=True),
+                    gr.update(interactive=True, visible=True),
+                ),
+                inputs=None,
+                outputs=[input_box, submit_button],
+                queue=False,
+            ).then(
+                fn=lambda: gr.update(
+                    value=f"<center>{self.config.demo.thank_you_feedback}</center>"
+                ),
+                inputs=None,
+                outputs=[directions],
+                queue=False,
+            )
         return demo
 
     def launch(self) -> None:
@@ -114,20 +140,29 @@ class Demo:
             self.demo.close()
 
     @staticmethod
-    def add_text(history: History, text: str) -> tuple[History, gr.Textbox]:
+    def add_text(
+        history: History, input_text: str, button_text: str
+    ) -> tuple[History, dict, dict]:
         """Add the text to the chat history.
 
         Args:
             history:
                 The chat history.
-            text:
+            input_text:
                 The text to add.
+            button_text:
+                The value of the submit button. This is how gradio Button works, when
+                used as input to a function.
 
         Returns:
-            The updated chat history and the updated chatbot.
+            The updated chat history, the textbox and updated submit button.
         """
-        history = history + [(text, None)]
-        return history, gr.Textbox(value="")
+        history = history + [(input_text, None)]
+        return (
+            history,
+            gr.update(value="", interactive=False, visible=False),
+            gr.update(value=button_text, interactive=False, visible=False),
+        )
 
     def ask(self, history: History) -> typing.Generator[History, None, None]:
         """Ask the bot a question.
@@ -157,5 +192,33 @@ class Demo:
             documents=documents,
             no_documents_reply=self.config.demo.no_documents_reply,
         )
+        self.retrieved_documents = documents
         history[-1] = (None, generated_answer)
         yield history
+
+    def vote(self, data: gr.LikeData, history: History):
+        """Record the vote in the database.
+
+        Args:
+            data: The like data.
+            history: The chat history.
+        """
+        retrieved_document_data = {}
+        for key in ["id", "text"]:
+            retrieved_document_data[key] = str(
+                [json.dumps(document.key) for document in self.retrieved_documents]
+            )
+        record = {
+            "query": history[-2][0],
+            "response": history[-1][1],
+            "liked": data.liked,
+        } | retrieved_document_data
+
+        # Add the record to the table "feedback" in the database.
+        self.connection = sqlite3.connect(self.db_path)
+        self.connection.execute(
+            ("INSERT INTO feedback VALUES " "(:query, :response, :liked, :id, :text)"),
+            record,
+        )
+        self.connection.commit()
+        self.connection.close()
