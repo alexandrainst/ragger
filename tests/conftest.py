@@ -73,5 +73,6 @@ def full_config(
                 mode="no_feedback",
                 db_path=db_filename,
             ),
+            verbose=False,
         )
     )
