@@ -55,9 +55,7 @@ class JsonlDocumentStore(DocumentStore):
                 The Hydra configuration.
         """
         super().__init__(config)
-        data_path = (
-            Path(self.config.dirs.data) / self.config.document_store.jsonl.filename
-        )
+        data_path = Path(self.config.dirs.data) / self.config.document_store.filename
         data_dicts = [
             json.loads(line)
             for line in data_path.read_text().splitlines()

@@ -3,11 +3,28 @@
 import typing
 
 import pytest
+from omegaconf import DictConfig
 from ragger.document_store import DocumentStore, JsonlDocumentStore
 
 
 class TestJsonlDocumentStore:
     """Tests for the `JsonlDocumentStore` class."""
+
+    @pytest.fixture(scope="class")
+    def config(self, jsonl_filename) -> typing.Generator[DictConfig, None, None]:
+        """Initialise a configuration for testing."""
+        yield DictConfig(
+            dict(
+                dirs=dict(
+                    data="data",
+                    raw="raw",
+                    processed="processed",
+                    final="final",
+                    models="models",
+                ),
+                document_store=dict(name="jsonl", filename=jsonl_filename),
+            )
+        )
 
     @pytest.fixture(scope="class")
     def document_store(

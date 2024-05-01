@@ -1,0 +1,18 @@
+defaults:
+  - document_store: jsonl
+  - embedder: e5
+  - embedding_store: numpy
+  - generator: openai
+  - demo: danish
+  - override hydra/job_logging: custom
+  - _self_
+
+dirs:
+  data: data
+  raw: raw
+  processed: processed
+  final: final
+  models: models
+
+random_seed: 703
+verbose: false

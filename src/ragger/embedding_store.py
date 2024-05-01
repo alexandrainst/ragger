@@ -76,7 +76,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Returns:
             The embedding dimension.
         """
-        model_config = AutoConfig.from_pretrained(self.config.embedder.e5.model_id)
+        model_config = AutoConfig.from_pretrained(
+            self.config.embedder.model_id, cache_dir=self.config.dirs.models
+        )
         return model_config.hidden_size
 
     def add_embeddings(self, embeddings: list[Embedding]) -> None:
@@ -90,6 +92,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
             ValueError:
                 If any of the embeddings already exist in the store.
         """
+        if not embeddings:
+            return
+
         embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
         already_existing_indices = [
             embedding.id
@@ -118,25 +123,22 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.row_id_to_index
 
     def save(self, path: Path | str) -> None:
-        """This saves the embeddings store to disk in a .zip-file.
-
-        This will store the embeddings in `npy`-file, called
-        `embeddings.npy`.
+        """Save the embedding store to disk.
 
         Args:
             path:
-                The path to the embeddings store in. This should be a .zip-file.
-                This .zip-file will contain the embeddings matrix in a .npy-file,
-                called `embeddings.npy`, and the row ID to index mapping in a
-                .json-file, called `index_to_row_id.json`.
+                The path to the embeddings store in. This should be a .zip-file. This
+                zip file will contain the embeddings matrix in the file
+                `embeddings.npy` and the row ID to index mapping in the file
+                `index_to_row_id.json`.
 
         Raises:
             ValueError:
-                If the path is not a .zip-file.
+                If the path is not a zip file.
         """
         path = Path(path)
         if path.suffix != ".zip":
-            raise ValueError("The path must be a .zip-file.")
+            raise ValueError("The path must be a zip file.")
 
         array_file = io.BytesIO()
         np.save(file=array_file, arr=self.embeddings)
@@ -179,7 +181,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 If the number of documents in the store is less than the number of
                 documents to retrieve.
         """
-        num_docs = self.config.embedding_store.numpy.num_documents_to_retrieve
+        num_docs = self.config.embedding_store.num_documents_to_retrieve
         if self.embeddings.shape[0] < num_docs:
             raise ValueError(
                 "The number of documents in the store is less than the number of "

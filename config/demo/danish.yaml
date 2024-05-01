@@ -1,0 +1,27 @@
+name: danish
+host: localhost
+port: 7860
+share: false
+password_protected: false
+username: admin
+password: admin
+mode: feedback
+db_path: ${dirs.final}/feedback.db
+theme: monochrome
+title: >
+  RAG Bot
+description: |
+  En robot, der kan svare på alle dine spørgsmål!
+
+  Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend' eller Enter knappen.
+feedback: |
+  Benyt 👍/👎 til at indikere om svaret er godt eller dårligt!
+thank_you_feedback: |
+  Tak for dit svar! Skriv dit spørgsmål nedenfor og tryk på 'Indsend'.
+input_box_placeholder: >
+  Skriv dit spørgsmål her
+submit_button_value: >
+  Indsend
+no_documents_reply: >
+  Jeg er desværre ikke i stand til at svare på dit spørgsmål ud fra den viden, som
+  jeg har til rådighed. Beklager!

@@ -213,7 +213,7 @@ class Demo:
         retrieved_document_data = dict(
             id=json.dumps(
                 [getattr(document, "id") for document in self.retrieved_documents]
-            ),
+            )
         )
         record = {
             "query": history[-2][0],
