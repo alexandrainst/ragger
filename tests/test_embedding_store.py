@@ -25,7 +25,9 @@ class TestNumpyEmbeddingStore:
                     final="final",
                     models="models",
                 ),
-                embedding_store=dict(name="numpy", num_documents_to_retrieve=2),
+                embedding_store=dict(
+                    name="numpy", num_documents_to_retrieve=2, embedding_path=None
+                ),
                 embedder=dict(
                     name="e5",
                     model_id="intfloat/multilingual-e5-small",
