@@ -67,7 +67,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
-        self.embeddings_loaded_from_disk: bool = False
         self.load_embeddings_if_exists()
 
     def load_embeddings_if_exists(self) -> None:
