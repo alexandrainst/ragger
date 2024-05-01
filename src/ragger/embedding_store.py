@@ -77,7 +77,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
         )
         if embedding_store_path.exists():
-            self.load(embedding_store_path)
+            self.load(path=embedding_store_path)
             logger.info("Loaded embeddings from disk.")
 
     @property
@@ -137,11 +137,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 self.embeddings.shape[0] - len(embeddings) + i
             )
 
-        embedding_store_path = (
-            Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-        )
         if self.config.embedding_store.embedding_path is not None:
-            self.save(embedding_store_path)
+            embedding_store_path = (
+                Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
+            )
+            self.save(path=embedding_store_path)
 
     def reset(self) -> None:
         """This resets the embeddings store."""
