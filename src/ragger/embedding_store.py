@@ -71,13 +71,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
+        if self.config.embedding_store.embedding_path is None:
+            return
         embedding_store_path = (
             Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
         )
-        if (
-            self.config.embedding_store.embedding_path is not None
-            and embedding_store_path.exists()
-        ):
+        if embedding_store_path.exists():
             self.load(embedding_store_path)
             logger.info("Loaded embeddings from disk.")
 
