@@ -118,8 +118,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
             num_already_existing_indices = len(already_existing_indices)
             logger.warning(
                 (
-                    "The following number of embeddings already exist in the store: "
-                    f"{num_already_existing_indices}, and is ignored."
+                    "{num_already_existing_indices:,} embeddings already existed in the "
+                    "embedding store and was ignored."
                 )
             )
         embedding_matrix = np.stack(
