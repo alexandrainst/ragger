@@ -87,6 +87,10 @@ class OpenAIGenerator(Generator):
         Returns:
             The generated answer.
         """
+        logger.info(
+            f"Generating answer for the query {query!r} and {len(documents):,} "
+            "documents..."
+        )
         messages = [
             ChatCompletionSystemMessageParam(role="system", content=RAG_SYSTEM_PROMPT),
             ChatCompletionUserMessageParam(
@@ -112,6 +116,7 @@ class OpenAIGenerator(Generator):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
                 generated_output = ""
+                generated_obj = GeneratedAnswer(answer="")
                 for chunk in model_output:
                     chunk_str = chunk.choices[0].delta.content
                     if chunk_str is None:
@@ -132,6 +137,7 @@ class OpenAIGenerator(Generator):
                         yield generated_obj
                     except ValidationError:
                         continue
+                logger.info(f"Generated answer: {generated_obj.answer!r}")
 
             return streamer()
         else:
@@ -149,4 +155,5 @@ class OpenAIGenerator(Generator):
         except ValidationError:
             raise ValueError(f"Could not validate model output: {generated_dict}")
 
+        logger.info(f"Generated answer: {generated_obj.answer!r}")
         return generated_obj
