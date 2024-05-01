@@ -87,7 +87,7 @@ class RagSystem:
                 self.embedding_store.add_embeddings(embeddings=embeddings)
                 self.embedding_store.save(embedding_store_path)
             else:
-                logger.info("Loaded embeddings from disk.")
+                logger.info(f"Loaded embeddings from {embedding_store_path}.")
 
         logger.info("Finished compiling the RAG system")
 
