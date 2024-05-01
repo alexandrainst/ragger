@@ -1,5 +1,6 @@
 """Embed documents using a pre-trained model."""
 
+import logging
 import os
 import re
 from abc import ABC, abstractmethod
@@ -11,6 +12,9 @@ from sentence_transformers import SentenceTransformer
 from .utils import Document, Embedding
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+logger = logging.getLogger(__package__)
 
 
 class Embedder(ABC):
@@ -77,22 +81,29 @@ class E5Embedder(Embedder):
         Returns:
             A list of embeddings, where each row corresponds to a document.
         """
+        logger.info(
+            f"Building embeddings of {len(documents):,} documents with the E5 "
+            f"model {self.config.embedder.model_id}..."
+        )
+
         # Prepare the texts for embedding
         texts = [document.text for document in documents]
         prepared_texts = self._prepare_texts_for_embedding(texts=texts)
 
         # Embed the texts
-        embeddings = self.embedder.encode(
+        embedding_matrix = self.embedder.encode(
             sentences=prepared_texts,
             normalize_embeddings=True,
             convert_to_numpy=True,
-            show_progress_bar=False,
+            show_progress_bar=self.config.verbose,
         )
-        assert isinstance(embeddings, np.ndarray)
-        return [
+        assert isinstance(embedding_matrix, np.ndarray)
+        embeddings = [
             Embedding(id=document.id, embedding=embedding)
-            for document, embedding in zip(documents, embeddings)
+            for document, embedding in zip(documents, embedding_matrix)
         ]
+        logger.info("Finished building embeddings.")
+        return embeddings
 
     def embed_query(self, query: str) -> np.ndarray:
         """Embed a query.
@@ -104,6 +115,7 @@ class E5Embedder(Embedder):
         Returns:
             The embedding of the query.
         """
+        logger.info(f"Embedding the query '{query}' with the E5 model...")
         prepared_query = self._prepare_query_for_embedding(query=query)
         query_embedding = self.embedder.encode(
             sentences=[prepared_query],
@@ -112,6 +124,7 @@ class E5Embedder(Embedder):
             show_progress_bar=False,
         )[0]
         assert isinstance(query_embedding, np.ndarray)
+        logger.info("Finished embedding the query.")
         return query_embedding
 
     def _prepare_texts_for_embedding(self, texts: list[str]) -> list[str]:

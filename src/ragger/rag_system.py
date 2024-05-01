@@ -85,7 +85,6 @@ class RagSystem:
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        logger.info(f"User asked the question: {query!r}")
         query_embedding = self.embedder.embed_query(query)
         nearest_neighbours = self.embedding_store.get_nearest_neighbours(
             query_embedding
@@ -103,11 +102,9 @@ class RagSystem:
                         answer.answer,
                         [self.document_store[i] for i in answer.sources],
                     )
-                logger.info(f"Generated the answer: {answer.answer!r}")
 
             return streamer()
         else:
-            logger.info(f"Generated the answer: {generated_answer.answer!r}")
             return (
                 generated_answer.answer,
                 [self.document_store[i] for i in generated_answer.sources],

@@ -29,6 +29,7 @@ class TestE5Embedder:
                     model_id="intfloat/multilingual-e5-small",
                     document_text_field="text",
                 ),
+                verbose=False,
             )
         )
 
