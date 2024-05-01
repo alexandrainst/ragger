@@ -1,6 +1,7 @@
 """A Gradio demo of the RAG system."""
 
 import json
+import logging
 import sqlite3
 import typing
 from pathlib import Path
@@ -8,13 +9,15 @@ from pathlib import Path
 import gradio as gr
 from omegaconf import DictConfig
 
-from ragger.utils import Document, format_answer
-
 from .rag_system import RagSystem
+from .utils import Document, format_answer
 
 Message = str | None
 Exchange = tuple[Message, Message]
 History = list[Exchange]
+
+
+logger = logging.getLogger(__package__)
 
 
 class Demo:
@@ -56,8 +59,9 @@ class Demo:
         Returns:
             The demo.
         """
+        logger.info("Building the demo...")
         with gr.Blocks(
-            theme=self.config.demo.theme, title=self.config.demo.title
+            theme=self.config.demo.theme, title=self.config.demo.title, fill_height=True
         ) as demo:
             gr.components.HTML(f"<center><h1>{self.config.demo.title}</h1></center>")
             directions = gr.components.HTML(
@@ -121,12 +125,13 @@ class Demo:
                     outputs=[directions],
                     queue=False,
                 )
-
+        logger.info("Built the demo.")
         return demo
 
     def launch(self) -> None:
         """Launch the demo."""
         self.demo = self.build_demo()
+        logger.info("Launching the demo...")
         auth = (
             (self.config.demo.username, self.config.demo.password)
             if self.config.demo.password_protected
@@ -143,6 +148,7 @@ class Demo:
         """Close the demo."""
         if self.demo:
             self.demo.close()
+            logger.info("Closed the demo.")
 
     def add_text(
         self, history: History, input_text: str, button_text: str
@@ -207,9 +213,16 @@ class Demo:
         """Record the vote in the database.
 
         Args:
-            data: The like data.
-            history: The chat history.
+            data:
+                The like data.
+            history:
+                The chat history.
         """
+        if data.liked:
+            logger.info("User liked the response.")
+        else:
+            logger.info("User disliked the response.")
+
         retrieved_document_data = dict(
             id=json.dumps(
                 [getattr(document, "id") for document in self.retrieved_documents]
@@ -228,3 +241,5 @@ class Demo:
         )
         self.connection.commit()
         self.connection.close()
+
+        logger.info("Recorded the vote in the database.")
