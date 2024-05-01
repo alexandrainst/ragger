@@ -2,6 +2,7 @@
 
 import io
 import json
+import logging
 import zipfile
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -12,6 +13,8 @@ from omegaconf import DictConfig
 from transformers import AutoConfig
 
 from .utils import Embedding, Index
+
+logger = logging.getLogger(__package__)
 
 
 class EmbeddingStore(ABC):
@@ -64,6 +67,18 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
+        self.embeddings_loaded_from_disk: bool = False
+        self.load_embeddings_if_exists()
+
+    def load_embeddings_if_exists(self) -> None:
+        """Load the embeddings from disk if they exist."""
+        # If the embeddings have not been loaded, embed the documents and save them
+        if self.config.embedding_store.embedding_path is not None:
+            embedding_store_path = (
+                Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
+            )
+            if embedding_store_path.exists():
+                self.load(embedding_store_path)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -95,20 +110,26 @@ class NumpyEmbeddingStore(EmbeddingStore):
         if not embeddings:
             return
 
-        embedding_matrix = np.stack([embedding.embedding for embedding in embeddings])
         already_existing_indices = [
             embedding.id
             for embedding in embeddings
             if embedding.id in self.index_to_row_id
         ]
         if already_existing_indices:
-            already_existing_indices_str = "\n".join(already_existing_indices)
-            raise ValueError(
+            num_already_existing_indices = len(already_existing_indices)
+            logger.warning(
                 (
-                    "The following embeddings already exist in the store: "
-                    f"{already_existing_indices_str}"
+                    "The following number of embeddings already exist in the store: "
+                    f"{num_already_existing_indices}, and is ignored."
                 )
             )
+        embedding_matrix = np.stack(
+            [
+                embedding.embedding
+                for embedding in embeddings
+                if embedding.id not in self.index_to_row_id
+            ]
+        )
 
         self.embeddings = np.vstack([self.embeddings, embedding_matrix])
         for i, embedding in enumerate(embeddings):

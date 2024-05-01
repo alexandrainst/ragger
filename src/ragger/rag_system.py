@@ -2,7 +2,6 @@
 
 import logging
 import typing
-from pathlib import Path
 
 from omegaconf import DictConfig
 
@@ -63,33 +62,13 @@ class RagSystem:
                 raise ValueError(f"The Generator type {name!r} is not supported")
 
         documents = self.document_store.get_all_documents()
-
-        # If the embeddings have not been loaded, embed the documents and save them
-        embedding_store_path = (
-            Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-        )
-        if not self.embeddings_loaded():
-            embeddings = self.embedder.embed_documents(documents=documents)
-            self.embedding_store.add_embeddings(embeddings=embeddings)
-
-            self.embedding_store.save(embedding_store_path)
-        else:
-            if any(
-                [
-                    document.id not in self.embedding_store.index_to_row_id.keys()
-                    for document in documents
-                ]
-            ):
-                logger.warning(
-                    "The document store has changed since the last compilation"
-                )
-                embeddings = self.embedder.embed_documents(documents=documents)
-                self.embedding_store.add_embeddings(embeddings=embeddings)
-                self.embedding_store.save(embedding_store_path)
-            else:
-                logger.info(f"Loaded embeddings from {embedding_store_path}.")
-
-        logger.info("Finished compiling the RAG system")
+        documents_not_in_embedding_store = [
+            document
+            for document in documents
+            if document.id not in self.embedding_store.index_to_row_id
+        ]
+        embeddings = self.embedder.embed_documents(documents_not_in_embedding_store)
+        self.embedding_store.add_embeddings(embeddings)
 
     def answer(
         self, query: str
@@ -166,25 +145,3 @@ class RagSystem:
             documents=documents,
             no_documents_reply=self.config.demo.no_documents_reply,
         )
-
-    def embeddings_loaded(self) -> bool:
-        """Try to load the embeddings from disk.
-
-        Returns:
-            True if the embeddings were loaded, False otherwise.
-        """
-        try:
-            embedding_store_path = (
-                Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-            )
-            # Check if the embedding store has a load method
-            if hasattr(self.embedding_store, "load") and callable(
-                self.embedding_store.load
-            ):
-                self.embedding_store.load(embedding_store_path)
-                return True
-            else:
-                return False
-        except FileNotFoundError:
-            logger.warning("No embeddings found on disk, starting from scratch")
-            return False

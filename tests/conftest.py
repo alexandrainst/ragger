@@ -53,7 +53,7 @@ def full_config(
                 document_text_field="text",
             ),
             embedding_store=dict(
-                name="numpy", num_documents_to_retrieve=3, embedding_path=""
+                name="numpy", num_documents_to_retrieve=3, embedding_path=None
             ),
             generator=dict(
                 name="openai",
