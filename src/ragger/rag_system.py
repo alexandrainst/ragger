@@ -62,9 +62,13 @@ class RagSystem:
                 raise ValueError(f"The Generator type {name!r} is not supported")
 
         documents = self.document_store.get_all_documents()
-        embeddings = self.embedder.embed_documents(documents=documents)
-        self.embedding_store.add_embeddings(embeddings=embeddings)
-        logger.info("Finished compiling the RAG system")
+        documents_not_in_embedding_store = [
+            document
+            for document in documents
+            if document.id not in self.embedding_store.index_to_row_id
+        ]
+        embeddings = self.embedder.embed_documents(documents_not_in_embedding_store)
+        self.embedding_store.add_embeddings(embeddings)
 
     def answer(
         self, query: str

@@ -52,7 +52,9 @@ def full_config(
                 model_id="intfloat/multilingual-e5-small",
                 document_text_field="text",
             ),
-            embedding_store=dict(name="numpy", num_documents_to_retrieve=3),
+            embedding_store=dict(
+                name="numpy", num_documents_to_retrieve=3, embedding_path=None
+            ),
             generator=dict(
                 name="openai",
                 api_key_variable_name="OPENAI_API_KEY",
