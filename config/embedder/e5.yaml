@@ -1,0 +1,3 @@
+name: e5
+model_id: intfloat/multilingual-e5-large
+document_text_field: text

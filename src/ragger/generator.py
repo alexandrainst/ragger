@@ -68,9 +68,9 @@ class OpenAIGenerator(Generator):
         """
         super().__init__(config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
-        api_key = os.environ[self.config.generator.openai.api_key_variable_name]
+        api_key = os.environ[self.config.generator.api_key_variable_name]
         self.client = OpenAI(
-            api_key=api_key.strip('"'), timeout=self.config.generator.openai.timeout
+            api_key=api_key.strip('"'), timeout=self.config.generator.timeout
         )
 
     def generate(
@@ -101,10 +101,10 @@ class OpenAIGenerator(Generator):
         ]
         model_output = self.client.chat.completions.create(
             messages=messages,
-            model=self.config.generator.openai.model,
-            max_tokens=self.config.generator.openai.max_tokens,
-            temperature=self.config.generator.openai.temperature,
-            stream=self.config.generator.openai.stream,
+            model=self.config.generator.model,
+            max_tokens=self.config.generator.max_tokens,
+            temperature=self.config.generator.temperature,
+            stream=self.config.generator.stream,
             stop=["</svar>"],
             response_format=ResponseFormat(type="json_object"),
         )

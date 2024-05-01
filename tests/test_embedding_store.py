@@ -14,19 +14,31 @@ class TestNumpyEmbeddingStore:
     """Tests for the `NumpyEmbeddingStore` class."""
 
     @pytest.fixture(scope="class")
-    def embedding_store(self) -> typing.Generator[NumpyEmbeddingStore, None, None]:
-        """Initialise a NumpyEmbeddingStore for testing."""
-        config = DictConfig(
+    def config(self) -> typing.Generator[DictConfig, None, None]:
+        """Initialise a configuration for testing."""
+        yield DictConfig(
             dict(
-                embedding_store=dict(numpy=dict(num_documents_to_retrieve=2)),
+                dirs=dict(
+                    data="data",
+                    raw="raw",
+                    processed="processed",
+                    final="final",
+                    models="models",
+                ),
+                embedding_store=dict(name="numpy", num_documents_to_retrieve=2),
                 embedder=dict(
-                    e5=dict(
-                        model_id="intfloat/multilingual-e5-small",
-                        document_text_field="text",
-                    )
+                    name="e5",
+                    model_id="intfloat/multilingual-e5-small",
+                    document_text_field="text",
                 ),
             )
         )
+
+    @pytest.fixture(scope="class")
+    def embedding_store(
+        self, config
+    ) -> typing.Generator[NumpyEmbeddingStore, None, None]:
+        """Initialise a NumpyEmbeddingStore for testing."""
         store = NumpyEmbeddingStore(config=config)
         yield store
 

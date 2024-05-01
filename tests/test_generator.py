@@ -12,6 +12,23 @@ class TestOpenAIGenerator:
     """Tests for the `OpenAIGenerator` class."""
 
     @pytest.fixture(scope="class")
+    def config(self) -> typing.Generator[DictConfig, None, None]:
+        """Initialise a configuration for testing."""
+        yield DictConfig(
+            dict(
+                generator=dict(
+                    name="openai",
+                    api_key_variable_name="OPENAI_API_KEY",
+                    model="gpt-3.5-turbo",
+                    temperature=0.0,
+                    stream=False,
+                    timeout=60,
+                    max_tokens=128,
+                )
+            )
+        )
+
+    @pytest.fixture(scope="class")
     def documents(self) -> typing.Generator[list[Document], None, None]:
         """Some documents for testing the OpenAIGenerator."""
         yield [
@@ -28,7 +45,7 @@ class TestOpenAIGenerator:
         """Test that the OpenAIGenerator is a Generator."""
         assert issubclass(OpenAIGenerator, Generator)
 
-    def test_initialisation(self, config: DictConfig) -> None:
+    def test_initialisation(self, config) -> None:
         """Test that the generator is initialised correctly."""
         assert OpenAIGenerator(config=config)
 
@@ -43,22 +60,22 @@ class TestOpenAIGenerator:
 
     def test_streaming(self, config, query, documents):
         """Test that the generator streams answers."""
-        config.generator.openai.stream = True
+        config.generator.stream = True
         generator = OpenAIGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         assert isinstance(answer, typing.Generator)
         for partial_answer in answer:
             assert isinstance(partial_answer, GeneratedAnswer)
-        config.generator.openai.stream = False
+        config.generator.stream = False
 
     def test_error_if_not_json(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        old_max_tokens = config.generator.openai.max_tokens
-        config.generator.openai.max_tokens = 1
+        old_max_tokens = config.generator.max_tokens
+        config.generator.max_tokens = 1
         generator = OpenAIGenerator(config=config)
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
-        config.generator.openai.max_tokens = old_max_tokens
+        config.generator.max_tokens = old_max_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
