@@ -78,7 +78,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         )
         if embedding_store_path.exists():
             self.load(path=embedding_store_path)
-            logger.info("Loaded embeddings from disk.")
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -110,6 +109,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
         if not embeddings:
             return
 
+        logger.info(f"Adding {len(embeddings):,} embeddings to the embedding store...")
+
         already_existing_indices = [
             embedding.id
             for embedding in embeddings
@@ -118,10 +119,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
         if already_existing_indices:
             num_already_existing_indices = len(already_existing_indices)
             logger.warning(
-                (
-                    f"{num_already_existing_indices:,} embeddings already existed in the "
-                    "embedding store and was ignored."
-                )
+                f"{num_already_existing_indices:,} embeddings already existed in the "
+                "embedding store and was ignored."
             )
         embedding_matrix = np.stack(
             [
@@ -137,6 +136,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 self.embeddings.shape[0] - len(embeddings) + i
             )
 
+        logger.info("Added embeddings to the embedding store.")
+
         if self.config.embedding_store.embedding_path is not None:
             embedding_store_path = (
                 Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
@@ -148,6 +149,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id = defaultdict()
         self.row_id_to_index
+        logger.info("Reset the embeddings store.")
 
     def save(self, path: Path | str) -> None:
         """Save the embedding store to disk.
@@ -163,6 +165,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
             ValueError:
                 If the path is not a zip file.
         """
+        logger.info(f"Saving embeddings to {path!r}...")
+
         path = Path(path)
         if path.suffix != ".zip":
             raise ValueError("The path must be a zip file.")
@@ -176,6 +180,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
             zf.writestr("embeddings.npy", data=array_file.getvalue())
             zf.writestr("index_to_row_id.json", data=index_to_row_id)
 
+        logger.info("Saved embeddings.")
+
     def load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
 
@@ -183,6 +189,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             path:
                 The path to the zip file to load the embedding store from.
         """
+        logger.info(f"Loading embeddings from {path!r}...")
         path = Path(path)
         with zipfile.ZipFile(file=path, mode="r") as zf:
             index_to_row_id_encoded = zf.read("index_to_row_id.json")
@@ -192,6 +199,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.embeddings = embeddings
         self.index_to_row_id = index_to_row_id
         self.row_id_to_index
+        logger.info("Loaded embeddings.")
 
     def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
@@ -214,7 +222,10 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 "The number of documents in the store is less than the number of "
                 "documents to retrieve."
             )
+
+        logger.info(f"Finding {num_docs:,} nearest neighbours...")
         scores = self.embeddings @ embedding
         top_indices = np.argsort(scores)[::-1][:num_docs]
         nearest_neighbours = [self.row_id_to_index[i] for i in top_indices]
+        logger.info(f"Found nearest neighbours with indices {top_indices}.")
         return nearest_neighbours
