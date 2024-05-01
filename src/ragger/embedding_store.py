@@ -74,8 +74,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
         embedding_store_path = (
             Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
         )
-        if self.config.embedding_store.embedding_path is not None and embedding_store_path.exists():
+        if (
+            self.config.embedding_store.embedding_path is not None
+            and embedding_store_path.exists()
+        ):
             self.load(embedding_store_path)
+            logger.info("Loaded embeddings from disk.")
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -116,7 +120,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             num_already_existing_indices = len(already_existing_indices)
             logger.warning(
                 (
-                    "{num_already_existing_indices:,} embeddings already existed in the "
+                    f"{num_already_existing_indices:,} embeddings already existed in the "
                     "embedding store and was ignored."
                 )
             )
@@ -133,6 +137,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
             self.index_to_row_id[embedding.id] = (
                 self.embeddings.shape[0] - len(embeddings) + i
             )
+
+        embedding_store_path = (
+            Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
+        )
+        if self.config.embedding_store.embedding_path is not None:
+            self.save(embedding_store_path)
 
     def reset(self) -> None:
         """This resets the embeddings store."""
