@@ -71,7 +71,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
-        # If the embeddings have not been loaded, embed the documents and save them
         embedding_store_path = (
             Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
         )
