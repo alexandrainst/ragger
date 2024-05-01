@@ -4,7 +4,6 @@ defaults:
   - embedding_store: numpy
   - generator: openai
   - demo: danish
-  - override hydra/job_logging: custom
   - _self_
 
 dirs:
