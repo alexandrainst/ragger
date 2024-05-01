@@ -73,12 +73,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
         # If the embeddings have not been loaded, embed the documents and save them
-        if self.config.embedding_store.embedding_path is not None:
-            embedding_store_path = (
-                Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-            )
-            if embedding_store_path.exists():
-                self.load(embedding_store_path)
+        embedding_store_path = (
+            Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
+        )
+        if self.config.embedding_store.embedding_path is not None and embedding_store_path.exists():
+            self.load(embedding_store_path)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
