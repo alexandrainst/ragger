@@ -13,7 +13,7 @@ from threading import Lock, Thread
 
 import gradio as gr
 import huggingface_hub
-from huggingface_hub import CommitScheduler, HfApi, create_repo
+from huggingface_hub import CommitScheduler, HfApi
 from huggingface_hub.utils import LocalTokenNotFoundError
 from omegaconf import DictConfig, OmegaConf
 
@@ -236,7 +236,7 @@ class Demo:
         )
 
         if not api.repo_exists(repo_id=self.config.demo.persistent_sharing.repo_id):
-            create_repo(
+            api.create_repo(
                 repo_id=self.config.demo.persistent_sharing.repo_id,
                 repo_type="space",
                 space_sdk="docker",
