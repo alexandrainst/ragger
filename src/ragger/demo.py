@@ -8,7 +8,9 @@ import typing
 from pathlib import Path
 
 import gradio as gr
+import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi, create_repo
+from huggingface_hub.utils import LocalTokenNotFoundError
 from omegaconf import DictConfig
 
 from .rag_system import RagSystem
@@ -193,7 +195,13 @@ class Demo:
             )
 
         # Check that all environment variables are set
-        required_env_vars: list[str] = [self.config.demo.persistent_sharing.repo_id]
+        required_env_vars: list[str] = []
+        try:
+            huggingface_hub.whoami()
+        except LocalTokenNotFoundError:
+            required_env_vars.append(
+                self.config.demo.persistent_sharing.token_variable_name
+            )
         if self.config.generator.name == "openai":
             required_env_vars.append(self.config.generator.api_key_variable_name)
         for env_var in required_env_vars:
