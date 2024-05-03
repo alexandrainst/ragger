@@ -2,11 +2,13 @@
 
 import json
 import logging
+import os
 import sqlite3
 import typing
 from pathlib import Path
 
 import gradio as gr
+from huggingface_hub import CommitScheduler, HfApi, create_repo
 from omegaconf import DictConfig
 
 from .rag_system import RagSystem
@@ -52,6 +54,22 @@ class Demo:
                 )
                 self.connection.commit()
             self.connection.close()
+
+        # Initialise commit scheduler, which will commit the final data directory to
+        # the Hub at regular intervals. This is only necessary when running in a
+        # Hugging Face Space, which we control via the `RUNNING_IN_SPACE` environment
+        # variable.
+        if os.getenv("RUNNING_IN_SPACE") == "1":
+            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
+            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
+            self.scheduler = CommitScheduler(
+                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_type="space",
+                folder_path=final_data_path,
+                path_in_repo=str(final_data_path),
+                squash_history=True,
+                every=5,
+            )
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -132,16 +150,122 @@ class Demo:
         """Launch the demo."""
         self.demo = self.build_demo()
         logger.info("Launching the demo...")
-        auth = (
-            (self.config.demo.username, self.config.demo.password)
-            if self.config.demo.password_protected
-            else None
+        launch_kwargs = dict(
+            server_name=self.config.demo.host, server_port=self.config.demo.port
         )
-        self.demo.queue().launch(
-            server_name=self.config.demo.host,
-            server_port=self.config.demo.port,
-            share=self.config.demo.share,
-            auth=auth,
+        match self.config.demo.share:
+            case "temporary":
+                auth = None
+                username = self.config.demo.temporary_sharing.username
+                password = self.config.demo.temporary_sharing.password
+                if (
+                    isinstance(username, str)
+                    and username != ""
+                    and isinstance(password, str)
+                    and password != ""
+                ):
+                    auth = (username, password)
+                launch_kwargs |= dict(share=True, auth=auth)
+                self.demo.queue().launch(**launch_kwargs)
+            case "persistent":
+                self.push_to_hub()
+            case "no-share":
+                self.demo.queue().launch(**launch_kwargs)
+            case _:
+                raise ValueError(
+                    "The `demo.share` field in the config must be one of 'temporary', "
+                    "'persistent', or 'no-share'. It is currently set to "
+                    f"{self.config.demo.share!r}. Please change it and try again."
+                )
+
+    def push_to_hub(self) -> None:
+        """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
+        if self.config.demo.share != "persistent":
+            raise ValueError(
+                "The demo must be shared persistently to push it to the hub. Please "
+                "set the `demo.share` field to 'persistent' in the config and try "
+                "again."
+            )
+        if self.config.demo.persistent_sharing.repo_id is None:
+            raise ValueError(
+                "The `demo.persistent_sharing.repo_id` field must be set in the "
+                "config to push the demo to the hub. Please set it and try again."
+            )
+
+        # Check that all environment variables are set
+        required_env_vars: list[str] = [self.config.demo.persistent_sharing.repo_id]
+        if self.config.generator.name == "openai":
+            required_env_vars.append(self.config.generator.api_key_variable_name)
+        for env_var in required_env_vars:
+            if env_var not in os.environ:
+                raise ValueError(
+                    f"{env_var} environment variable is not set. Please set it in "
+                    "your `.env` file or in your environment, and try again."
+                )
+
+        logger.info("Pushing the demo to the hub...")
+
+        api = HfApi(
+            token=os.environ[self.config.demo.persistent_sharing.token_variable_name]
+        )
+
+        if not api.repo_exists(repo_id=self.config.demo.persistent_sharing.repo_id):
+            create_repo(
+                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_type="space",
+                space_sdk="docker",
+                exist_ok=True,
+                private=True,
+            )
+
+        # This environment variable is used to trigger the creation of a commit
+        # scheduler when the demo is initialised, which will commit the final data
+        # directory to the Hub at regular intervals.
+        api.add_space_variable(
+            repo_id=self.config.demo.persistent_sharing.repo_id,
+            key="RUNNING_IN_SPACE",
+            value="1",
+        )
+
+        if self.config.generator.name == "openai":
+            api.add_space_secret(
+                repo_id=self.config.hub.repo_id,
+                key="OPENAI_API_KEY",
+                value=os.environ[self.config.generator.api_key_variable_name],
+            )
+
+        folders_to_upload: list[Path] = [
+            Path("src"),
+            Path("config"),
+            Path(self.config.dirs.data) / self.config.dirs.processed,
+            Path(self.config.dirs.data) / self.config.dirs.final,
+        ]
+        files_to_upload: list[Path] = [Path("Dockerfile"), Path("pyproject.toml")]
+        for path in folders_to_upload + files_to_upload:
+            if not path.exists():
+                raise FileNotFoundError(f"{path} does not exist. Please create it.")
+
+        for folder in folders_to_upload:
+            api.upload_folder(
+                repo_id=self.config.hub.repo_id,
+                repo_type="space",
+                folder_path=str(folder),
+                path_in_repo=str(folder),
+                commit_message=f"Upload {folder!r} folder to the hub.",
+            )
+
+        for file in files_to_upload:
+            api.upload_file(
+                repo_id=self.config.hub.repo_id,
+                repo_type="space",
+                path_or_fileobj=str(file),
+                path_in_repo=str(file),
+                commit_message=f"Upload {file!r} script to the hub.",
+            )
+
+        logger.info(
+            f"Pushed the demo to the hub! You can access it at "
+            f"https://hf.co/spaces/{self.config.demo.persistent_sharing.repo_id}."
         )
 
     def close(self) -> None:

@@ -1,12 +1,24 @@
 name: danish
+
+# Endpoint parameters
 host: localhost
 port: 7860
-share: false
-password_protected: false
-username: admin
-password: admin
+
+# Feedback parameters
 mode: feedback
 db_path: ${dirs.final}/feedback.db
+
+# Demo sharing parameters
+share: no-share  # Can be "no-share", "temporary" or "persistent"
+temporary_sharing:
+  password_protected: false
+  username: admin
+  password: admin
+persistent_sharing:
+  repo_id: null
+  token_variable_name: HF_HUB_TOKEN
+
+# User interface parameters
 theme: monochrome
 title: >
   RAG Bot
