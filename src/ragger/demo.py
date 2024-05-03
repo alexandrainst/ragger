@@ -60,6 +60,7 @@ class Demo:
                 token=os.getenv(
                     self.config.demo.persistent_sharing.token_variable_name
                 ),
+                private=True,
             )
 
         self.retrieved_documents: list[Document] = []
