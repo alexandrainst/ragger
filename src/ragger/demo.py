@@ -174,7 +174,6 @@ class Demo:
             )
 
         self.demo = self.build_demo()
-        logger.info("Launching the demo...")
 
         # If we are storing the demo persistently we push it to the Hugging Face Hub,
         # unless we are already running this from the Hub
@@ -184,6 +183,8 @@ class Demo:
         ):
             self.push_to_hub()
             return
+
+        logger.info("Launching the demo...")
 
         launch_kwargs = dict(
             server_name=self.config.demo.host, server_port=self.config.demo.port
