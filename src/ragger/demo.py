@@ -71,15 +71,15 @@ class Demo:
             case "strict_feedback" | "feedback":
                 logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
                 with sqlite3.connect(self.db_path) as connection:
-                    table_empty = not connection.execute(
-                        "SELECT name FROM sqlite_master "
-                        "WHERE type='table' AND name='feedback'"
-                    ).fetchone()
+                    table_empty = not connection.execute("""
+                        SELECT name FROM sqlite_master
+                        WHERE type='table' AND name='feedback'
+                    """).fetchone()
                     if table_empty:
-                        connection.execute(
-                            "CREATE TABLE feedback (query text, response text,"
-                            "liked integer, document_ids text)"
-                        )
+                        connection.execute("""
+                            CREATE TABLE feedback (query text, response text,
+                            liked integer, document_ids text)
+                        """)
                         connection.commit()
             case "no_feedback":
                 logger.info("No feedback will be collected.")
