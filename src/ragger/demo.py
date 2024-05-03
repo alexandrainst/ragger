@@ -214,7 +214,9 @@ class Demo:
         logger.info("Pushing the demo to the hub...")
 
         api = HfApi(
-            token=os.environ[self.config.demo.persistent_sharing.token_variable_name]
+            token=os.getenv(
+                self.config.demo.persistent_sharing.token_variable_name, True
+            )
         )
 
         if not api.repo_exists(repo_id=self.config.demo.persistent_sharing.repo_id):
@@ -237,7 +239,7 @@ class Demo:
 
         if self.config.generator.name == "openai":
             api.add_space_secret(
-                repo_id=self.config.hub.repo_id,
+                repo_id=self.config.demo.persistent_sharing.repo_id,
                 key="OPENAI_API_KEY",
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
@@ -255,7 +257,7 @@ class Demo:
 
         for folder in folders_to_upload:
             api.upload_folder(
-                repo_id=self.config.hub.repo_id,
+                repo_id=self.config.demo.persistent_sharing.repo_id,
                 repo_type="space",
                 folder_path=str(folder),
                 path_in_repo=str(folder),
@@ -264,7 +266,7 @@ class Demo:
 
         for file in files_to_upload:
             api.upload_file(
-                repo_id=self.config.hub.repo_id,
+                repo_id=self.config.demo.persistent_sharing.repo_id,
                 repo_type="space",
                 path_or_fileobj=str(file),
                 path_in_repo=str(file),
