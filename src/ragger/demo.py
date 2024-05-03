@@ -308,7 +308,11 @@ class Demo:
             Path(self.config.dirs.data) / self.config.dirs.processed,
             Path(self.config.dirs.data) / self.config.dirs.final,
         ]
-        files_to_upload: list[Path] = [Path("Dockerfile"), Path("pyproject.toml")]
+        files_to_upload: list[Path] = [
+            Path("Dockerfile"),
+            Path("pyproject.toml"),
+            Path("poetry.lock"),
+        ]
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
                 raise FileNotFoundError(f"{path} does not exist. Please create it.")
