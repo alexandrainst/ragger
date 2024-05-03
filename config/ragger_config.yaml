@@ -14,4 +14,4 @@ dirs:
   models: models
 
 random_seed: 703
-verbose: false
+verbose: true
