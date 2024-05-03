@@ -1,6 +1,5 @@
 """A Gradio demo of the RAG system."""
 
-import atexit
 import json
 import logging
 import os
@@ -9,7 +8,6 @@ import typing
 import warnings
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from threading import Lock, Thread
 
 import gradio as gr
 import huggingface_hub
@@ -52,12 +50,13 @@ class Demo:
             # regular intervals
             final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
             assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = DockerSpaceCommitScheduler(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+            self.scheduler = CommitScheduler(
+                repo_id=self.config.demo.persistent_sharing.database_repo_id,
+                repo_type="dataset",
                 folder_path=final_data_path,
                 path_in_repo=str(final_data_path),
                 squash_history=True,
-                every=60,
+                every=1,
                 token=os.getenv(
                     self.config.demo.persistent_sharing.token_variable_name
                 ),
@@ -205,10 +204,19 @@ class Demo:
                 "set the `demo.share` field to 'persistent' in the config and try "
                 "again."
             )
-        if self.config.demo.persistent_sharing.repo_id is None:
+
+        space_repo_id = self.config.demo.persistent_sharing.space_repo_id
+        if space_repo_id is None:
             raise ValueError(
-                "The `demo.persistent_sharing.repo_id` field must be set in the "
+                "The `demo.persistent_sharing.space_repo_id` field must be set in the "
                 "config to push the demo to the hub. Please set it and try again."
+            )
+
+        database_repo_id = self.config.demo.persistent_sharing.database_repo_id
+        if database_repo_id is None:
+            raise ValueError(
+                "The `demo.persistent_sharing.database_repo_id` field must be set in "
+                "the config to push the demo to the hub. Please set it and try again."
             )
 
         # Check that all environment variables are set
@@ -236,9 +244,9 @@ class Demo:
             )
         )
 
-        if not api.repo_exists(repo_id=self.config.demo.persistent_sharing.repo_id):
+        if not api.repo_exists(repo_id=space_repo_id):
             api.create_repo(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 repo_type="space",
                 space_sdk="docker",
                 exist_ok=True,
@@ -248,20 +256,16 @@ class Demo:
         # This environment variable is used to trigger the creation of a commit
         # scheduler when the demo is initialised, which will commit the final data
         # directory to the Hub at regular intervals.
-        api.add_space_variable(
-            repo_id=self.config.demo.persistent_sharing.repo_id,
-            key="RUNNING_IN_SPACE",
-            value="1",
-        )
+        api.add_space_variable(repo_id=space_repo_id, key="RUNNING_IN_SPACE", value="1")
 
         api.add_space_secret(
-            repo_id=self.config.demo.persistent_sharing.repo_id,
+            repo_id=space_repo_id,
             key=self.config.demo.persistent_sharing.token_variable_name,
             value=os.environ[self.config.demo.persistent_sharing.token_variable_name],
         )
         if self.config.generator.name == "openai":
             api.add_space_secret(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 key=self.config.generator.api_key_variable_name,
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
@@ -270,7 +274,7 @@ class Demo:
         # running this current session
         with TemporaryDirectory() as temp_dir:
             api.upload_folder(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 repo_type="space",
                 folder_path=temp_dir,
                 path_in_repo="config",
@@ -281,7 +285,7 @@ class Demo:
             file.write(config_yaml)
             file.flush()
             api.upload_file(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 repo_type="space",
                 path_or_fileobj=file.name,
                 path_in_repo="config/ragger_config.yaml",
@@ -300,7 +304,7 @@ class Demo:
 
         for folder in folders_to_upload:
             api.upload_folder(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 repo_type="space",
                 folder_path=str(folder),
                 path_in_repo=str(folder),
@@ -309,7 +313,7 @@ class Demo:
 
         for path in files_to_upload:
             api.upload_file(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_id=space_repo_id,
                 repo_type="space",
                 path_or_fileobj=str(path),
                 path_in_repo=str(path),
@@ -318,7 +322,7 @@ class Demo:
 
         logger.info(
             f"Pushed the demo to the hub! You can access it at "
-            f"https://hf.co/spaces/{self.config.demo.persistent_sharing.repo_id}."
+            f"https://hf.co/spaces/{space_repo_id}."
         )
 
     def close(self) -> None:
@@ -419,104 +423,3 @@ class Demo:
             connection.commit()
 
         logger.info("Recorded the vote in the database.")
-
-
-class DockerSpaceCommitScheduler(CommitScheduler):
-    """A custom commit scheduler allowing Docker SDK."""
-
-    def __init__(
-        self,
-        *,
-        repo_id: str,
-        folder_path: str | Path,
-        every: int | float = 5,
-        path_in_repo: str | None = None,
-        token: str | None = None,
-        allow_patterns: list[str] | str | None = None,
-        ignore_patterns: list[str] | str | None = None,
-        squash_history: bool = False,
-    ) -> None:
-        """Initialise the custom commit scheduler.
-
-        Args:
-            repo_id:
-                The id of the repo to commit to.
-            folder_path:
-                Path to the local folder to upload regularly.
-            every:
-                The number of minutes between each commit. Defaults to 5 minutes.
-            path_in_repo:
-                Relative path of the directory in the repo, for example:
-                `"checkpoints/"`. Defaults to the root folder of the repository.
-            token:
-                The token to use to commit to the repo. Defaults to the token saved on
-                the machine. If not provided, the token must be saved on the machine.
-            allow_patterns:
-                If provided, only files matching at least one pattern are uploaded.
-            ignore_patterns:
-                If provided, files matching any of the patterns are not uploaded.
-            squash_history:
-                Whether to squash the history of the repo after each commit. Defaults
-                to `False`. Squashing commits is useful to avoid degraded performances
-                on the repo when it grows too large.
-        """
-        self.api = HfApi(token=token)
-
-        # Folder
-        self.folder_path = Path(folder_path).expanduser().resolve()
-        self.path_in_repo = path_in_repo or ""
-        self.allow_patterns = allow_patterns
-
-        if ignore_patterns is None:
-            ignore_patterns = []
-        elif isinstance(ignore_patterns, str):
-            ignore_patterns = [ignore_patterns]
-        self.ignore_patterns = ignore_patterns + [
-            ".git",
-            ".git/*",
-            "*/.git",
-            "**/.git/**",
-            ".cache/huggingface",
-            ".cache/huggingface/*",
-            "*/.cache/huggingface",
-            "**/.cache/huggingface/**",
-        ]
-
-        if self.folder_path.is_file():
-            raise ValueError(
-                f"'folder_path' must be a directory, not a file: '{self.folder_path}'."
-            )
-        self.folder_path.mkdir(parents=True, exist_ok=True)
-
-        repo_url = self.api.create_repo(
-            repo_id=repo_id,
-            private=True,
-            repo_type="space",
-            space_sdk="docker",
-            exist_ok=True,
-            token=token,
-        )
-        self.repo_id = repo_url.repo_id
-        self.token = token
-
-        # Keep track of already uploaded files
-        self.last_uploaded: dict[
-            Path, float
-        ] = {}  # key is local path, value is timestamp
-
-        # Scheduler
-        if not every > 0:
-            raise ValueError(f"'every' must be a positive integer, not '{every}'.")
-        self.lock = Lock()
-        self.every = every
-        self.squash_history = squash_history
-
-        logger.info(
-            f"Scheduled job to push '{self.folder_path}' to '{self.repo_id}' every "
-            f"{self.every} minutes."
-        )
-        self._scheduler_thread = Thread(target=self._run_scheduler, daemon=True)
-        self._scheduler_thread.start()
-        atexit.register(self._push_to_hub)
-
-        self.__stopped = False

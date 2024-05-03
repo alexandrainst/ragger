@@ -14,7 +14,8 @@ temporary_sharing:
   username: admin
   password: admin
 persistent_sharing:
-  repo_id: null
+  space_repo_id: null
+  database_repo_id: null
   token_variable_name: HF_HUB_TOKEN
 
 # User interface parameters
