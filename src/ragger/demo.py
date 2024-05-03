@@ -1,5 +1,6 @@
 """A Gradio demo of the RAG system."""
 
+import atexit
 import json
 import logging
 import os
@@ -8,11 +9,12 @@ import typing
 import warnings
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
+from threading import Lock, Thread
 
 import gradio as gr
 import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi, create_repo
-from huggingface_hub.utils import LocalTokenNotFoundError
+from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS, LocalTokenNotFoundError
 from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
@@ -50,9 +52,8 @@ class Demo:
             # regular intervals
             final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
             assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = CommitScheduler(
+            self.scheduler = CustomCommitScheduler(
                 repo_id=self.config.demo.persistent_sharing.repo_id,
-                repo_type="space",
                 folder_path=final_data_path,
                 path_in_repo=str(final_data_path),
                 squash_history=True,
@@ -409,3 +410,95 @@ class Demo:
             connection.commit()
 
         logger.info("Recorded the vote in the database.")
+
+
+class CustomCommitScheduler(CommitScheduler):
+    """A custom commit scheduler allowing Docker SDK."""
+
+    def __init__(
+        self,
+        *,
+        repo_id: str,
+        folder_path: str | Path,
+        every: int | float = 5,
+        path_in_repo: str | None = None,
+        token: str | None = None,
+        allow_patterns: list[str] | str | None = None,
+        ignore_patterns: list[str] | str | None = None,
+        squash_history: bool = False,
+    ) -> None:
+        """Initialise the custom commit scheduler.
+
+        Args:
+            repo_id:
+                The id of the repo to commit to.
+            folder_path:
+                Path to the local folder to upload regularly.
+            every:
+                The number of minutes between each commit. Defaults to 5 minutes.
+            path_in_repo:
+                Relative path of the directory in the repo, for example:
+                `"checkpoints/"`. Defaults to the root folder of the repository.
+            token:
+                The token to use to commit to the repo. Defaults to the token saved on
+                the machine. If not provided, the token must be saved on the machine.
+            allow_patterns:
+                If provided, only files matching at least one pattern are uploaded.
+            ignore_patterns:
+                If provided, files matching any of the patterns are not uploaded.
+            squash_history:
+                Whether to squash the history of the repo after each commit. Defaults
+                to `False`. Squashing commits is useful to avoid degraded performances
+                on the repo when it grows too large.
+        """
+        self.api = HfApi(token=token)
+
+        # Folder
+        self.folder_path = Path(folder_path).expanduser().resolve()
+        self.path_in_repo = path_in_repo or ""
+        self.allow_patterns = allow_patterns
+
+        if ignore_patterns is None:
+            ignore_patterns = []
+        elif isinstance(ignore_patterns, str):
+            ignore_patterns = [ignore_patterns]
+        self.ignore_patterns = ignore_patterns + DEFAULT_IGNORE_PATTERNS
+
+        if self.folder_path.is_file():
+            raise ValueError(
+                f"'folder_path' must be a directory, not a file: '{self.folder_path}'."
+            )
+        self.folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Repository
+        repo_url = self.api.create_repo(
+            repo_id=repo_id,
+            private=True,
+            repo_type="space",
+            space_sdk="docker",
+            exist_ok=True,
+        )
+        self.repo_id = repo_url.repo_id
+        self.token = token
+
+        # Keep track of already uploaded files
+        self.last_uploaded: dict[
+            Path, float
+        ] = {}  # key is local path, value is timestamp
+
+        # Scheduler
+        if not every > 0:
+            raise ValueError(f"'every' must be a positive integer, not '{every}'.")
+        self.lock = Lock()
+        self.every = every
+        self.squash_history = squash_history
+
+        logger.info(
+            f"Scheduled job to push '{self.folder_path}' to '{self.repo_id}' every "
+            f"{self.every} minutes."
+        )
+        self._scheduler_thread = Thread(target=self._run_scheduler, daemon=True)
+        self._scheduler_thread.start()
+        atexit.register(self._push_to_hub)
+
+        self.__stopped = False
