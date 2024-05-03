@@ -52,7 +52,7 @@ class Demo:
             # regular intervals
             final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
             assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = CustomCommitScheduler(
+            self.scheduler = DockerSpaceCommitScheduler(
                 repo_id=self.config.demo.persistent_sharing.repo_id,
                 folder_path=final_data_path,
                 path_in_repo=str(final_data_path),
@@ -420,7 +420,7 @@ class Demo:
         logger.info("Recorded the vote in the database.")
 
 
-class CustomCommitScheduler(CommitScheduler):
+class DockerSpaceCommitScheduler(CommitScheduler):
     """A custom commit scheduler allowing Docker SDK."""
 
     def __init__(
