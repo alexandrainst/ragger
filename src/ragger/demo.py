@@ -14,7 +14,7 @@ from threading import Lock, Thread
 import gradio as gr
 import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi, create_repo
-from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS, LocalTokenNotFoundError
+from huggingface_hub.utils import LocalTokenNotFoundError
 from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
@@ -462,7 +462,16 @@ class CustomCommitScheduler(CommitScheduler):
             ignore_patterns = []
         elif isinstance(ignore_patterns, str):
             ignore_patterns = [ignore_patterns]
-        self.ignore_patterns = ignore_patterns + DEFAULT_IGNORE_PATTERNS
+        self.ignore_patterns = ignore_patterns + [
+            ".git",
+            ".git/*",
+            "*/.git",
+            "**/.git/**",
+            ".cache/huggingface",
+            ".cache/huggingface/*",
+            "*/.cache/huggingface",
+            "**/.cache/huggingface/**",
+        ]
 
         if self.folder_path.is_file():
             raise ValueError(
