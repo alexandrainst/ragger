@@ -69,7 +69,7 @@ class Demo:
         self.db_path = Path(config.dirs.data) / config.demo.db_path
         match self.config.demo.mode:
             case "strict_feedback" | "feedback":
-                logger.info(f"Running with feedback mode: {self.config.demo.mode!r}.")
+                logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
                 with sqlite3.connect(self.db_path) as connection:
                     table_empty = not connection.execute(
                         "SELECT name FROM sqlite_master "
