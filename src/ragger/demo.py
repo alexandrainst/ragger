@@ -57,7 +57,7 @@ class Demo:
                 folder_path=final_data_path,
                 path_in_repo=str(final_data_path),
                 squash_history=True,
-                every=5,
+                every=60,
                 token=os.getenv(
                     self.config.demo.persistent_sharing.token_variable_name
                 ),
@@ -186,7 +186,8 @@ class Demo:
                 launch_kwargs |= dict(share=True, auth=auth)
                 self.demo.queue().launch(**launch_kwargs)
             case "persistent":
-                self.push_to_hub()
+                if os.getenv("RUNNING_IN_SPACE") != "1":
+                    self.push_to_hub()
             case "no-share":
                 self.demo.queue().launch(**launch_kwargs)
             case _:
