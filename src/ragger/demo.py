@@ -37,8 +37,30 @@ class Demo:
                 The Hydra configuration.
         """
         self.config = config
-        self.rag_system = RagSystem(config=config)
+
+        # This will only run when the demo is running in a Hugging Face Space
+        if os.getenv("RUNNING_IN_SPACE") == "1":
+            logger.info("Running in a Hugging Face space.")
+
+            # Suppress warnings when running in a Hugging Face space, as this causes
+            # the space to crash
+            warnings.filterwarnings(action="ignore")
+
+            # Initialise commit scheduler, which will commit files to the Hub at
+            # regular intervals
+            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
+            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
+            self.scheduler = CommitScheduler(
+                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_type="space",
+                folder_path=final_data_path,
+                path_in_repo=str(final_data_path),
+                squash_history=True,
+                every=5,
+            )
+
         self.retrieved_documents: list[Document] = []
+        self.rag_system = RagSystem(config=config)
 
         self.db_path = Path(config.dirs.data) / config.demo.db_path
         match self.config.demo.mode:
@@ -62,27 +84,6 @@ class Demo:
                     "The feedback mode must be one of 'strict_feedback', 'feedback', "
                     "or 'no_feedback'."
                 )
-
-        # This will only run when the demo is running in a Hugging Face Space
-        if os.getenv("RUNNING_IN_SPACE") == "1":
-            logger.info("Running in a Hugging Face space.")
-
-            # Suppress warnings when running in a Hugging Face space, as this causes
-            # the space to crash
-            warnings.filterwarnings(action="ignore")
-
-            # Initialise commit scheduler, which will commit files to the Hub at
-            # regular intervals
-            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
-            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = CommitScheduler(
-                repo_id=self.config.demo.persistent_sharing.repo_id,
-                repo_type="space",
-                folder_path=final_data_path,
-                path_in_repo=str(final_data_path),
-                squash_history=True,
-                every=5,
-            )
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
