@@ -253,10 +253,15 @@ class Demo:
             value="1",
         )
 
+        api.add_space_secret(
+            repo_id=self.config.demo.persistent_sharing.repo_id,
+            key=self.config.demo.persistent_sharing.token_variable_name,
+            value=os.environ[self.config.demo.persistent_sharing.token_variable_name],
+        )
         if self.config.generator.name == "openai":
             api.add_space_secret(
                 repo_id=self.config.demo.persistent_sharing.repo_id,
-                key="OPENAI_API_KEY",
+                key=self.config.generator.api_key_variable_name,
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
 
