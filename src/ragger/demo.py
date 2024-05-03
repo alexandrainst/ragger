@@ -58,6 +58,9 @@ class Demo:
                 path_in_repo=str(final_data_path),
                 squash_history=True,
                 every=5,
+                token=os.getenv(
+                    self.config.demo.persistent_sharing.token_variable_name
+                ),
             )
 
         self.retrieved_documents: list[Document] = []
