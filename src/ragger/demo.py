@@ -395,9 +395,9 @@ class Demo:
                 The chat history.
         """
         if data.liked:
-            logger.info("User liked the response.")
+            logger.info(f"User liked the response {data.value!r}.")
         else:
-            logger.info("User disliked the response.")
+            logger.info(f"User disliked the response {data.value!r}.")
 
         retrieved_document_data = dict(
             id=json.dumps(
