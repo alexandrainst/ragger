@@ -11,7 +11,6 @@ db_path: ${dirs.final}/feedback.db
 # Demo sharing parameters
 share: no-share  # Can be "no-share", "temporary" or "persistent"
 temporary_sharing:
-  password_protected: false
   username: admin
   password: admin
 persistent_sharing:
