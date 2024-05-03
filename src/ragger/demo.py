@@ -486,6 +486,7 @@ class CustomCommitScheduler(CommitScheduler):
             repo_type="space",
             space_sdk="docker",
             exist_ok=True,
+            token=token,
         )
         self.repo_id = repo_url.repo_id
         self.token = token
