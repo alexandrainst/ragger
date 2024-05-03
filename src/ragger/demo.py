@@ -5,13 +5,15 @@ import logging
 import os
 import sqlite3
 import typing
+import warnings
 from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import gradio as gr
 import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi, create_repo
 from huggingface_hub.utils import LocalTokenNotFoundError
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
 from .utils import Document, format_answer
@@ -37,31 +39,40 @@ class Demo:
         self.config = config
         self.rag_system = RagSystem(config=config)
         self.retrieved_documents: list[Document] = []
-        if self.config.demo.mode not in ["strict_feedback", "feedback", "no_feedback"]:
-            raise ValueError(
-                "The feedback mode must be one of 'strict_feedback', 'feedback', or "
-                "'no_feedback'."
-            )
-        if self.config.demo.mode in ["strict_feedback", "feedback"]:
-            self.db_path = Path(config.dirs.data) / config.demo.db_path
-            self.connection = sqlite3.connect(self.db_path)
-            if not self.connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
-            ).fetchone():
-                self.connection.execute(
-                    (
-                        "CREATE TABLE feedback (query text, response text,"
-                        "liked integer, document_ids text)"
-                    )
-                )
-                self.connection.commit()
-            self.connection.close()
 
-        # Initialise commit scheduler, which will commit the final data directory to
-        # the Hub at regular intervals. This is only necessary when running in a
-        # Hugging Face Space, which we control via the `RUNNING_IN_SPACE` environment
-        # variable.
+        self.db_path = Path(config.dirs.data) / config.demo.db_path
+        match self.config.demo.mode:
+            case "strict_feedback" | "feedback":
+                logger.info(f"Running with feedback mode: {self.config.demo.mode!r}.")
+                with sqlite3.connect(self.db_path) as connection:
+                    table_empty = not connection.execute(
+                        "SELECT name FROM sqlite_master "
+                        "WHERE type='table' AND name='feedback'"
+                    ).fetchone()
+                    if table_empty:
+                        connection.execute(
+                            "CREATE TABLE feedback (query text, response text,"
+                            "liked integer, document_ids text)"
+                        )
+                        connection.commit()
+            case "no_feedback":
+                logger.info("No feedback will be collected.")
+            case _:
+                raise ValueError(
+                    "The feedback mode must be one of 'strict_feedback', 'feedback', "
+                    "or 'no_feedback'."
+                )
+
+        # This will only run when the demo is running in a Hugging Face Space
         if os.getenv("RUNNING_IN_SPACE") == "1":
+            logger.info("Running in a Hugging Face space.")
+
+            # Suppress warnings when running in a Hugging Face space, as this causes
+            # the space to crash
+            warnings.filterwarnings(action="ignore")
+
+            # Initialise commit scheduler, which will commit files to the Hub at
+            # regular intervals
             final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
             assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
             self.scheduler = CommitScheduler(
@@ -244,9 +255,30 @@ class Demo:
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
 
+        # Upload config separately, as the user might have created overrides when
+        # running this current session
+        with TemporaryDirectory() as temp_dir:
+            api.upload_folder(
+                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_type="space",
+                folder_path=temp_dir,
+                path_in_repo="config",
+                commit_message="Create config folder.",
+            )
+        with NamedTemporaryFile(mode="w", suffix=".yaml") as file:
+            config_yaml = OmegaConf.to_yaml(cfg=self.config)
+            file.write(config_yaml)
+            file.flush()
+            api.upload_file(
+                repo_id=self.config.demo.persistent_sharing.repo_id,
+                repo_type="space",
+                path_or_fileobj=file.name,
+                path_in_repo="config/ragger_config.yaml",
+                commit_message="Upload config to the hub.",
+            )
+
         folders_to_upload: list[Path] = [
             Path("src"),
-            Path("config"),
             Path(self.config.dirs.data) / self.config.dirs.processed,
             Path(self.config.dirs.data) / self.config.dirs.final,
         ]
@@ -264,13 +296,13 @@ class Demo:
                 commit_message=f"Upload {folder!r} folder to the hub.",
             )
 
-        for file in files_to_upload:
+        for path in files_to_upload:
             api.upload_file(
                 repo_id=self.config.demo.persistent_sharing.repo_id,
                 repo_type="space",
-                path_or_fileobj=str(file),
-                path_in_repo=str(file),
-                commit_message=f"Upload {file!r} script to the hub.",
+                path_or_fileobj=str(path),
+                path_in_repo=str(path),
+                commit_message=f"Upload {path!r} script to the hub.",
             )
 
         logger.info(
@@ -369,11 +401,10 @@ class Demo:
         } | retrieved_document_data
 
         # Add the record to the table "feedback" in the database.
-        self.connection = sqlite3.connect(self.db_path)
-        self.connection.execute(
-            ("INSERT INTO feedback VALUES (:query, :response, :liked, :id)"), record
-        )
-        self.connection.commit()
-        self.connection.close()
+        with sqlite3.connect(self.db_path) as connection:
+            connection.execute(
+                "INSERT INTO feedback VALUES (:query, :response, :liked, :id)", record
+            )
+            connection.commit()
 
         logger.info("Recorded the vote in the database.")
