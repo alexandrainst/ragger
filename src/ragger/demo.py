@@ -166,36 +166,46 @@ class Demo:
 
     def launch(self) -> None:
         """Launch the demo."""
+        if self.config.demo.share not in {"no-share", "temporary", "persistent"}:
+            raise ValueError(
+                "The `demo.share` field in the config must be one of 'temporary', "
+                "'persistent', or 'no-share'. It is currently set to "
+                f"{self.config.demo.share!r}. Please change it and try again."
+            )
+
         self.demo = self.build_demo()
         logger.info("Launching the demo...")
+
+        # If we are storing the demo persistently we push it to the Hugging Face Hub,
+        # unless we are already running this from the Hub
+        if (
+            self.config.demo.share == "persistent"
+            and os.getenv("RUNNING_IN_SPACE") != "1"
+        ):
+            self.push_to_hub()
+            return
+
         launch_kwargs = dict(
             server_name=self.config.demo.host, server_port=self.config.demo.port
         )
-        match self.config.demo.share:
-            case "temporary":
-                auth = None
-                username = self.config.demo.temporary_sharing.username
-                password = self.config.demo.temporary_sharing.password
-                if (
-                    isinstance(username, str)
-                    and username != ""
-                    and isinstance(password, str)
-                    and password != ""
-                ):
-                    auth = (username, password)
-                launch_kwargs |= dict(share=True, auth=auth)
-                self.demo.queue().launch(**launch_kwargs)
-            case "persistent":
-                if os.getenv("RUNNING_IN_SPACE") != "1":
-                    self.push_to_hub()
-            case "no-share":
-                self.demo.queue().launch(**launch_kwargs)
-            case _:
-                raise ValueError(
-                    "The `demo.share` field in the config must be one of 'temporary', "
-                    "'persistent', or 'no-share'. It is currently set to "
-                    f"{self.config.demo.share!r}. Please change it and try again."
-                )
+
+        # Add password protection to the demo, if required
+        auth = None
+        username = self.config.demo.temporary_sharing.username
+        password = self.config.demo.temporary_sharing.password
+        if (
+            isinstance(username, str)
+            and username != ""
+            and isinstance(password, str)
+            and password != ""
+        ):
+            auth = (username, password)
+        launch_kwargs["auth"] = auth
+
+        if self.config.demo.share == "temporary":
+            launch_kwargs["share"] = True
+
+        self.demo.queue().launch(**launch_kwargs)
 
     def push_to_hub(self) -> None:
         """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
