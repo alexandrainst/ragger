@@ -479,7 +479,6 @@ class CustomCommitScheduler(CommitScheduler):
             )
         self.folder_path.mkdir(parents=True, exist_ok=True)
 
-        # Repository
         repo_url = self.api.create_repo(
             repo_id=repo_id,
             private=True,
