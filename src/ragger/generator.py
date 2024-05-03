@@ -137,7 +137,7 @@ class OpenAIGenerator(Generator):
                         yield generated_obj
                     except ValidationError:
                         continue
-                logger.info(f"Generated answer: {generated_obj}")
+                logger.info(f"Generated {generated_obj}")
 
             return streamer()
         else:
