@@ -39,8 +39,8 @@ class Demo:
         self.retrieved_documents: list[Document] = []
         if self.config.demo.mode not in ["strict_feedback", "feedback", "no_feedback"]:
             raise ValueError(
-                "The feedback mode must be one of 'strict_feedback'"
-                ", 'feedback', or 'no_feedback'."
+                "The feedback mode must be one of 'strict_feedback', 'feedback', or "
+                "'no_feedback'."
             )
         if self.config.demo.mode in ["strict_feedback", "feedback"]:
             self.db_path = Path(config.dirs.data) / config.demo.db_path
