@@ -77,21 +77,27 @@ class Demo:
             # regular intervals
             if self.config.demo.feedback in {"strict-feedback", "feedback"}:
                 backup_dir = self.db_path.parent
+                db_repo_id = self.config.demo.persistent_sharing.database_repo_id
+                every = self.config.demo.db_update_frequency
                 assert backup_dir.exists(), f"{backup_dir!r} does not exist!"
                 self.scheduler = CommitScheduler(
-                    repo_id=self.config.demo.persistent_sharing.database_repo_id,
+                    repo_id=db_repo_id,
                     repo_type="dataset",
                     folder_path=backup_dir,
                     path_in_repo=str(backup_dir),
                     squash_history=True,
-                    every=self.config.demo.db_update_frequency,
+                    every=every,
                     token=os.getenv(
                         self.config.demo.persistent_sharing.token_variable_name
                     ),
                     private=True,
                 )
+                logger.info(
+                    "Initialised the commit scheduler, which will backup the feedback "
+                    f"database to {db_repo_id} every {every:,} minutes."
+                )
 
-        self.retrieved_documents: list[Document] = []
+        self.retrieved_documents: list[Document] = list()
         self.rag_system = RagSystem(config=config)
 
     def build_demo(self) -> gr.Blocks:
