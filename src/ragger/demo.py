@@ -2,12 +2,18 @@
 
 import json
 import logging
+import os
 import sqlite3
 import typing
+import warnings
 from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import gradio as gr
-from omegaconf import DictConfig
+import huggingface_hub
+from huggingface_hub import CommitScheduler, HfApi
+from huggingface_hub.utils import LocalTokenNotFoundError
+from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
 from .utils import Document, format_answer
@@ -31,27 +37,57 @@ class Demo:
                 The Hydra configuration.
         """
         self.config = config
-        self.rag_system = RagSystem(config=config)
-        self.retrieved_documents: list[Document] = []
-        if self.config.demo.mode not in ["strict_feedback", "feedback", "no_feedback"]:
-            raise ValueError(
-                "The feedback mode must be one of 'strict_feedback'"
-                ", 'feedback', or 'no_feedback'."
+
+        # This will only run when the demo is running in a Hugging Face Space
+        if os.getenv("RUNNING_IN_SPACE") == "1":
+            logger.info("Running in a Hugging Face space.")
+
+            # Suppress warnings when running in a Hugging Face space, as this causes
+            # the space to crash
+            warnings.filterwarnings(action="ignore")
+
+            # Initialise commit scheduler, which will commit files to the Hub at
+            # regular intervals
+            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
+            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
+            self.scheduler = CommitScheduler(
+                repo_id=self.config.demo.persistent_sharing.database_repo_id,
+                repo_type="dataset",
+                folder_path=final_data_path,
+                path_in_repo=str(final_data_path),
+                squash_history=True,
+                every=5,
+                token=os.getenv(
+                    self.config.demo.persistent_sharing.token_variable_name
+                ),
+                private=True,
             )
-        if self.config.demo.mode in ["strict_feedback", "feedback"]:
-            self.db_path = Path(config.dirs.data) / config.demo.db_path
-            self.connection = sqlite3.connect(self.db_path)
-            if not self.connection.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
-            ).fetchone():
-                self.connection.execute(
-                    (
-                        "CREATE TABLE feedback (query text, response text,"
-                        "liked integer, document_ids text)"
-                    )
+
+        self.retrieved_documents: list[Document] = []
+        self.rag_system = RagSystem(config=config)
+
+        self.db_path = Path(config.dirs.data) / config.demo.db_path
+        match self.config.demo.mode:
+            case "strict_feedback" | "feedback":
+                logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
+                with sqlite3.connect(self.db_path) as connection:
+                    table_empty = not connection.execute("""
+                        SELECT name FROM sqlite_master
+                        WHERE type='table' AND name='feedback'
+                    """).fetchone()
+                    if table_empty:
+                        connection.execute("""
+                            CREATE TABLE feedback (query text, response text,
+                            liked integer, document_ids text)
+                        """)
+                        connection.commit()
+            case "no_feedback":
+                logger.info("No feedback will be collected.")
+            case _:
+                raise ValueError(
+                    "The feedback mode must be one of 'strict_feedback', 'feedback', "
+                    "or 'no_feedback'."
                 )
-                self.connection.commit()
-            self.connection.close()
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -130,18 +166,179 @@ class Demo:
 
     def launch(self) -> None:
         """Launch the demo."""
+        if self.config.demo.share not in {"no-share", "temporary", "persistent"}:
+            raise ValueError(
+                "The `demo.share` field in the config must be one of 'temporary', "
+                "'persistent', or 'no-share'. It is currently set to "
+                f"{self.config.demo.share!r}. Please change it and try again."
+            )
+
         self.demo = self.build_demo()
+
+        # If we are storing the demo persistently we push it to the Hugging Face Hub,
+        # unless we are already running this from the Hub
+        if (
+            self.config.demo.share == "persistent"
+            and os.getenv("RUNNING_IN_SPACE") != "1"
+        ):
+            self.push_to_hub()
+            return
+
         logger.info("Launching the demo...")
-        auth = (
-            (self.config.demo.username, self.config.demo.password)
-            if self.config.demo.password_protected
-            else None
+
+        launch_kwargs = dict(
+            server_name=self.config.demo.host, server_port=self.config.demo.port
         )
-        self.demo.queue().launch(
-            server_name=self.config.demo.host,
-            server_port=self.config.demo.port,
-            share=self.config.demo.share,
-            auth=auth,
+
+        # Add password protection to the demo, if required
+        auth = None
+        username = self.config.demo.temporary_sharing.username
+        password = self.config.demo.temporary_sharing.password
+        if (
+            isinstance(username, str)
+            and username != ""
+            and isinstance(password, str)
+            and password != ""
+        ):
+            auth = (username, password)
+        launch_kwargs["auth"] = auth
+
+        if self.config.demo.share == "temporary":
+            launch_kwargs["share"] = True
+
+        self.demo.queue().launch(**launch_kwargs)
+
+    def push_to_hub(self) -> None:
+        """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
+        if self.config.demo.share != "persistent":
+            raise ValueError(
+                "The demo must be shared persistently to push it to the hub. Please "
+                "set the `demo.share` field to 'persistent' in the config and try "
+                "again."
+            )
+
+        space_repo_id = self.config.demo.persistent_sharing.space_repo_id
+        if space_repo_id is None:
+            raise ValueError(
+                "The `demo.persistent_sharing.space_repo_id` field must be set in the "
+                "config to push the demo to the hub. Please set it and try again."
+            )
+
+        database_repo_id = self.config.demo.persistent_sharing.database_repo_id
+        if database_repo_id is None:
+            raise ValueError(
+                "The `demo.persistent_sharing.database_repo_id` field must be set in "
+                "the config to push the demo to the hub. Please set it and try again."
+            )
+
+        # Check that all environment variables are set
+        required_env_vars: list[str] = []
+        try:
+            huggingface_hub.whoami()
+        except LocalTokenNotFoundError:
+            required_env_vars.append(
+                self.config.demo.persistent_sharing.token_variable_name
+            )
+        if self.config.generator.name == "openai":
+            required_env_vars.append(self.config.generator.api_key_variable_name)
+        for env_var in required_env_vars:
+            if env_var not in os.environ:
+                raise ValueError(
+                    f"{env_var} environment variable is not set. Please set it in "
+                    "your `.env` file or in your environment, and try again."
+                )
+
+        logger.info("Pushing the demo to the hub...")
+
+        api = HfApi(
+            token=os.getenv(
+                self.config.demo.persistent_sharing.token_variable_name, True
+            )
+        )
+
+        if not api.repo_exists(repo_id=space_repo_id):
+            api.create_repo(
+                repo_id=space_repo_id,
+                repo_type="space",
+                space_sdk="docker",
+                exist_ok=True,
+                private=True,
+            )
+
+        # This environment variable is used to trigger the creation of a commit
+        # scheduler when the demo is initialised, which will commit the final data
+        # directory to the Hub at regular intervals.
+        api.add_space_variable(repo_id=space_repo_id, key="RUNNING_IN_SPACE", value="1")
+
+        api.add_space_secret(
+            repo_id=space_repo_id,
+            key=self.config.demo.persistent_sharing.token_variable_name,
+            value=os.environ[self.config.demo.persistent_sharing.token_variable_name],
+        )
+        if self.config.generator.name == "openai":
+            api.add_space_secret(
+                repo_id=space_repo_id,
+                key=self.config.generator.api_key_variable_name,
+                value=os.environ[self.config.generator.api_key_variable_name],
+            )
+
+        # Upload config separately, as the user might have created overrides when
+        # running this current session
+        with TemporaryDirectory() as temp_dir:
+            api.upload_folder(
+                repo_id=space_repo_id,
+                repo_type="space",
+                folder_path=temp_dir,
+                path_in_repo="config",
+                commit_message="Create config folder.",
+            )
+        with NamedTemporaryFile(mode="w", suffix=".yaml") as file:
+            config_yaml = OmegaConf.to_yaml(cfg=self.config)
+            file.write(config_yaml)
+            file.flush()
+            api.upload_file(
+                repo_id=space_repo_id,
+                repo_type="space",
+                path_or_fileobj=file.name,
+                path_in_repo="config/ragger_config.yaml",
+                commit_message="Upload config to the hub.",
+            )
+
+        folders_to_upload: list[Path] = [
+            Path("src"),
+            Path(self.config.dirs.data) / self.config.dirs.processed,
+            Path(self.config.dirs.data) / self.config.dirs.final,
+        ]
+        files_to_upload: list[Path] = [
+            Path("Dockerfile"),
+            Path("pyproject.toml"),
+            Path("poetry.lock"),
+        ]
+        for path in folders_to_upload + files_to_upload:
+            if not path.exists():
+                raise FileNotFoundError(f"{path} does not exist. Please create it.")
+
+        for folder in folders_to_upload:
+            api.upload_folder(
+                repo_id=space_repo_id,
+                repo_type="space",
+                folder_path=str(folder),
+                path_in_repo=str(folder),
+                commit_message=f"Upload {folder!r} folder to the hub.",
+            )
+
+        for path in files_to_upload:
+            api.upload_file(
+                repo_id=space_repo_id,
+                repo_type="space",
+                path_or_fileobj=str(path),
+                path_in_repo=str(path),
+                commit_message=f"Upload {path!r} script to the hub.",
+            )
+
+        logger.info(
+            f"Pushed the demo to the hub! You can access it at "
+            f"https://hf.co/spaces/{space_repo_id}."
         )
 
     def close(self) -> None:
@@ -219,9 +416,9 @@ class Demo:
                 The chat history.
         """
         if data.liked:
-            logger.info("User liked the response.")
+            logger.info(f"User liked the response {data.value!r}.")
         else:
-            logger.info("User disliked the response.")
+            logger.info(f"User disliked the response {data.value!r}.")
 
         retrieved_document_data = dict(
             id=json.dumps(
@@ -235,11 +432,10 @@ class Demo:
         } | retrieved_document_data
 
         # Add the record to the table "feedback" in the database.
-        self.connection = sqlite3.connect(self.db_path)
-        self.connection.execute(
-            ("INSERT INTO feedback VALUES (:query, :response, :liked, :id)"), record
-        )
-        self.connection.commit()
-        self.connection.close()
+        with sqlite3.connect(self.db_path) as connection:
+            connection.execute(
+                "INSERT INTO feedback VALUES (:query, :response, :liked, :id)", record
+            )
+            connection.commit()
 
         logger.info("Recorded the vote in the database.")

@@ -189,7 +189,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             path:
                 The path to the zip file to load the embedding store from.
         """
-        logger.info(f"Loading embeddings from {path!r}...")
+        logger.info(f"Loading embeddings from {str(path)!r}...")
         path = Path(path)
         with zipfile.ZipFile(file=path, mode="r") as zf:
             index_to_row_id_encoded = zf.read("index_to_row_id.json")
