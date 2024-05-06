@@ -70,7 +70,7 @@ def full_config(
                 port=7860,
                 share=False,
                 password_protected=False,
-                mode="no_feedback",
+                feedback="no-feedback",
                 db_path=db_filename,
             ),
             verbose=False,

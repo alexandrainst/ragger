@@ -12,7 +12,11 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import gradio as gr
 import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi
-from huggingface_hub.utils import LocalTokenNotFoundError
+from huggingface_hub.utils import (
+    EntryNotFoundError,
+    LocalTokenNotFoundError,
+    RepositoryNotFoundError,
+)
 from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
@@ -38,38 +42,10 @@ class Demo:
         """
         self.config = config
 
-        # This will only run when the demo is running in a Hugging Face Space
-        if os.getenv("RUNNING_IN_SPACE") == "1":
-            logger.info("Running in a Hugging Face space.")
-
-            # Suppress warnings when running in a Hugging Face space, as this causes
-            # the space to crash
-            warnings.filterwarnings(action="ignore")
-
-            # Initialise commit scheduler, which will commit files to the Hub at
-            # regular intervals
-            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
-            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = CommitScheduler(
-                repo_id=self.config.demo.persistent_sharing.database_repo_id,
-                repo_type="dataset",
-                folder_path=final_data_path,
-                path_in_repo=str(final_data_path),
-                squash_history=True,
-                every=5,
-                token=os.getenv(
-                    self.config.demo.persistent_sharing.token_variable_name
-                ),
-                private=True,
-            )
-
-        self.retrieved_documents: list[Document] = []
-        self.rag_system = RagSystem(config=config)
-
         self.db_path = Path(config.dirs.data) / config.demo.db_path
-        match self.config.demo.mode:
-            case "strict_feedback" | "feedback":
-                logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
+        match self.config.demo.feedback:
+            case "strict-feedback" | "feedback":
+                logger.info(f"Using the {self.config.demo.feedback!r} feedback mode.")
                 with sqlite3.connect(self.db_path) as connection:
                     table_empty = not connection.execute("""
                         SELECT name FROM sqlite_master
@@ -81,13 +57,48 @@ class Demo:
                             liked integer, document_ids text)
                         """)
                         connection.commit()
-            case "no_feedback":
+            case "no-feedback":
                 logger.info("No feedback will be collected.")
             case _:
                 raise ValueError(
-                    "The feedback mode must be one of 'strict_feedback', 'feedback', "
-                    "or 'no_feedback'."
+                    "The feedback mode must be one of 'strict-feedback', 'feedback', "
+                    "or 'no-feedback'."
                 )
+
+        # This will only run when the demo is running in a Hugging Face Space
+        if os.getenv("RUNNING_IN_SPACE") == "1":
+            logger.info("Running in a Hugging Face space.")
+
+            # Suppress warnings when running in a Hugging Face space, as this causes
+            # the space to crash
+            warnings.filterwarnings(action="ignore")
+
+            # Initialise commit scheduler, which will commit files to the Hub at
+            # regular intervals
+            if self.config.demo.feedback in {"strict-feedback", "feedback"}:
+                backup_dir = self.db_path.parent
+                db_repo_id = self.config.demo.persistent_sharing.database_repo_id
+                every = self.config.demo.db_update_frequency
+                assert backup_dir.exists(), f"{backup_dir!r} does not exist!"
+                self.scheduler = CommitScheduler(
+                    repo_id=db_repo_id,
+                    repo_type="dataset",
+                    folder_path=backup_dir,
+                    path_in_repo=str(backup_dir),
+                    squash_history=True,
+                    every=every,
+                    token=os.getenv(
+                        self.config.demo.persistent_sharing.token_variable_name
+                    ),
+                    private=True,
+                )
+                logger.info(
+                    "Initialised the commit scheduler, which will backup the feedback "
+                    f"database to {db_repo_id} every {every:,} minutes."
+                )
+
+        self.retrieved_documents: list[Document] = list()
+        self.rag_system = RagSystem(config=config)
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -127,7 +138,7 @@ class Demo:
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            if self.config.demo.mode in ["strict_feedback", "feedback"]:
+            if self.config.demo.feedback in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
                         value=f"<b><center>{self.config.demo.feedback}</center></b>"
@@ -138,7 +149,11 @@ class Demo:
 
                 input_box_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                        value=f"""
+                            <b><center>
+                            {self.config.demo.feedback_instruction}
+                            </center></b>
+                        """
                     ),
                     outputs=[directions],
                     queue=False,
@@ -264,6 +279,7 @@ class Demo:
                 exist_ok=True,
                 private=True,
             )
+            logger.info("Created the space on the hub.")
 
         # This environment variable is used to trigger the creation of a commit
         # scheduler when the demo is initialised, which will commit the final data
@@ -281,6 +297,28 @@ class Demo:
                 key=self.config.generator.api_key_variable_name,
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
+
+        logger.info("Added environment variables and secrets to the space.")
+
+        # The feedback database is stored in a separate repo, so we need to pull the
+        # newest version of the database before pushing the demo to the hub
+        if self.config.demo.feedback in {"strict-feedback", "feedback"}:
+            try:
+                api.hf_hub_download(
+                    repo_id=database_repo_id,
+                    repo_type="dataset",
+                    filename=str(self.db_path),
+                    force_download=True,
+                    local_dir=".",
+                )
+                logger.info(
+                    "Downloaded the feedback database from the Hugging Face Hub."
+                )
+            # If the database or database repo does not exist, we skip this step
+            except (ValueError, EntryNotFoundError, RepositoryNotFoundError):
+                logger.info(
+                    "The feedback database or database repo does not exist. Skipping."
+                )
 
         # Upload config separately, as the user might have created overrides when
         # running this current session
@@ -316,24 +354,28 @@ class Demo:
         ]
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
-                raise FileNotFoundError(f"{path} does not exist. Please create it.")
+                raise FileNotFoundError(
+                    f"{str(path)!r} does not exist. Please create it."
+                )
 
         for folder in folders_to_upload:
+            logger.info(f"Uploading {str(folder)!r} folder to the hub...")
             api.upload_folder(
                 repo_id=space_repo_id,
                 repo_type="space",
                 folder_path=str(folder),
                 path_in_repo=str(folder),
-                commit_message=f"Upload {folder!r} folder to the hub.",
+                commit_message=f"Upload {str(folder)!r} folder to the hub.",
             )
 
         for path in files_to_upload:
+            logger.info(f"Uploading {str(path)!r} to the hub...")
             api.upload_file(
                 repo_id=space_repo_id,
                 repo_type="space",
                 path_or_fileobj=str(path),
                 path_in_repo=str(path),
-                commit_message=f"Upload {path!r} script to the hub.",
+                commit_message=f"Upload {str(path)!r} script to the hub.",
             )
 
         logger.info(
@@ -365,7 +407,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.demo.mode == "strict_feedback":
+        if self.config.demo.feedback == "strict-feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
