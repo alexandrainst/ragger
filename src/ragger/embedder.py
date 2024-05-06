@@ -81,6 +81,9 @@ class E5Embedder(Embedder):
         Returns:
             A list of embeddings, where each row corresponds to a document.
         """
+        if not documents:
+            return []
+
         logger.info(
             f"Building embeddings of {len(documents):,} documents with the E5 "
             f"model {self.config.embedder.model_id}..."

@@ -67,8 +67,10 @@ class RagSystem:
             for document in documents
             if document.id not in self.embedding_store.index_to_row_id
         ]
-        embeddings = self.embedder.embed_documents(documents_not_in_embedding_store)
-        self.embedding_store.add_embeddings(embeddings)
+        embeddings = self.embedder.embed_documents(
+            documents=documents_not_in_embedding_store
+        )
+        self.embedding_store.add_embeddings(embeddings=embeddings)
 
     def answer(
         self, query: str

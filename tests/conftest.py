@@ -58,7 +58,7 @@ def full_config(
             generator=dict(
                 name="openai",
                 api_key_variable_name="OPENAI_API_KEY",
-                model="gpt-3.5-turbo",
+                model="gpt-3.5-turbo-0125",
                 temperature=0.0,
                 stream=False,
                 timeout=60,
@@ -70,7 +70,7 @@ def full_config(
                 port=7860,
                 share=False,
                 password_protected=False,
-                mode="no_feedback",
+                feedback="no-feedback",
                 db_path=db_filename,
             ),
             verbose=False,
