@@ -5,7 +5,7 @@ host: localhost
 port: 7860
 
 # Feedback parameters
-mode: feedback
+mode: feedback  # Can be "no-feedback", "feedback" and "strict-feedback"
 db_path: ${dirs.final}/feedback.db
 
 # Demo sharing parameters

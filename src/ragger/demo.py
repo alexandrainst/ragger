@@ -68,7 +68,7 @@ class Demo:
 
         self.db_path = Path(config.dirs.data) / config.demo.db_path
         match self.config.demo.mode:
-            case "strict_feedback" | "feedback":
+            case "strict-feedback" | "feedback":
                 logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
                 with sqlite3.connect(self.db_path) as connection:
                     table_empty = not connection.execute("""
@@ -81,12 +81,12 @@ class Demo:
                             liked integer, document_ids text)
                         """)
                         connection.commit()
-            case "no_feedback":
+            case "no-feedback":
                 logger.info("No feedback will be collected.")
             case _:
                 raise ValueError(
-                    "The feedback mode must be one of 'strict_feedback', 'feedback', "
-                    "or 'no_feedback'."
+                    "The feedback mode must be one of 'strict-feedback', 'feedback', "
+                    "or 'no-feedback'."
                 )
 
     def build_demo(self) -> gr.Blocks:
@@ -127,7 +127,7 @@ class Demo:
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            if self.config.demo.mode in ["strict_feedback", "feedback"]:
+            if self.config.demo.mode in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
                         value=f"<b><center>{self.config.demo.feedback}</center></b>"
@@ -365,7 +365,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.demo.mode == "strict_feedback":
+        if self.config.demo.mode == "strict-feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
