@@ -269,6 +269,7 @@ class Demo:
                 exist_ok=True,
                 private=True,
             )
+            logger.info("Created the space on the hub.")
 
         # This environment variable is used to trigger the creation of a commit
         # scheduler when the demo is initialised, which will commit the final data
@@ -287,6 +288,8 @@ class Demo:
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
 
+        logger.info("Added environment variables and secrets to the space.")
+
         # The feedback database is stored in a separate repo, so we need to pull the
         # newest version of the database before pushing the demo to the hub
         if self.config.demo.mode in {"strict-feedback", "feedback"}:
@@ -298,9 +301,14 @@ class Demo:
                     force_download=True,
                     local_dir=str(self.db_path.parent),
                 )
+                logger.info(
+                    "Downloaded the feedback database from the Hugging Face Hub."
+                )
             # If the database or database repo does not exist, we skip this step
-            except (EntryNotFoundError, RepositoryNotFoundError):
-                pass
+            except (ValueError, EntryNotFoundError, RepositoryNotFoundError):
+                logger.info(
+                    "The feedback database or database repo does not exist. Skipping."
+                )
 
         # Upload config separately, as the user might have created overrides when
         # running this current session
@@ -341,6 +349,7 @@ class Demo:
                 raise FileNotFoundError(f"{path} does not exist. Please create it.")
 
         for folder in folders_to_upload:
+            logger.info(f"Uploading {folder!r} folder to the hub...")
             api.upload_folder(
                 repo_id=space_repo_id,
                 repo_type="space",
@@ -350,6 +359,7 @@ class Demo:
             )
 
         for path in files_to_upload:
+            logger.info(f"Uploading {path!r} script to the hub...")
             api.upload_file(
                 repo_id=space_repo_id,
                 repo_type="space",
