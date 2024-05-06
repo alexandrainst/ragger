@@ -12,7 +12,11 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 import gradio as gr
 import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi
-from huggingface_hub.utils import LocalTokenNotFoundError
+from huggingface_hub.utils import (
+    EntryNotFoundError,
+    LocalTokenNotFoundError,
+    RepositoryNotFoundError,
+)
 from omegaconf import DictConfig, OmegaConf
 
 from .rag_system import RagSystem
@@ -282,6 +286,21 @@ class Demo:
                 value=os.environ[self.config.generator.api_key_variable_name],
             )
 
+        # The feedback database is stored in a separate repo, so we need to pull the
+        # newest version of the database before pushing the demo to the hub
+        db_path = Path(self.config.dirs.data) / self.config.demo.db_path
+        try:
+            api.hf_hub_download(
+                repo_id=database_repo_id,
+                repo_type="dataset",
+                filename=str(db_path),
+                force_download=True,
+                local_dir=str(db_path.parent),
+            )
+        # If the database or database repo does not exist, we skip this step
+        except (EntryNotFoundError, RepositoryNotFoundError):
+            pass
+
         # Upload config separately, as the user might have created overrides when
         # running this current session
         with TemporaryDirectory() as temp_dir:
@@ -313,6 +332,7 @@ class Demo:
             Path("Dockerfile"),
             Path("pyproject.toml"),
             Path("poetry.lock"),
+            db_path,
         ]
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
