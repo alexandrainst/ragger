@@ -38,6 +38,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
+      - name: Log disk space
+        run: df -h
+
       - name: Install Dependencies
         run: |
           poetry env use "${{ matrix.python-version }}"
