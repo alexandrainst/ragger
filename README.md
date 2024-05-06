@@ -43,7 +43,12 @@ The general structure of the repository is based on the following classes:
 - The `Generator` class in the `generator` module generates answers from a query and a
   list of relevant documents.
 - The `Demo` class in the `demo` module wraps the `RagSystem` in a Gradio demo that can
-  be accessed in the browser. The demo has three modes (`demo.mode`), `no_feedback`, `feedback` and `strict_feedback`. `strict_feedback` requires the use to give feedback before the are allowed to ask further questions, `feedback` makes feedback optional, and `no_feedback` removes the feedback option.
+  be accessed in the browser. The demo has three feedback modes (`demo.mode`),
+  `no-feedback`, `feedback` and `strict-feedback`, where `feedback` allows the user to
+  give feedback and `strict-feedback` requires the user to give feedback. It also
+  features three sharing modes (`demo.share`), `no-share`, `temporary` and
+  `persistent`, where `temporary` shares the demo on a Gradio website for 72 hours, and
+  `persistent` pushes the demo to the Hugging Face Hub as a Hugging Face Space.
 
 The `DocumentStore`, `Embedder`, `EmbeddingStore` and `Generator` classes are all
 abstract, and can be subclassed to a concrete implementation, which depends on the
