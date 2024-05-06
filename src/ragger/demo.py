@@ -42,34 +42,6 @@ class Demo:
         """
         self.config = config
 
-        # This will only run when the demo is running in a Hugging Face Space
-        if os.getenv("RUNNING_IN_SPACE") == "1":
-            logger.info("Running in a Hugging Face space.")
-
-            # Suppress warnings when running in a Hugging Face space, as this causes
-            # the space to crash
-            warnings.filterwarnings(action="ignore")
-
-            # Initialise commit scheduler, which will commit files to the Hub at
-            # regular intervals
-            final_data_path = Path(self.config.dirs.data) / self.config.dirs.final
-            assert final_data_path.exists(), f"{final_data_path!r} does not exist!"
-            self.scheduler = CommitScheduler(
-                repo_id=self.config.demo.persistent_sharing.database_repo_id,
-                repo_type="dataset",
-                folder_path=final_data_path,
-                path_in_repo=str(final_data_path),
-                squash_history=True,
-                every=self.config.demo.db_update_frequency,
-                token=os.getenv(
-                    self.config.demo.persistent_sharing.token_variable_name
-                ),
-                private=True,
-            )
-
-        self.retrieved_documents: list[Document] = []
-        self.rag_system = RagSystem(config=config)
-
         self.db_path = Path(config.dirs.data) / config.demo.db_path
         match self.config.demo.mode:
             case "strict-feedback" | "feedback":
@@ -92,6 +64,35 @@ class Demo:
                     "The feedback mode must be one of 'strict-feedback', 'feedback', "
                     "or 'no-feedback'."
                 )
+
+        # This will only run when the demo is running in a Hugging Face Space
+        if os.getenv("RUNNING_IN_SPACE") == "1":
+            logger.info("Running in a Hugging Face space.")
+
+            # Suppress warnings when running in a Hugging Face space, as this causes
+            # the space to crash
+            warnings.filterwarnings(action="ignore")
+
+            # Initialise commit scheduler, which will commit files to the Hub at
+            # regular intervals
+            if self.config.demo.mode in {"strict-feedback", "feedback"}:
+                backup_dir = self.db_path.parent
+                assert backup_dir.exists(), f"{backup_dir!r} does not exist!"
+                self.scheduler = CommitScheduler(
+                    repo_id=self.config.demo.persistent_sharing.database_repo_id,
+                    repo_type="dataset",
+                    folder_path=backup_dir,
+                    path_in_repo=str(backup_dir),
+                    squash_history=True,
+                    every=self.config.demo.db_update_frequency,
+                    token=os.getenv(
+                        self.config.demo.persistent_sharing.token_variable_name
+                    ),
+                    private=True,
+                )
+
+        self.retrieved_documents: list[Document] = []
+        self.rag_system = RagSystem(config=config)
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -288,18 +289,18 @@ class Demo:
 
         # The feedback database is stored in a separate repo, so we need to pull the
         # newest version of the database before pushing the demo to the hub
-        db_path = Path(self.config.dirs.data) / self.config.demo.db_path
-        try:
-            api.hf_hub_download(
-                repo_id=database_repo_id,
-                repo_type="dataset",
-                filename=str(db_path),
-                force_download=True,
-                local_dir=str(db_path.parent),
-            )
-        # If the database or database repo does not exist, we skip this step
-        except (EntryNotFoundError, RepositoryNotFoundError):
-            pass
+        if self.config.demo.mode in {"strict-feedback", "feedback"}:
+            try:
+                api.hf_hub_download(
+                    repo_id=database_repo_id,
+                    repo_type="dataset",
+                    filename=str(self.db_path),
+                    force_download=True,
+                    local_dir=str(self.db_path.parent),
+                )
+            # If the database or database repo does not exist, we skip this step
+            except (EntryNotFoundError, RepositoryNotFoundError):
+                pass
 
         # Upload config separately, as the user might have created overrides when
         # running this current session
@@ -332,8 +333,9 @@ class Demo:
             Path("Dockerfile"),
             Path("pyproject.toml"),
             Path("poetry.lock"),
-            db_path,
         ]
+        if self.config.demo.mode in {"strict-feedback", "feedback"}:
+            files_to_upload.append(self.db_path)
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
                 raise FileNotFoundError(f"{path} does not exist. Please create it.")
