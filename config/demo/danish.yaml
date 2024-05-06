@@ -7,6 +7,7 @@ port: 7860
 # Feedback parameters
 mode: feedback  # Can be "no-feedback", "feedback" and "strict-feedback"
 db_path: ${dirs.final}/feedback.db
+db_update_frequency: 5
 
 # Demo sharing parameters
 share: no-share  # Can be "no-share", "temporary" or "persistent"

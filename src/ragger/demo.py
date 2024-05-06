@@ -60,7 +60,7 @@ class Demo:
                 folder_path=final_data_path,
                 path_in_repo=str(final_data_path),
                 squash_history=True,
-                every=5,
+                every=self.config.demo.db_update_frequency,
                 token=os.getenv(
                     self.config.demo.persistent_sharing.token_variable_name
                 ),
