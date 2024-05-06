@@ -149,7 +149,11 @@ class Demo:
 
                 input_box_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                        value=f"""
+                            <b><center>
+                            {self.config.demo.feedback_instruction}
+                            </center></b>
+                        """
                     ),
                     outputs=[directions],
                     queue=False,
@@ -305,7 +309,7 @@ class Demo:
                     repo_type="dataset",
                     filename=str(self.db_path),
                     force_download=True,
-                    local_dir=str(self.db_path.parent),
+                    local_dir=".",
                 )
                 logger.info(
                     "Downloaded the feedback database from the Hugging Face Hub."
@@ -352,26 +356,28 @@ class Demo:
             files_to_upload.append(self.db_path)
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
-                raise FileNotFoundError(f"{path} does not exist. Please create it.")
+                raise FileNotFoundError(
+                    f"{str(path)!r} does not exist. Please create it."
+                )
 
         for folder in folders_to_upload:
-            logger.info(f"Uploading {folder!r} folder to the hub...")
+            logger.info(f"Uploading {str(folder)!r} folder to the hub...")
             api.upload_folder(
                 repo_id=space_repo_id,
                 repo_type="space",
                 folder_path=str(folder),
                 path_in_repo=str(folder),
-                commit_message=f"Upload {folder!r} folder to the hub.",
+                commit_message=f"Upload {str(folder)!r} folder to the hub.",
             )
 
         for path in files_to_upload:
-            logger.info(f"Uploading {path!r} script to the hub...")
+            logger.info(f"Uploading {str(path)!r} to the hub...")
             api.upload_file(
                 repo_id=space_repo_id,
                 repo_type="space",
                 path_or_fileobj=str(path),
                 path_in_repo=str(path),
-                commit_message=f"Upload {path!r} script to the hub.",
+                commit_message=f"Upload {str(path)!r} script to the hub.",
             )
 
         logger.info(

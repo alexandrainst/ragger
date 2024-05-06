@@ -27,7 +27,7 @@ description: |
   En robot, der kan svare på alle dine spørgsmål!
 
   Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend' eller Enter knappen.
-feedback: |
+feedback_instruction: |
   Benyt 👍/👎 til at indikere om svaret er godt eller dårligt!
 thank_you_feedback: |
   Tak for dit svar! Skriv dit spørgsmål nedenfor og tryk på 'Indsend'.
