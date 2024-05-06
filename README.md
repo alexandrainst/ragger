@@ -43,7 +43,7 @@ The general structure of the repository is based on the following classes:
 - The `Generator` class in the `generator` module generates answers from a query and a
   list of relevant documents.
 - The `Demo` class in the `demo` module wraps the `RagSystem` in a Gradio demo that can
-  be accessed in the browser. The demo has three feedback modes (`demo.mode`),
+  be accessed in the browser. The demo has three feedback modes (`demo.feedback`),
   `no-feedback`, `feedback` and `strict-feedback`, where `feedback` allows the user to
   give feedback and `strict-feedback` requires the user to give feedback. It also
   features three sharing modes (`demo.share`), `no-share`, `temporary` and

@@ -43,9 +43,9 @@ class Demo:
         self.config = config
 
         self.db_path = Path(config.dirs.data) / config.demo.db_path
-        match self.config.demo.mode:
+        match self.config.demo.feedback:
             case "strict-feedback" | "feedback":
-                logger.info(f"Using the {self.config.demo.mode!r} feedback mode.")
+                logger.info(f"Using the {self.config.demo.feedback!r} feedback mode.")
                 with sqlite3.connect(self.db_path) as connection:
                     table_empty = not connection.execute("""
                         SELECT name FROM sqlite_master
@@ -75,7 +75,7 @@ class Demo:
 
             # Initialise commit scheduler, which will commit files to the Hub at
             # regular intervals
-            if self.config.demo.mode in {"strict-feedback", "feedback"}:
+            if self.config.demo.feedback in {"strict-feedback", "feedback"}:
                 backup_dir = self.db_path.parent
                 assert backup_dir.exists(), f"{backup_dir!r} does not exist!"
                 self.scheduler = CommitScheduler(
@@ -132,7 +132,7 @@ class Demo:
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            if self.config.demo.mode in ["strict-feedback", "feedback"]:
+            if self.config.demo.feedback in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
                         value=f"<b><center>{self.config.demo.feedback}</center></b>"
@@ -292,7 +292,7 @@ class Demo:
 
         # The feedback database is stored in a separate repo, so we need to pull the
         # newest version of the database before pushing the demo to the hub
-        if self.config.demo.mode in {"strict-feedback", "feedback"}:
+        if self.config.demo.feedback in {"strict-feedback", "feedback"}:
             try:
                 api.hf_hub_download(
                     repo_id=database_repo_id,
@@ -342,7 +342,7 @@ class Demo:
             Path("pyproject.toml"),
             Path("poetry.lock"),
         ]
-        if self.config.demo.mode in {"strict-feedback", "feedback"}:
+        if self.config.demo.feedback in {"strict-feedback", "feedback"}:
             files_to_upload.append(self.db_path)
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
@@ -397,7 +397,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.demo.mode == "strict-feedback":
+        if self.config.demo.feedback == "strict-feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
