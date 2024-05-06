@@ -352,8 +352,6 @@ class Demo:
             Path("pyproject.toml"),
             Path("poetry.lock"),
         ]
-        if self.config.demo.feedback in {"strict-feedback", "feedback"}:
-            files_to_upload.append(self.db_path)
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
                 raise FileNotFoundError(
