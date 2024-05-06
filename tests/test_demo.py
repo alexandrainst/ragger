@@ -17,7 +17,7 @@ def test_initialisation_no_feedback(full_config):
 def test_initialisation_feedback(full_config):
     """Test the initialisation of the demo."""
     config_copy = deepcopy(full_config)
-    for mode in ["strict_feedback", "feedback"]:
+    for mode in ["strict-feedback", "feedback"]:
         config_copy.demo.mode = mode
         Demo(config=config_copy)
         with sqlite3.connect(
