@@ -114,7 +114,9 @@ class Demo:
             directions = gr.components.HTML(
                 f"<b><center>{self.config.demo.description}</b></center>", label="p"
             )
-            chatbot = gr.Chatbot([], elem_id="chatbot", bubble_full_width=False)
+            chatbot = gr.Chatbot(
+                value=[], elem_id="chatbot", bubble_full_width=False, scale=1
+            )
             with gr.Row():
                 input_box = gr.Textbox(
                     scale=4,

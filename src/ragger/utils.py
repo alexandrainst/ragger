@@ -53,6 +53,7 @@ def format_answer(
         case _:
             answer += "\n\nKilder:\n\n"
     answer += "\n\n".join(
-        f'===  {document.id}  ===\n"{document.text}"' for document in documents
+        f"<details><summary>{document.id}</summary>{document.text}</details>"
+        for document in documents
     )
     return answer
