@@ -4,7 +4,7 @@
 A repository for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-69%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-65%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):

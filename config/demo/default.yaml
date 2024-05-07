@@ -1,0 +1,22 @@
+name: default
+host: localhost
+port: 7860
+feedback: feedback  # Can be "no-feedback", "feedback" and "strict-feedback"
+db_path: ${dirs.final}/feedback.db
+db_update_frequency: 5
+share: no-share  # Can be "no-share", "temporary" or "persistent"
+temporary_sharing:
+  username: null
+  password: null
+persistent_sharing:
+  space_repo_id: null
+  database_repo_id: null
+  token_variable_name: HF_HUB_TOKEN
+theme: monochrome
+title: ${..language.title}
+feedback_instruction: ${..language.feedback_instruction}
+thank_you_feedback: ${..language.thank_you_feedback}
+input_box_placeholder: ${..language.input_box_placeholder}
+submit_button_value: ${..language.submit_button_value}
+no_documents_reply: ${..language.no_documents_reply}
+description: ${..language.description}

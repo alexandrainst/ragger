@@ -3,7 +3,8 @@ defaults:
   - embedder: e5
   - embedding_store: numpy
   - generator: openai
-  - demo: danish
+  - demo: default
+  - language: danish
   - _self_
 
 dirs:
