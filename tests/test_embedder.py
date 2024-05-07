@@ -13,24 +13,12 @@ class TestE5Embedder:
     """Tests for the `Embedder` class."""
 
     @pytest.fixture(scope="class")
-    def config(self) -> typing.Generator[DictConfig, None, None]:
+    def config(
+        self, dirs_params, embedder_params
+    ) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
         yield DictConfig(
-            dict(
-                dirs=dict(
-                    data="data",
-                    raw="raw",
-                    processed="processed",
-                    final="final",
-                    models="models",
-                ),
-                embedder=dict(
-                    name="e5",
-                    model_id="intfloat/multilingual-e5-small",
-                    document_text_field="text",
-                ),
-                verbose=False,
-            )
+            dict(dirs=dirs_params, embedder=embedder_params, verbose=False)
         )
 
     @pytest.fixture(scope="class")
