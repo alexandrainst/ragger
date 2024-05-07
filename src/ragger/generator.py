@@ -17,7 +17,6 @@ from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 
-from .prompts import RAG_ANSWER_PROMPT, RAG_SYSTEM_PROMPT
 from .utils import Document, GeneratedAnswer
 
 load_dotenv()
@@ -92,10 +91,12 @@ class OpenAIGenerator(Generator):
             "documents..."
         )
         messages = [
-            ChatCompletionSystemMessageParam(role="system", content=RAG_SYSTEM_PROMPT),
+            ChatCompletionSystemMessageParam(
+                role="system", content=self.config.generator.system_prompt
+            ),
             ChatCompletionUserMessageParam(
                 role="user",
-                content=RAG_ANSWER_PROMPT.format(
+                content=self.config.generator.prompt.format(
                     documents=json.dumps(
                         [document.model_dump() for document in documents]
                     ),
@@ -109,7 +110,7 @@ class OpenAIGenerator(Generator):
             max_tokens=self.config.generator.max_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
-            stop=["</svar>"],
+            stop=["</answer>"],
             response_format=ResponseFormat(type="json_object"),
         )
         if isinstance(model_output, Stream):

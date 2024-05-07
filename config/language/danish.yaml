@@ -1,0 +1,48 @@
+name: danish
+
+# Demo parameters
+title: >
+  RAG Bot
+feedback_instruction: >
+  Benyt 👍/👎 til at indikere om svaret er godt eller dårligt!
+thank_you_feedback: >
+  Tak for dit svar! Skriv dit spørgsmål nedenfor og tryk på 'Indsend'.
+input_box_placeholder: >
+  Skriv dit spørgsmål her
+submit_button_value: >
+  Indsend
+no_documents_reply: >
+  Jeg er desværre ikke i stand til at svare på dit spørgsmål ud fra den viden, som
+  jeg har til rådighed. Beklager!
+description: |
+  En robot, der kan svare på alle dine spørgsmål!
+
+  Skriv dit spørgsmål i tekstboksen og tryk på 'Indsend' eller Enter knappen.
+
+# Generator parameters
+system_prompt: |
+    Du er en seniorkonsulent, som har til opgave at finde svar på spørgsmål ud fra en
+    række dokumenter.
+
+    Du vil altid referere til ID'erne på de dokumenter, som indeholder svaret, og *kun*
+    disse dokumenter. Du svarer altid på dansk.
+
+    Dit svar er i JSON-format, med keys "answer" og "sources" i din JSON dictionary.
+    Her er "answer" dit svar, og "sources" er en liste af ID'er på de dokumenter, som
+    du baserer dit svar på.
+prompt: |
+    Her er en række dokumenter, som du skal basere din besvarelse på.
+
+    <documents>
+    {documents}
+    </documents>
+
+    Ud fra disse dokumenter, hvad er svaret på følgende spørgsmål?
+
+    <question>
+    {query}
+    </question>
+
+    Husk at du altid skal svare på dansk.
+
+    <answer>

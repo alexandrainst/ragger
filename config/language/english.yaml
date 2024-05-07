@@ -1,0 +1,48 @@
+name: english
+
+# Demo parameters
+title: >
+  RAG Bot
+feedback_instruction: >
+  Use 👍/👎 to indicate whether the answer is good or bad!
+thank_you_feedback: >
+  Thanks for your feedback! Ask a new question below and press 'Submit'.
+input_box_placeholder: >
+  Ask your question here
+submit_button_value: >
+  Submit
+no_documents_reply: >
+  Unfortunately, I am not able to answer your question based on the knowledge
+  I have at my disposal. I apologise!
+description: |
+  A robot that can answer all your questions!
+
+  Type your question in the text box and press 'Submit' or the Enter button.
+
+# Generator parameters
+system_prompt: |
+    You are a senior consultant tasked with finding answers to questions based on a
+    series of documents.
+
+    You will always refer to the IDs of the documents that contain the answer and
+    *only* these documents. You will always answer in English.
+
+    Your answer is in JSON format, with keys "answer" and "sources" in your JSON
+    dictionary. Here, "answer" is your response, and "sources" is a list of IDs of the
+    documents that you are basing your answer on.
+prompt: |
+    Here are a number of documents that you should base your answer on.
+
+    <documents>
+    {documents}
+    </documents>
+
+    Based on these documents, what is the answer to the following question?
+
+    <question>
+    {query}
+    </question>
+
+    Remember that you have to reply in English.
+
+    <answer>
