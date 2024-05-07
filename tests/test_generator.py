@@ -12,21 +12,9 @@ class TestOpenAIGenerator:
     """Tests for the `OpenAIGenerator` class."""
 
     @pytest.fixture(scope="class")
-    def config(self) -> typing.Generator[DictConfig, None, None]:
+    def config(self, generator_params) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
-        yield DictConfig(
-            dict(
-                generator=dict(
-                    name="openai",
-                    api_key_variable_name="OPENAI_API_KEY",
-                    model="gpt-3.5-turbo-0125",
-                    temperature=0.0,
-                    stream=False,
-                    timeout=60,
-                    max_tokens=128,
-                )
-            )
-        )
+        yield DictConfig(dict(generator=generator_params))
 
     @pytest.fixture(scope="class")
     def documents(self) -> typing.Generator[list[Document], None, None]:
