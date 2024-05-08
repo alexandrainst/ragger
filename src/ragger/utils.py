@@ -1,5 +1,7 @@
 """Utility constants and functions used in the project."""
 
+import re
+
 from .data_models import Document
 
 
@@ -51,4 +53,5 @@ def is_link(text: str) -> bool:
     Returns:
         Whether the text is a link.
     """
-    return text.startswith("http://") or text.startswith("https://")
+    url_regex = r"(https?:\/\/)?(\w+\.)+\w{2,4}(\/#?\w+)*?(\/\w+\.\w{1,4}){0,1}"
+    return re.match(pattern=url_regex, string=text) is not None
