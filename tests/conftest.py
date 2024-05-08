@@ -1,11 +1,11 @@
 """Test fixtures used throughout the test suite."""
 
-import json
 import typing
 from tempfile import NamedTemporaryFile
 
 import pytest
 from omegaconf import DictConfig
+from ragger.data_models import Document
 
 
 @pytest.fixture(scope="session")
@@ -55,17 +55,22 @@ def dirs_params() -> typing.Generator[dict, None, None]:
 
 
 @pytest.fixture(scope="session")
-def document_store_params() -> typing.Generator[dict, None, None]:
+def documents() -> typing.Generator[list[Document], None, None]:
+    """Some documents for testing."""
+    yield [
+        Document(id="1", text="Den hvide kat hedder Sjusk."),
+        Document(id="2", text="Den sorte kat hedder Sutsko."),
+        Document(id="3", text="Den røde kat hedder Pjuskebusk."),
+        Document(id="4", text="Den grønne kat hedder Sjask."),
+        Document(id="5", text="Den blå kat hedder Sky."),
+    ]
+
+
+@pytest.fixture(scope="session")
+def document_store_params(documents) -> typing.Generator[dict, None, None]:
     """Parameters for the document store."""
     with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
-        data_dicts = [
-            dict(id="1", text="Den hvide kat hedder Sjusk."),
-            dict(id="2", text="Den sorte kat hedder Sutsko."),
-            dict(id="3", text="Den røde kat hedder Pjuskebusk."),
-            dict(id="4", text="Den grønne kat hedder Sjask."),
-            dict(id="5", text="Den blå kat hedder Sky."),
-        ]
-        data_str = "\n".join(json.dumps(data_dict) for data_dict in data_dicts)
+        data_str = "\n".join(document.model_dump() for document in documents)
         file.write(data_str)
         file.flush()
         yield dict(name="jsonl", filename=file.name)
