@@ -12,7 +12,7 @@ import numpy as np
 from omegaconf import DictConfig
 from transformers import AutoConfig
 
-from .utils import Embedding, Index
+from .data_models import Embedding, Index
 
 logger = logging.getLogger(__package__)
 

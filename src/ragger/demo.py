@@ -19,8 +19,9 @@ from huggingface_hub.utils import (
 )
 from omegaconf import DictConfig, OmegaConf
 
+from .data_models import Document
 from .rag_system import RagSystem
-from .utils import Document, format_answer
+from .utils import format_answer
 
 Message = str | None
 Exchange = tuple[Message, Message]

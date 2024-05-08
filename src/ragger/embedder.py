@@ -9,7 +9,7 @@ import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
 
-from .utils import Document, Embedding
+from .data_models import Document, Embedding
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 

@@ -5,11 +5,12 @@ import typing
 
 from omegaconf import DictConfig
 
+from .data_models import Document, GeneratedAnswer
 from .document_store import DocumentStore, JsonlDocumentStore
 from .embedder import E5Embedder, Embedder
 from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
 from .generator import Generator, OpenAIGenerator
-from .utils import Document, GeneratedAnswer, format_answer
+from .utils import format_answer
 
 logger = logging.getLogger(__package__)
 
