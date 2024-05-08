@@ -5,8 +5,8 @@ import typing
 import numpy as np
 import pytest
 from omegaconf import DictConfig
+from ragger.data_models import Document, Embedding
 from ragger.embedder import E5Embedder, Embedder
-from ragger.utils import Document, Embedding
 
 
 class TestE5Embedder:

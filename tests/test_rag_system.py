@@ -4,8 +4,8 @@ import typing
 from copy import deepcopy
 
 import pytest
+from ragger.data_models import Document
 from ragger.rag_system import RagSystem
-from ragger.utils import Document
 
 
 @pytest.fixture(scope="module")
