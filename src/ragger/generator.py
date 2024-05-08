@@ -17,7 +17,7 @@ from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 
-from .utils import Document, GeneratedAnswer
+from .data_models import Document, GeneratedAnswer
 
 load_dotenv()
 

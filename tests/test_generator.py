@@ -4,8 +4,8 @@ import typing
 
 import pytest
 from omegaconf import DictConfig
+from ragger.data_models import Document, GeneratedAnswer
 from ragger.generator import Generator, OpenAIGenerator
-from ragger.utils import Document, GeneratedAnswer
 
 
 class TestOpenAIGenerator:
