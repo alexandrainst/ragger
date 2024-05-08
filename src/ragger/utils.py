@@ -52,8 +52,29 @@ def format_answer(
             answer += "\n\nKilde:\n\n"
         case _:
             answer += "\n\nKilder:\n\n"
-    answer += "\n\n".join(
-        f"<details><summary>{document.id}</summary>{document.text}</details>"
+
+    formatted_ids = [
+        f"<a href='{document.id}'>{document.id}</a>"
+        if is_link(text=document.id)
+        else document.id
         for document in documents
+    ]
+
+    answer += "\n\n".join(
+        f"<details><summary>{formatted_id}</summary>{document.text}</details>"
+        for formatted_id, document in zip(formatted_ids, documents)
     )
     return answer
+
+
+def is_link(text: str) -> bool:
+    """Check if the text is a link.
+
+    Args:
+        text:
+            The text to check.
+
+    Returns:
+        Whether the text is a link.
+    """
+    return text.startswith("http://") or text.startswith("https://")
