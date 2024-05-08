@@ -70,7 +70,7 @@ def documents() -> typing.Generator[list[Document], None, None]:
 def document_store_params(documents) -> typing.Generator[dict, None, None]:
     """Parameters for the document store."""
     with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
-        data_str = "\n".join(document.model_dump() for document in documents)
+        data_str = "\n".join(document.model_dump_json() for document in documents)
         file.write(data_str)
         file.flush()
         yield dict(name="jsonl", filename=file.name)
