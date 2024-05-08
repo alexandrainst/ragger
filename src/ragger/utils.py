@@ -53,5 +53,11 @@ def is_link(text: str) -> bool:
     Returns:
         Whether the text is a link.
     """
-    url_regex = r"(https?:\/\/)?(\w+\.)+\w{2,4}(\/#?\w+)*?(\/\w+\.\w{1,4}){0,1}"
+    url_regex = (
+        r"^(https?:\/\/)?"  # Begins with http:// or https://, or neither
+        r"(\w+\.)+"  # Then one or more blocks of lower-case letters and a dot
+        r"\w{2,4}"  # Then two to four lower-case letters (e.g., .com, .dk, .org)
+        r"(\/#?\w+)*?"  # Optionally followed by subdirectories or anchors
+        r"(\/\w+\.\w{1,4})?"  # Optionally followed by a file suffix (e.g., .html)
+    )
     return re.match(pattern=url_regex, string=text) is not None
