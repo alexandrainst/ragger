@@ -144,7 +144,11 @@ class Demo:
             if self.config.demo.feedback in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                        value=f"""
+                            <b><center>
+                            {self.config.demo.feedback_instruction}
+                            </center></b>
+                        """
                     ),
                     outputs=[directions],
                     queue=False,
