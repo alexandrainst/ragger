@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
+from transformers import AutoConfig
 
 from .data_models import Document, Embedding
 
@@ -55,6 +56,25 @@ class Embedder(ABC):
         """
         ...
 
+    @abstractmethod
+    def tokenize(self, text: str | list[str]) -> np.array:
+        """Tokenize a text.
+
+        Args:
+            text:
+                The text or texts to tokenize.
+
+        Returns:
+            The tokens of the text.
+        """
+        ...
+
+    @property
+    @abstractmethod
+    def max_context_length(self) -> int:
+        """The maximum length of the context that the embedder can handle."""
+        ...
+
 
 class E5Embedder(Embedder):
     """An embedder that uses an E5 model to embed documents."""
@@ -70,6 +90,24 @@ class E5Embedder(Embedder):
         self.embedder = SentenceTransformer(
             self.config.embedder.model_id, cache_folder=self.config.dirs.models
         )
+
+    @property
+    def max_context_length(self) -> int:
+        """The maximum length of the context that the embedder can handle."""
+        embedder_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
+        return embedder_config.max_position_embeddings
+
+    def tokenize(self, text: str | list[str]) -> np.array:
+        """Tokenize a text.
+
+        Args:
+            text:
+                The text or texts to tokenize.
+
+        Returns:
+            The tokens of the text.
+        """
+        return self.embedder.tokenize(text)
 
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
