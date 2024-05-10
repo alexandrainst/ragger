@@ -8,7 +8,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
-from transformers import AutoConfig
 
 from .data_models import Document, Embedding
 
@@ -94,8 +93,7 @@ class E5Embedder(Embedder):
     @property
     def max_context_length(self) -> int:
         """The maximum length of the context that the embedder can handle."""
-        embedder_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
-        return embedder_config.max_position_embeddings
+        return self.embedder.tokenizer.model_max_length
 
     def tokenize(self, text: str | list[str]) -> np.array:
         """Tokenize a text.
