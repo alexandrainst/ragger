@@ -2,7 +2,13 @@
 
 import re
 
+from omegaconf import DictConfig
+
 from .data_models import Document
+from .document_store import DocumentStore, JsonlDocumentStore
+from .embedder import E5Embedder, Embedder
+from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
+from .generator import Generator, OpenAIGenerator
 
 
 def format_answer(
@@ -61,3 +67,47 @@ def is_link(text: str) -> bool:
         r"(\/\w+\.\w{1,4})?"  # Optionally followed by a file suffix (e.g., .html)
     )
     return re.match(pattern=url_regex, string=text) is not None
+
+
+def load_ragger_components(
+    config: DictConfig,
+) -> dict[
+    str, type[DocumentStore] | type[Embedder] | type[EmbeddingStore] | type[Generator]
+]:
+    """Load the components of the RAG system.
+
+    Args:
+        config:
+            The Hydra configuration.
+
+    """
+    match name := config.document_store.name:
+        case "jsonl":
+            document_store = JsonlDocumentStore
+        case _:
+            raise ValueError(f"The DocumentStore type {name!r} is not supported")
+
+    match name := config.embedder.name:
+        case "e5":
+            embedder = E5Embedder
+        case _:
+            raise ValueError(f"The Embedder type {name!r} is not supported")
+
+    match name := config.embedding_store.name:
+        case "numpy":
+            embedding_store = NumpyEmbeddingStore
+        case _:
+            raise ValueError(f"The EmbeddingStore type {name!r} is not supported")
+
+    match name := config.generator.name:
+        case "openai":
+            generator = OpenAIGenerator
+        case _:
+            raise ValueError(f"The Generator type {name!r} is not supported")
+
+    return {
+        "document_store": document_store,
+        "embedder": embedder,
+        "embedding_store": embedding_store,
+        "generator": generator,
+    }

@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
+from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, Embedding
 
@@ -28,6 +29,13 @@ class Embedder(ABC):
                 The Hydra configuration.
         """
         self.config = config
+
+    def compile(self) -> None:
+        """Compile the embedder.
+
+        This method loads any necessary resources and prepares the embedder for use.
+        """
+        pass
 
     @abstractmethod
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
@@ -86,14 +94,23 @@ class E5Embedder(Embedder):
                 The Hydra configuration.
         """
         super().__init__(config)
-        self.embedder = SentenceTransformer(
-            self.config.embedder.model_id, cache_folder=self.config.dirs.models
-        )
+        self.embedder = None
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config.embedder.model_id)
+        self.model_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
+
+    def compile(self) -> None:
+        """Compile the E5 embedder.
+
+        This method loads the E5 model and prepares it for use.
+        """
+        logger.info("Initialising the E5 model...")
+        self.embedder = SentenceTransformer(self.config.embedder.model_id)
+        logger.info("Finished initialising the E5 model.")
 
     @property
     def max_context_length(self) -> int:
         """The maximum length of the context that the embedder can handle."""
-        return self.embedder.tokenizer.model_max_length
+        return self.tokenizer.model_max_length
 
     def tokenize(self, text: str | list[str]) -> np.array:
         """Tokenize a text.
@@ -105,7 +122,7 @@ class E5Embedder(Embedder):
         Returns:
             The tokens of the text.
         """
-        return self.embedder.tokenize(text)
+        return self.tokenizer.tokenize(text)
 
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
@@ -117,6 +134,9 @@ class E5Embedder(Embedder):
         Returns:
             A list of embeddings, where each row corresponds to a document.
         """
+        if self.embedder is None:
+            self.compile()
+
         if not documents:
             return []
 
@@ -130,6 +150,7 @@ class E5Embedder(Embedder):
         prepared_texts = self._prepare_texts_for_embedding(texts=texts)
 
         # Embed the texts
+        assert self.embedder is not None
         embedding_matrix = self.embedder.encode(
             sentences=prepared_texts,
             normalize_embeddings=True,
@@ -154,8 +175,12 @@ class E5Embedder(Embedder):
         Returns:
             The embedding of the query.
         """
+        if self.embedder is None:
+            self.compile()
         logger.info(f"Embedding the query '{query}' with the E5 model...")
         prepared_query = self._prepare_query_for_embedding(query=query)
+
+        assert self.embedder is not None
         query_embedding = self.embedder.encode(
             sentences=[prepared_query],
             normalize_embeddings=True,
