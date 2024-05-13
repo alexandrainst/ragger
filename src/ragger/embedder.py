@@ -95,10 +95,7 @@ class E5Embedder(Embedder):
         """
         super().__init__(config)
         self.embedder = None
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.config.embedder.model_id,
-            model_max_length=self.config.embedder.max_context_length,
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config.embedder.model_id)
         self.model_config = AutoConfig.from_pretrained(
             self.config.embedder.model_id, cache_dir=self.config.dirs.models
         )
@@ -128,23 +125,6 @@ class E5Embedder(Embedder):
             The tokens of the text.
         """
         return self.tokenizer.tokenize(text)
-
-    @property
-    def max_context_length(self) -> int:
-        """The maximum length of the context that the embedder can handle."""
-        return self.embedder.tokenizer.model_max_length
-
-    def tokenize(self, text: str | list[str]) -> np.array:
-        """Tokenize a text.
-
-        Args:
-            text:
-                The text or texts to tokenize.
-
-        Returns:
-            The tokens of the text.
-        """
-        return self.embedder.tokenize(text)
 
     def embed_documents(self, documents: list[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
