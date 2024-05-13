@@ -73,6 +73,22 @@ class RagSystem:
         )
         self.embedding_store.add_embeddings(embeddings=embeddings)
 
+    def get_relevant_documents(self, query: str) -> list[Document]:
+        """Get the most relevant documents for a query.
+
+        Args:
+            query:
+                The query to find relevant documents for.
+
+        Returns:
+            The most relevant documents.
+        """
+        query_embedding = self.embedder.embed_query(query)
+        nearest_neighbours = self.embedding_store.get_nearest_neighbours(
+            query_embedding
+        )
+        return [self.document_store[i] for i in nearest_neighbours]
+
     def answer(
         self, query: str
     ) -> (
@@ -88,13 +104,8 @@ class RagSystem:
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        query_embedding = self.embedder.embed_query(query)
-        nearest_neighbours = self.embedding_store.get_nearest_neighbours(
-            query_embedding
-        )
-        generated_answer = self.generator.generate(
-            query=query, documents=[self.document_store[i] for i in nearest_neighbours]
-        )
+        documents = self.get_relevant_documents(query=query)
+        generated_answer = self.generator.generate(query=query, documents=documents)
         if isinstance(generated_answer, typing.Generator):
 
             def streamer() -> typing.Generator[tuple[str, list[Document]], None, None]:
