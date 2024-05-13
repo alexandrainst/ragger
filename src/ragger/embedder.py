@@ -33,7 +33,7 @@ class Embedder(ABC):
     def compile(self) -> None:
         """Compile the embedder.
 
-        This method can be called whenever the data needs to be updated.
+        This method loads any necessary resources and prepares the embedder for use.
         """
         pass
 
@@ -96,14 +96,12 @@ class E5Embedder(Embedder):
         super().__init__(config)
         self.embedder = None
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.embedder.model_id)
-        self.model_config = AutoConfig.from_pretrained(
-            self.config.embedder.model_id, cache_dir=self.config.dirs.models
-        )
+        self.model_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
 
     def compile(self) -> None:
         """Compile the E5 embedder.
 
-        This method can be called whenever the data needs to be updated.
+        This method loads the E5 model and prepares it for use.
         """
         logger.info("Initialising the E5 model...")
         self.embedder = SentenceTransformer(self.config.embedder.model_id)
