@@ -19,8 +19,9 @@ from huggingface_hub.utils import (
 )
 from omegaconf import DictConfig, OmegaConf
 
+from .data_models import Document
 from .rag_system import RagSystem
-from .utils import Document, format_answer
+from .utils import format_answer
 
 Message = str | None
 Exchange = tuple[Message, Message]
@@ -143,7 +144,11 @@ class Demo:
             if self.config.demo.feedback in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
-                        value=f"<b><center>{self.config.demo.feedback}</center></b>"
+                        value=f"""
+                            <b><center>
+                            {self.config.demo.feedback_instruction}
+                            </center></b>
+                        """
                     ),
                     outputs=[directions],
                     queue=False,

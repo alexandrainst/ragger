@@ -6,7 +6,7 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 
-from .utils import Document, Index
+from .data_models import Document, Index
 
 
 class DocumentStore(ABC):

@@ -12,7 +12,7 @@ import numpy as np
 from omegaconf import DictConfig
 from transformers import AutoConfig
 
-from .utils import Embedding, Index
+from .data_models import Embedding, Index
 
 logger = logging.getLogger(__package__)
 
@@ -49,6 +49,19 @@ class EmbeddingStore(ABC):
 
         Returns:
             A list of indices of the nearest neighbours.
+        """
+        ...
+
+    @abstractmethod
+    def document_exists_in_store(self, document_id: Index) -> bool:
+        """Check if a document exists in the store.
+
+        Args:
+            document_id:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
         """
         ...
 
@@ -229,3 +242,15 @@ class NumpyEmbeddingStore(EmbeddingStore):
         nearest_neighbours = [self.row_id_to_index[i] for i in top_indices]
         logger.info(f"Found nearest neighbours with indices {top_indices}.")
         return nearest_neighbours
+
+    def document_exists_in_store(self, document_id: Index) -> bool:
+        """Check if a document exists in the store.
+
+        Args:
+            document_id:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        return document_id in self.index_to_row_id

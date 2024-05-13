@@ -5,11 +5,12 @@ import typing
 
 from omegaconf import DictConfig
 
-from .document_store import DocumentStore, JsonlDocumentStore
-from .embedder import E5Embedder, Embedder
-from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
-from .generator import Generator, OpenAIGenerator
-from .utils import Document, GeneratedAnswer, format_answer
+from .data_models import Document, GeneratedAnswer
+from .document_store import DocumentStore
+from .embedder import Embedder
+from .embedding_store import EmbeddingStore
+from .generator import Generator
+from .utils import format_answer, load_ragger_components
 
 logger = logging.getLogger(__package__)
 
@@ -37,40 +38,37 @@ class RagSystem:
         This builds the underlying embedding store and can be called whenever the data
         needs to be updated.
         """
-        match name := self.config.document_store.name:
-            case "jsonl":
-                self.document_store = JsonlDocumentStore(config=self.config)
-            case _:
-                raise ValueError(f"The DocumentStore type {name!r} is not supported")
-
-        match name := self.config.embedder.name:
-            case "e5":
-                self.embedder = E5Embedder(config=self.config)
-            case _:
-                raise ValueError(f"The Embedder type {name!r} is not supported")
-
-        match name := self.config.embedding_store.name:
-            case "numpy":
-                self.embedding_store = NumpyEmbeddingStore(config=self.config)
-            case _:
-                raise ValueError(f"The EmbeddingStore type {name!r} is not supported")
-
-        match name := self.config.generator.name:
-            case "openai":
-                self.generator = OpenAIGenerator(config=self.config)
-            case _:
-                raise ValueError(f"The Generator type {name!r} is not supported")
+        components = load_ragger_components(config=self.config)
+        for component_name, component_class in components.items():
+            setattr(self, component_name, component_class(config=self.config))
 
         documents = self.document_store.get_all_documents()
         documents_not_in_embedding_store = [
             document
             for document in documents
-            if document.id not in self.embedding_store.index_to_row_id
+            if not self.embedding_store.document_exists_in_store(document.id)
         ]
+
         embeddings = self.embedder.embed_documents(
             documents=documents_not_in_embedding_store
         )
         self.embedding_store.add_embeddings(embeddings=embeddings)
+
+    def get_relevant_documents(self, query: str) -> list[Document]:
+        """Get the most relevant documents for a query.
+
+        Args:
+            query:
+                The query to find relevant documents for.
+
+        Returns:
+            The most relevant documents.
+        """
+        query_embedding = self.embedder.embed_query(query)
+        nearest_neighbours = self.embedding_store.get_nearest_neighbours(
+            query_embedding
+        )
+        return [self.document_store[i] for i in nearest_neighbours]
 
     def answer(
         self, query: str
@@ -87,13 +85,8 @@ class RagSystem:
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        query_embedding = self.embedder.embed_query(query)
-        nearest_neighbours = self.embedding_store.get_nearest_neighbours(
-            query_embedding
-        )
-        generated_answer = self.generator.generate(
-            query=query, documents=[self.document_store[i] for i in nearest_neighbours]
-        )
+        documents = self.get_relevant_documents(query=query)
+        generated_answer = self.generator.generate(query=query, documents=documents)
         if isinstance(generated_answer, typing.Generator):
 
             def streamer() -> typing.Generator[tuple[str, list[Document]], None, None]:

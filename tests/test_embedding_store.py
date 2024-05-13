@@ -6,8 +6,8 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 import pytest
 from omegaconf import DictConfig
+from ragger.data_models import Embedding
 from ragger.embedding_store import EmbeddingStore, NumpyEmbeddingStore
-from ragger.utils import Embedding
 
 
 class TestNumpyEmbeddingStore:
