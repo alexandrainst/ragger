@@ -52,6 +52,19 @@ class EmbeddingStore(ABC):
         """
         ...
 
+    @abstractmethod
+    def document_exists_in_store(self, document_id: Index) -> bool:
+        """Check if a document exists in the store.
+
+        Args:
+            document_id:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        ...
+
 
 class NumpyEmbeddingStore(EmbeddingStore):
     """An embedding store that fetches embeddings from a NumPy file."""
@@ -229,3 +242,15 @@ class NumpyEmbeddingStore(EmbeddingStore):
         nearest_neighbours = [self.row_id_to_index[i] for i in top_indices]
         logger.info(f"Found nearest neighbours with indices {top_indices}.")
         return nearest_neighbours
+
+    def document_exists_in_store(self, document_id: Index) -> bool:
+        """Check if a document exists in the store.
+
+        Args:
+            document_id:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        return document_id in self.index_to_row_id

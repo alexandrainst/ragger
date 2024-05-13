@@ -43,14 +43,11 @@ class RagSystem:
             setattr(self, component_name, component_class(config=self.config))
 
         documents = self.document_store.get_all_documents()
-        if hasattr(self.embedding_store, "index_to_row_id"):
-            documents_not_in_embedding_store = [
-                document
-                for document in documents
-                if document.id not in self.embedding_store.index_to_row_id
-            ]
-        else:
-            documents_not_in_embedding_store = documents
+        documents_not_in_embedding_store = [
+            document
+            for document in documents
+            if not self.embedding_store.document_exists_in_store(document.id)
+        ]
 
         embeddings = self.embedder.embed_documents(
             documents=documents_not_in_embedding_store
