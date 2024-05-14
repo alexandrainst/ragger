@@ -441,8 +441,12 @@ class Demo:
             generated_answer = ""
             documents: list[Document] = []
             for generated_answer, documents in answer_or_stream:
-                assert isinstance(generated_answer, str)
-                history[-1] = (None, generated_answer)
+                formatted_answer = format_answer(
+                    answer=generated_answer,
+                    documents=documents,
+                    no_documents_reply=self.config.demo.no_documents_reply,
+                )
+                history[-1] = (None, formatted_answer)
                 yield history
         else:
             generated_answer, documents = answer_or_stream

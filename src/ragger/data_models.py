@@ -1,7 +1,10 @@
 """Data models used in the RAG system."""
 
+from typing import Annotated
+
+import annotated_types
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 Index = str
 
@@ -25,5 +28,5 @@ class Embedding(BaseModel):
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    answer: str
-    sources: list[Index] = Field(default_factory=list)
+    sources: list[Annotated[Index, annotated_types.Len(min_length=1)]]
+    answer: str = ""

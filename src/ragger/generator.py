@@ -117,7 +117,7 @@ class OpenAIGenerator(Generator):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
                 generated_output = ""
-                generated_obj = GeneratedAnswer(answer="")
+                generated_obj = GeneratedAnswer(sources=[])
                 for chunk in model_output:
                     chunk_str = chunk.choices[0].delta.content
                     if chunk_str is None:
@@ -127,7 +127,10 @@ class OpenAIGenerator(Generator):
                         generated_dict = from_json(
                             data=generated_output, allow_partial=True
                         )
-                        if "answer" not in generated_dict:
+                        if (
+                            "sources" in generated_dict
+                            and "answer" not in generated_dict
+                        ):
                             generated_dict = from_json(
                                 data=generated_output + '"', allow_partial=True
                             )
