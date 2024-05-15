@@ -1,3 +1,3 @@
 name: numpy
 num_documents_to_retrieve: 5
-embedding_path: ${dirs.processed}/embedding_store.zip
+filename: embedding_store.zip

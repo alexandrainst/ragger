@@ -2,6 +2,7 @@
 
 import logging
 import typing
+from pathlib import Path
 
 from omegaconf import DictConfig
 
@@ -32,15 +33,34 @@ class RagSystem:
         self.generator: Generator
         self.compile()
 
-    def compile(self) -> None:
+    def compile(self, force: bool = False) -> "RagSystem":
         """Compile the RAG system.
 
         This builds the underlying embedding store and can be called whenever the data
         needs to be updated.
+
+        Args:
+            force:
+                Whether to force a recompilation. This deletes the existing embedding
+                store and rebuilds it.
         """
         components = load_ragger_components(config=self.config)
         for component_name, component_class in components.items():
             setattr(self, component_name, component_class(config=self.config))
+
+        if force:
+            document_store_path = (
+                Path(self.config.dirs.data)
+                / self.config.dirs.processed
+                / self.config.document_store.filename
+            )
+            embedding_store_path = (
+                Path(self.config.dirs.data)
+                / self.config.dirs.processed
+                / self.config.embedding_store.filename
+            )
+            document_store_path.unlink(missing_ok=True)
+            embedding_store_path.unlink(missing_ok=True)
 
         documents = self.document_store.get_all_documents()
         documents_not_in_embedding_store = [
@@ -53,6 +73,7 @@ class RagSystem:
             documents=documents_not_in_embedding_store
         )
         self.embedding_store.add_embeddings(embeddings=embeddings)
+        return self
 
     def get_relevant_documents(self, query: str) -> list[Document]:
         """Get the most relevant documents for a query.
@@ -90,7 +111,7 @@ class RagSystem:
         if isinstance(generated_answer, typing.Generator):
 
             def streamer() -> typing.Generator[tuple[str, list[Document]], None, None]:
-                answer = GeneratedAnswer(answer="")
+                answer = GeneratedAnswer(sources=[])
                 for answer in generated_answer:
                     assert isinstance(answer, GeneratedAnswer)
                     yield (

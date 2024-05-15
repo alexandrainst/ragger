@@ -76,21 +76,27 @@ class NumpyEmbeddingStore(EmbeddingStore):
             config:
                 The Hydra configuration.
         """
-        super().__init__(config)
+        super().__init__(config=config)
         self.embedding_dim = self._get_embedding_dimension()
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
+        self.embedding_store_path = (
+            (
+                Path(self.config.dirs.data)
+                / self.config.dirs.processed
+                / self.config.embedding_store.filename
+            )
+            if self.config.embedding_store.filename is not None
+            else None
+        )
         self.load_embeddings_if_exists()
 
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
-        if self.config.embedding_store.embedding_path is None:
+        if self.embedding_store_path is None:
             return
-        embedding_store_path = (
-            Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-        )
-        if embedding_store_path.exists():
-            self.load(path=embedding_store_path)
+        if self.embedding_store_path.exists():
+            self.load(path=self.embedding_store_path)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -151,11 +157,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Added embeddings to the embedding store.")
 
-        if self.config.embedding_store.embedding_path is not None:
-            embedding_store_path = (
-                Path(self.config.dirs.data) / self.config.embedding_store.embedding_path
-            )
-            self.save(path=embedding_store_path)
+        if self.embedding_store_path is not None:
+            self.save(path=self.embedding_store_path)
 
     def reset(self) -> None:
         """This resets the embeddings store."""

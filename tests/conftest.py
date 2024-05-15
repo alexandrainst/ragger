@@ -87,7 +87,7 @@ def embedder_params() -> typing.Generator[dict, None, None]:
 @pytest.fixture(scope="session")
 def embedding_store_params() -> typing.Generator[dict, None, None]:
     """Parameters for the embedding store."""
-    yield dict(name="numpy", num_documents_to_retrieve=2, embedding_path=None)
+    yield dict(name="numpy", num_documents_to_retrieve=2, filename=None)
 
 
 @pytest.fixture(scope="session")

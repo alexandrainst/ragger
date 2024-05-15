@@ -1,2 +1,2 @@
 name: jsonl
-filename: ${dirs.processed}/document_store.jsonl
+filename: document_store.jsonl
