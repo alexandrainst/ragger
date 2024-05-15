@@ -46,20 +46,15 @@ class RagSystem:
         """
         components = load_ragger_components(config=self.config)
         for component_name, component_class in components.items():
-            setattr(self, component_name, component_class(config=self.config))
+            if not hasattr(self, component_name) or force:
+                setattr(self, component_name, component_class(config=self.config))
 
         if force:
-            document_store_path = (
-                Path(self.config.dirs.data)
-                / self.config.dirs.processed
-                / self.config.document_store.filename
-            )
             embedding_store_path = (
                 Path(self.config.dirs.data)
                 / self.config.dirs.processed
                 / self.config.embedding_store.filename
             )
-            document_store_path.unlink(missing_ok=True)
             embedding_store_path.unlink(missing_ok=True)
 
         documents = self.document_store.get_all_documents()
