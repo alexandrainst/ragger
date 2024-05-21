@@ -105,7 +105,7 @@ def get_component_by_name(class_name: str, component_type: str) -> Type:
         The class.
     """
     # Get the snake_case and PascalCase version of the class name
-    full_class_name = class_name + component_type
+    full_class_name = f"{class_name}_{component_type}"
     name_pascal = snake_to_pascal(snake_string=full_class_name)
 
     # Get the class from the module
