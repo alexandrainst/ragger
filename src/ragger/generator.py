@@ -54,9 +54,14 @@ class OpenaiGenerator(Generator):
         """
         super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
-        api_key = os.environ[self.config.generator.api_key_variable_name]
+        api_key = os.environ[self.config.generator.api_key_variable_name].strip('"')
+        # self.client = OpenAI(
+        #     api_key=api_key, timeout=self.config.generator.timeout
+        # )
         self.client = OpenAI(
-            api_key=api_key.strip('"'), timeout=self.config.generator.timeout
+            base_url="http://localhost:8000/v1",
+            api_key=api_key,
+            timeout=self.config.generator.timeout,
         )
 
     def generate(
