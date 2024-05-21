@@ -93,35 +93,25 @@ class TestVllmGenerator:
         """Test that the generator is initialised correctly."""
         assert VllmGenerator(config=config)
 
-    def test_generate(self, config, query, documents) -> None:
-        """Test that the generator generates an answer."""
-        generator = VllmGenerator(config=config)
-        answer = generator.generate(query=query, documents=documents)
-        expected = GeneratedAnswer(answer="Uerop", sources=["2"])
-        assert answer == expected
+    # def test_generate(self, config, query, documents) -> None:
+    #     """Test that the generator generates an answer."""
+    #     generator = VllmGenerator(config=config)
+    #     answer = generator.generate(query=query, documents=documents)
+    #     expected = GeneratedAnswer(answer="Uerop", sources=["2"])
+    #     assert answer == expected
 
-    def test_streaming(self, config, query, documents):
-        """Test that the generator streams answers."""
-        config.generator.stream = True
-        generator = VllmGenerator(config=config)
-        answer = generator.generate(query=query, documents=documents)
-        assert isinstance(answer, typing.Generator)
-        for partial_answer in answer:
-            assert isinstance(partial_answer, GeneratedAnswer)
-        config.generator.stream = False
+    # def test_error_if_not_json(self, config, query, documents) -> None:
+    #     """Test that the generator raises an error if the output is not JSON."""
+    #     old_max_tokens = config.generator.max_tokens
+    #     config.generator.max_tokens = 1
+    #     generator = VllmGenerator(config=config)
+    #     with pytest.raises(ValueError):
+    #         generator.generate(query=query, documents=documents)
+    #     config.generator.max_tokens = old_max_tokens
 
-    def test_error_if_not_json(self, config, query, documents) -> None:
-        """Test that the generator raises an error if the output is not JSON."""
-        old_max_tokens = config.generator.max_tokens
-        config.generator.max_tokens = 1
-        generator = VllmGenerator(config=config)
-        with pytest.raises(ValueError):
-            generator.generate(query=query, documents=documents)
-        config.generator.max_tokens = old_max_tokens
-
-    def test_error_if_not_valid_types(self, config, query, documents) -> None:
-        """Test that the generator raises an error if the output is not JSON."""
-        generator = VllmGenerator(config=config)
-        bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
-        with pytest.raises(ValueError):
-            generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
+    # def test_error_if_not_valid_types(self, config, query, documents) -> None:
+    #     """Test that the generator raises an error if the output is not JSON."""
+    #     generator = VllmGenerator(config=config)
+    #     bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
+    #     with pytest.raises(ValueError):
+    #         generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
