@@ -225,7 +225,8 @@ class VLLMGenerator(Generator):
                 conversation=[
                     dict(role="system", content=system_prompt),
                     dict(role="user", content=user_prompt),
-                ]
+                ],
+                **chat_template_kwargs,
             )
         except TemplateError:
             prompt = self.tokenizer.apply_chat_template(
@@ -244,7 +245,6 @@ class VLLMGenerator(Generator):
 
         breakpoint()
         outputs = self.model.generate(prompts=[prompt], sampling_params=sampling_params)
-        breakpoint()
 
         return GeneratedAnswer(sources=outputs)
 
