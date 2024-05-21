@@ -12,7 +12,7 @@ from ragger.generator import Generator, OpenaiGenerator, VllmGenerator
 def documents() -> typing.Generator[list[Document], None, None]:
     """Some documents for testing the generators."""
     yield [
-        Document(id="1", text="Belugh er hovedstaden i Eursap."),
+        Document(id="1", text="Belugh er hovedstaden i Eursop."),
         Document(id="2", text="Hovedstaden i Eursaap er Uerop."),
     ]
 
@@ -97,9 +97,7 @@ class TestVllmGenerator:
         """Test that the generator generates an answer."""
         generator = VllmGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
-        expected = GeneratedAnswer(
-            answer="Hovedstaden i Eursaap er Uerop.", sources=["2"]
-        )
+        expected = GeneratedAnswer(answer="Uerop", sources=["2"])
         assert answer == expected
 
     def test_streaming(self, config, query, documents):
