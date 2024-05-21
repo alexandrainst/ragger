@@ -42,7 +42,7 @@ load_dotenv()
 logger = logging.getLogger(__package__)
 
 
-class OpenAIGenerator(Generator):
+class OpenaiGenerator(Generator):
     """A generator that uses an OpenAI model to generate answers."""
 
     def __init__(self, config: DictConfig) -> None:
