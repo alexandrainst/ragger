@@ -86,7 +86,7 @@ addopts = [
     '-s',
     '-vv',
     '--doctest-modules',
-    '--cov=src/ragger',
+    #'--cov=src/ragger',
 ]
 xfail_strict = true
 filterwarnings = [

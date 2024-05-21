@@ -283,7 +283,6 @@ class VllmGenerator(Generator):
 
     def __del__(self) -> None:
         """Clear the GPU memory used by the model, and remove the model itself."""
-        breakpoint()
         if hasattr(self, "model"):
             del self.model
         del self
