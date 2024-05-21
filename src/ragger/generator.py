@@ -1,12 +1,15 @@
 """Generation of an answer from a query and a list of relevant documents."""
 
+import importlib.util
 import json
 import logging
 import os
 import typing
 from abc import ABC, abstractmethod
 
+import torch
 from dotenv import load_dotenv
+from jinja2 import TemplateError
 from omegaconf import DictConfig
 from openai import OpenAI, Stream
 from openai.types.chat import (
@@ -18,6 +21,13 @@ from pydantic import ValidationError
 from pydantic_core import from_json
 
 from .data_models import Document, GeneratedAnswer
+
+if importlib.util.find_spec("vllm") is not None:
+    from vllm import LLM, SamplingParams
+    from vllm.model_executor.guided_decoding.outlines_logits_processors import (
+        JSONLogitsProcessor,
+    )
+
 
 load_dotenv()
 
@@ -65,7 +75,7 @@ class OpenAIGenerator(Generator):
             config:
                 The Hydra configuration.
         """
-        super().__init__(config)
+        super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
         api_key = os.environ[self.config.generator.api_key_variable_name]
         self.client = OpenAI(
@@ -166,7 +176,6 @@ class OpenAIGenerator(Generator):
                         yield generated_obj
                     except ValidationError:
                         continue
-                logger.info(f"Generated {generated_obj}")
 
             return streamer()
         else:
@@ -186,3 +195,92 @@ class OpenAIGenerator(Generator):
 
         logger.info(f"Generated answer: {generated_obj.answer!r}")
         return generated_obj
+
+
+class VLLMGenerator(Generator):
+    """A generator that uses a vLLM model to generate answers."""
+
+    def __init__(self, config: DictConfig) -> None:
+        """Initialise the vLLM generator.
+
+        Args:
+            config:
+                The Hydra configuration.
+        """
+        super().__init__(config=config)
+        self.model = LLM(
+            model=config.generator.model_id,
+            gpu_memory_utilization=0.95,
+            max_model_len=config.generator.max_model_len,
+            seed=4242,
+            tensor_parallel_size=torch.cuda.device_count(),
+            disable_custom_all_reduce=True,
+        )
+        self.logits_processor = JSONLogitsProcessor(
+            schema=GeneratedAnswer, llm=self.model, whitespace_pattern=r" ?"
+        )
+
+    def generate(
+        self, query: str, documents: list[Document]
+    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
+        """Generate an answer from a query and relevant documents.
+
+        Args:
+            query:
+                The query to answer.
+            documents:
+                The relevant documents.
+
+        Returns:
+            The generated answer.
+        """
+        logger.info(
+            f"Generating answer for the query {query!r} and {len(documents):,} "
+            "documents..."
+        )
+
+        system_prompt = self.config.generator.system_prompt
+        user_prompt = self.config.generator.prompt.format(
+            documents=json.dumps([document.model_dump() for document in documents]),
+            query=query,
+        )
+
+        chat_template_kwargs = dict(
+            chat_template=self.model.tokenizer.chat_template,
+            add_generation_prompt=True,
+            tokenize=False,
+        )
+        try:
+            prompt = self.model.tokenizer.apply_chat_template(
+                conversation=[
+                    dict(role="system", content=system_prompt),
+                    dict(role="user", content=user_prompt),
+                ]
+            )
+        except TemplateError:
+            prompt = self.model.tokenizer.apply_chat_template(
+                conversation=[
+                    dict(role="user", content=system_prompt + "\n\n" + user_prompt)
+                ],
+                **chat_template_kwargs,
+            )
+
+        sampling_params = SamplingParams(
+            max_tokens=self.config.generator.max_tokens,
+            temperature=self.config.generator.temperature,
+            stop=["</answer>"],
+            logits_processors=[self.logits_processor],
+        )
+
+        outputs = self.model.generate(prompts=[prompt], sampling_params=sampling_params)
+        breakpoint()
+
+        return GeneratedAnswer(sources=outputs)
+
+        # try:
+        #     generated_obj = GeneratedAnswer.model_validate(generated_dict)
+        # except ValidationError:
+        #     raise ValueError(f"Could not validate model output: {generated_dict}")
+
+        # logger.info(f"Generated answer: {generated_obj.answer!r}")
+        # return generated_obj

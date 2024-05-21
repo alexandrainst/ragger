@@ -1,0 +1,8 @@
+name: vllm
+model: ThatsGroes/munin-SkoleGPTOpenOrca-7b-16bit
+max_model_len: 10000
+temperature: 0.0
+max_tokens: 256
+stream: true
+system_prompt: ${..language.system_prompt}
+prompt: ${..language.prompt}
