@@ -177,6 +177,13 @@ class VLLMGenerator(Generator):
                 The Hydra configuration.
         """
         super().__init__(config=config)
+
+        if not torch.cuda.is_available():
+            raise RuntimeError(
+                "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
+                "Please ensure that a compatible GPU is available and try again."
+            )
+
         self.model = LLM(
             model=config.generator.model,
             gpu_memory_utilization=config.generator.gpu_memory_utilization,
