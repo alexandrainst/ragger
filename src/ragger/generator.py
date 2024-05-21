@@ -243,15 +243,22 @@ class VLLMGenerator(Generator):
             logits_processors=[self.logits_processor],
         )
 
-        breakpoint()
-        outputs = self.model.generate(prompts=[prompt], sampling_params=sampling_params)
+        model_output = self.model.generate(
+            prompts=[prompt], sampling_params=sampling_params
+        )
+        generated_output = model_output[0].outputs.text
 
-        return GeneratedAnswer(sources=outputs)
+        try:
+            generated_dict = json.loads(generated_output)
+        except json.JSONDecodeError:
+            raise ValueError(
+                f"Could not decode JSON from model output: {generated_output}"
+            )
 
-        # try:
-        #     generated_obj = GeneratedAnswer.model_validate(generated_dict)
-        # except ValidationError:
-        #     raise ValueError(f"Could not validate model output: {generated_dict}")
+        try:
+            generated_obj = GeneratedAnswer.model_validate(generated_dict)
+        except ValidationError:
+            raise ValueError(f"Could not validate model output: {generated_dict}")
 
-        # logger.info(f"Generated answer: {generated_obj.answer!r}")
-        # return generated_obj
+        logger.info(f"Generated answer: {generated_obj.answer!r}")
+        return generated_obj
