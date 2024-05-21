@@ -3,6 +3,7 @@
 import typing
 
 import pytest
+import torch
 from omegaconf import DictConfig
 from ragger.data_models import Document, GeneratedAnswer
 from ragger.generator import Generator, OpenaiGenerator, VllmGenerator
@@ -77,6 +78,7 @@ class TestOpenaiGenerator:
             generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
 
 
+@pytest.mark.skipif(condition=not torch.cuda.is_available(), reason="No GPU available.")
 class TestVllmGenerator:
     """Tests for the `VllmGenerator` class."""
 
