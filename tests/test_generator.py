@@ -83,7 +83,7 @@ class TestVLLMGenerator:
     @pytest.fixture(scope="class")
     def config(self, vllm_generator_params) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
-        yield DictConfig(dict(generator=vllm_generator_params))
+        yield DictConfig(dict(random_seed=703, generator=vllm_generator_params))
 
     def test_is_generator(self) -> None:
         """Test that the VLLMGenerator is a Generator."""
