@@ -5,7 +5,6 @@ import json
 import logging
 import os
 import typing
-from abc import ABC, abstractmethod
 
 import torch
 from dotenv import load_dotenv
@@ -20,7 +19,7 @@ from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 
-from .data_models import Document, GeneratedAnswer
+from .data_models import Document, GeneratedAnswer, Generator
 
 if importlib.util.find_spec("vllm") is not None:
     from vllm import LLM, SamplingParams
@@ -33,36 +32,6 @@ load_dotenv()
 
 
 logger = logging.getLogger(__package__)
-
-
-class Generator(ABC):
-    """An abstract generator of answers from a query and relevant documents."""
-
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the generator.
-
-        Args:
-            config:
-                The Hydra configuration.
-        """
-        self.config = config
-
-    @abstractmethod
-    def generate(
-        self, query: str, documents: list[Document]
-    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
-        """Generate an answer from a query and relevant documents.
-
-        Args:
-            query:
-                The query to answer.
-            documents:
-                The relevant documents.
-
-        Returns:
-            The generated answer.
-        """
-        ...
 
 
 class OpenAIGenerator(Generator):

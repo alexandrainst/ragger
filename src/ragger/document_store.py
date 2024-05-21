@@ -1,47 +1,11 @@
 """Store and fetch documents from a database."""
 
 import json
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 from omegaconf import DictConfig
 
-from .data_models import Document, Index
-
-
-class DocumentStore(ABC):
-    """An abstract document store, which fetches documents from a database."""
-
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the document store.
-
-        Args:
-            config:
-                The Hydra configuration.
-        """
-        self.config = config
-
-    @abstractmethod
-    def __getitem__(self, index: Index) -> Document:
-        """Fetch a document by its ID.
-
-        Args:
-            index:
-                The ID of the document to fetch.
-
-        Returns:
-            The document with the given ID.
-        """
-        ...
-
-    @abstractmethod
-    def get_all_documents(self) -> list[Document]:
-        """Fetch all documents from the store.
-
-        Returns:
-            A list of all documents in the store.
-        """
-        ...
+from .data_models import Document, DocumentStore, Index
 
 
 class JsonlDocumentStore(DocumentStore):
