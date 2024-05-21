@@ -41,8 +41,7 @@ class E5Embedder(Embedder):
         logger.info("Initialising the E5 model...")
         try:
             self.embedder = SentenceTransformer(
-                model_name_or_path=self.config.embedder.model_id,
-                device=self.config.embedder.device,
+                model_name_or_path=self.config.embedder.model_id
             )
         except OutOfMemoryError:
             logger.error(
