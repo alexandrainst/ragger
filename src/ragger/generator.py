@@ -179,9 +179,9 @@ class VLLMGenerator(Generator):
         super().__init__(config=config)
         self.model = LLM(
             model=config.generator.model,
-            gpu_memory_utilization=0.95,
+            gpu_memory_utilization=config.generator.gpu_memory_utilization,
             max_model_len=config.generator.max_model_len,
-            seed=4242,
+            seed=config.random_seed,
             tensor_parallel_size=torch.cuda.device_count(),
             disable_custom_all_reduce=True,
         )

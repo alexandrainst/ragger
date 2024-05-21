@@ -1,6 +1,7 @@
 name: vllm
 model: ThatsGroes/munin-SkoleGPTOpenOrca-7b-16bit
 max_model_len: 10_000
+gpu_memory_utilization: 0.95
 temperature: 0.0
 max_tokens: 256
 stream: true
