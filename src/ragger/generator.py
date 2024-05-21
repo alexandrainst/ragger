@@ -246,7 +246,7 @@ class VLLMGenerator(Generator):
         model_output = self.model.generate(
             prompts=[prompt], sampling_params=sampling_params
         )
-        generated_output = model_output[0].outputs.text
+        generated_output = model_output[0].outputs[0].text
 
         try:
             generated_dict = json.loads(generated_output)
