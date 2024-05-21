@@ -14,11 +14,11 @@ class TestE5Embedder:
 
     @pytest.fixture(scope="class")
     def config(
-        self, dirs_params, embedder_params
+        self, dirs_params, e5_embedder_params
     ) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
         yield DictConfig(
-            dict(dirs=dirs_params, embedder=embedder_params, verbose=False)
+            dict(dirs=dirs_params, embedder=e5_embedder_params, verbose=False)
         )
 
     @pytest.fixture(scope="class")

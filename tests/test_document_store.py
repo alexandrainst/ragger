@@ -12,10 +12,12 @@ class TestJsonlDocumentStore:
 
     @pytest.fixture(scope="class")
     def config(
-        self, dirs_params, document_store_params
+        self, dirs_params, jsonl_document_store_params
     ) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
-        yield DictConfig(dict(dirs=dirs_params, document_store=document_store_params))
+        yield DictConfig(
+            dict(dirs=dirs_params, document_store=jsonl_document_store_params)
+        )
 
     @pytest.fixture(scope="class")
     def document_store(
