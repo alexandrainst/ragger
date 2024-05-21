@@ -185,6 +185,7 @@ class VLLMGenerator(Generator):
             tensor_parallel_size=torch.cuda.device_count(),
             disable_custom_all_reduce=True,
         )
+        breakpoint()
         self.logits_processor = JSONLogitsProcessor(
             schema=GeneratedAnswer,
             tokenizer=self.model.tokenizer,
