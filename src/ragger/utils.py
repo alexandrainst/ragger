@@ -1,7 +1,9 @@
 """Utility constants and functions used in the project."""
 
+import gc
 import re
 
+import torch
 from omegaconf import DictConfig
 
 from .data_models import Components, Document
@@ -106,3 +108,12 @@ def load_ragger_components(config: DictConfig) -> Components:
             raise ValueError(f"The Generator type {name!r} is not supported")
 
     return components
+
+
+def clear_memory() -> None:
+    """Clears the memory of unused items."""
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()

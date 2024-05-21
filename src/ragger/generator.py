@@ -20,12 +20,20 @@ from pydantic import ValidationError
 from pydantic_core import from_json
 
 from .data_models import Document, GeneratedAnswer, Generator
+from .utils import clear_memory
 
 if importlib.util.find_spec("vllm") is not None:
     from vllm import LLM, SamplingParams
     from vllm.model_executor.guided_decoding.outlines_logits_processors import (
         JSONLogitsProcessor,
     )
+
+    try:
+        from vllm.model_executor.parallel_utils.parallel_state import (
+            destroy_model_parallel,
+        )
+    except ImportError:
+        from vllm.distributed.parallel_state import destroy_model_parallel
 
 
 load_dotenv()
@@ -183,6 +191,10 @@ class VLLMGenerator(Generator):
                 "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
                 "Please ensure that a compatible GPU is available and try again."
             )
+
+        # We need to remove the model from GPU memory before creating a new one
+        destroy_model_parallel()
+        clear_memory()
 
         self.model = LLM(
             model=config.generator.model,
