@@ -203,6 +203,7 @@ class VLLMGenerator(Generator):
             seed=config.random_seed,
             tensor_parallel_size=torch.cuda.device_count(),
             disable_custom_all_reduce=True,
+            enforce_eager=True,
         )
         self.tokenizer = self.model.get_tokenizer()
         self.logits_processor = JSONLogitsProcessor(
