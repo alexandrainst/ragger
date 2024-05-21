@@ -196,6 +196,7 @@ class VLLMGenerator(Generator):
         destroy_model_parallel()
         clear_memory()
 
+        breakpoint()
         self.model = LLM(
             model=config.generator.model,
             gpu_memory_utilization=config.generator.gpu_memory_utilization,
