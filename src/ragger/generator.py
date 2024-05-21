@@ -63,6 +63,7 @@ class OpenaiGenerator(Generator):
             api_key=api_key,
             timeout=self.config.generator.timeout,
         )
+        self.model = self.client.models.list().data[0].id
 
     def generate(
         self, query: str, documents: list[Document]
@@ -98,7 +99,7 @@ class OpenaiGenerator(Generator):
         ]
         model_output = self.client.chat.completions.create(
             messages=messages,
-            model=self.config.generator.model,
+            model=self.model,  # self.config.generator.model,
             max_tokens=self.config.generator.max_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
