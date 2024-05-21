@@ -178,7 +178,7 @@ class VLLMGenerator(Generator):
         """
         super().__init__(config=config)
         self.model = LLM(
-            model=config.generator.model_id,
+            model=config.generator.model,
             gpu_memory_utilization=0.95,
             max_model_len=config.generator.max_model_len,
             seed=4242,
