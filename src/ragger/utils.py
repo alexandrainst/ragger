@@ -7,10 +7,6 @@ import torch
 from omegaconf import DictConfig
 
 from .data_models import Components, Document
-from .document_store import JsonlDocumentStore
-from .embedder import E5Embedder
-from .embedding_store import NumpyEmbeddingStore
-from .generator import OpenAIGenerator, VLLMGenerator
 
 
 def format_answer(
@@ -79,6 +75,11 @@ def load_ragger_components(config: DictConfig) -> Components:
             The Hydra configuration.
 
     """
+    from .document_store import JsonlDocumentStore
+    from .embedder import E5Embedder
+    from .embedding_store import NumpyEmbeddingStore
+    from .generator import OpenAIGenerator, VLLMGenerator
+
     components = Components()
 
     match name := config.document_store.name:
