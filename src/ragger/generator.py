@@ -185,11 +185,9 @@ class VLLMGenerator(Generator):
             tensor_parallel_size=torch.cuda.device_count(),
             disable_custom_all_reduce=True,
         )
-        breakpoint()
+        self.tokenizer = self.model.get_tokenizer()
         self.logits_processor = JSONLogitsProcessor(
-            schema=GeneratedAnswer,
-            tokenizer=self.model.tokenizer,
-            whitespace_pattern=r" ?",
+            schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
         )
 
     def generate(
@@ -218,19 +216,19 @@ class VLLMGenerator(Generator):
         )
 
         chat_template_kwargs = dict(
-            chat_template=self.model.tokenizer.chat_template,
+            chat_template=self.tokenizer.chat_template,
             add_generation_prompt=True,
             tokenize=False,
         )
         try:
-            prompt = self.model.tokenizer.apply_chat_template(
+            prompt = self.tokenizer.apply_chat_template(
                 conversation=[
                     dict(role="system", content=system_prompt),
                     dict(role="user", content=user_prompt),
                 ]
             )
         except TemplateError:
-            prompt = self.model.tokenizer.apply_chat_template(
+            prompt = self.tokenizer.apply_chat_template(
                 conversation=[
                     dict(role="user", content=system_prompt + "\n\n" + user_prompt)
                 ],
