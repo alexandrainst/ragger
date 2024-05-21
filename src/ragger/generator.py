@@ -174,7 +174,7 @@ class OpenaiGenerator(Generator):
         return generated_obj
 
 
-class VLLMGenerator(Generator):
+class VllmGenerator(Generator):
     """A generator that uses a vLLM model to generate answers."""
 
     def __init__(self, config: DictConfig) -> None:
