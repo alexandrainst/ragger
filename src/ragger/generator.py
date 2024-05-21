@@ -15,7 +15,6 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 
@@ -103,9 +102,10 @@ class OpenaiGenerator(Generator):
             max_tokens=self.config.generator.max_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
-            stop=["</answer>"],
-            response_format=ResponseFormat(type="json_object"),
+            # stop=["</answer>"],
+            # response_format=ResponseFormat(type="json_object"),
         )
+        breakpoint()
         if isinstance(model_output, Stream):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
