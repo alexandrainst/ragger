@@ -45,7 +45,7 @@ class RagSystem:
                 store and rebuilds it.
         """
         components = load_ragger_components(config=self.config)
-        for component_name, component_class in components.items():
+        for component_name, component_class in components.model_dump().items():
             if not hasattr(self, component_name) or force:
                 setattr(self, component_name, component_class(config=self.config))
 
