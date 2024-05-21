@@ -186,7 +186,9 @@ class VLLMGenerator(Generator):
             disable_custom_all_reduce=True,
         )
         self.logits_processor = JSONLogitsProcessor(
-            schema=GeneratedAnswer, llm=self.model, whitespace_pattern=r" ?"
+            schema=GeneratedAnswer,
+            tokenizer=self.model.tokenizer,
+            whitespace_pattern=r" ?",
         )
 
     def generate(
