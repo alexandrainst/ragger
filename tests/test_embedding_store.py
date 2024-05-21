@@ -15,14 +15,14 @@ class TestNumpyEmbeddingStore:
 
     @pytest.fixture(scope="class")
     def config(
-        self, dirs_params, embedding_store_params, embedder_params
+        self, dirs_params, numpy_embedding_store_params, e5_embedder_params
     ) -> typing.Generator[DictConfig, None, None]:
         """Initialise a configuration for testing."""
         yield DictConfig(
             dict(
                 dirs=dirs_params,
-                embedding_store=embedding_store_params,
-                embedder=embedder_params,
+                embedding_store=numpy_embedding_store_params,
+                embedder=e5_embedder_params,
             )
         )
 

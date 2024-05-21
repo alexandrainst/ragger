@@ -1,14 +1,14 @@
 """Utility constants and functions used in the project."""
 
+import gc
+import importlib
 import re
+from typing import Type
 
+import torch
 from omegaconf import DictConfig
 
-from .data_models import Document
-from .document_store import DocumentStore, JsonlDocumentStore
-from .embedder import E5Embedder, Embedder
-from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
-from .generator import Generator, OpenAIGenerator
+from .data_models import Components, Document
 
 
 def format_answer(
@@ -69,11 +69,54 @@ def is_link(text: str) -> bool:
     return re.match(pattern=url_regex, string=text) is not None
 
 
-def load_ragger_components(
-    config: DictConfig,
-) -> dict[
-    str, type[DocumentStore] | type[Embedder] | type[EmbeddingStore] | type[Generator]
-]:
+def clear_memory() -> None:
+    """Clears the memory of unused items."""
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    if torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+
+
+def snake_to_pascal(snake_string: str) -> str:
+    """Converts a snake_case string to PascalCase.
+
+    Args:
+        snake_string:
+            The snake_case string.
+
+    Returns:
+        The PascalCase string.
+    """
+    return "".join(word.title() for word in snake_string.split("_"))
+
+
+def get_component_by_name(class_name: str, component_type: str) -> Type:
+    """Get a component class by its name.
+
+    Args:
+        class_name:
+            The name of the class, written in snake_case.
+        component_type:
+            The type of component, written in snake_case. It is assumed that a module
+            exists with this name in the `ragger` package.
+
+    Returns:
+        The class.
+    """
+    # Get the snake_case and PascalCase version of the class name
+    full_class_name = f"{class_name}_{component_type}"
+    name_pascal = snake_to_pascal(snake_string=full_class_name)
+
+    # Get the class from the module
+    module_name = f"ragger.{component_type}"
+    module = importlib.import_module(name=module_name)
+    class_: Type = getattr(module, name_pascal)
+
+    return class_
+
+
+def load_ragger_components(config: DictConfig) -> Components:
     """Load the components of the RAG system.
 
     Args:
@@ -81,33 +124,17 @@ def load_ragger_components(
             The Hydra configuration.
 
     """
-    match name := config.document_store.name:
-        case "jsonl":
-            document_store = JsonlDocumentStore
-        case _:
-            raise ValueError(f"The DocumentStore type {name!r} is not supported")
-
-    match name := config.embedder.name:
-        case "e5":
-            embedder = E5Embedder
-        case _:
-            raise ValueError(f"The Embedder type {name!r} is not supported")
-
-    match name := config.embedding_store.name:
-        case "numpy":
-            embedding_store = NumpyEmbeddingStore
-        case _:
-            raise ValueError(f"The EmbeddingStore type {name!r} is not supported")
-
-    match name := config.generator.name:
-        case "openai":
-            generator = OpenAIGenerator
-        case _:
-            raise ValueError(f"The Generator type {name!r} is not supported")
-
-    return {
-        "document_store": document_store,
-        "embedder": embedder,
-        "embedding_store": embedding_store,
-        "generator": generator,
-    }
+    return Components(
+        document_store=get_component_by_name(
+            class_name=config.document_store.name, component_type="document_store"
+        ),
+        embedder=get_component_by_name(
+            class_name=config.embedder.name, component_type="embedder"
+        ),
+        embedding_store=get_component_by_name(
+            class_name=config.embedding_store.name, component_type="embedding_store"
+        ),
+        generator=get_component_by_name(
+            class_name=config.generator.name, component_type="generator"
+        ),
+    )

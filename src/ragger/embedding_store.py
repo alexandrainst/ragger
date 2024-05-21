@@ -4,7 +4,6 @@ import io
 import json
 import logging
 import zipfile
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,58 +11,9 @@ import numpy as np
 from omegaconf import DictConfig
 from transformers import AutoConfig
 
-from .data_models import Embedding, Index
+from .data_models import Embedding, EmbeddingStore, Index
 
 logger = logging.getLogger(__package__)
-
-
-class EmbeddingStore(ABC):
-    """An abstract embedding store, which fetches embeddings from a database."""
-
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the embedding store.
-
-        Args:
-            config:
-                The Hydra configuration.
-        """
-        self.config = config
-
-    @abstractmethod
-    def add_embeddings(self, embeddings: list[Embedding]) -> None:
-        """Add embeddings to the store.
-
-        Args:
-            embeddings:
-                A list of embeddings to add to the store.
-        """
-        ...
-
-    @abstractmethod
-    def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
-        """Get the nearest neighbours to a given embedding.
-
-        Args:
-            embedding:
-                The embedding to find nearest neighbours for.
-
-        Returns:
-            A list of indices of the nearest neighbours.
-        """
-        ...
-
-    @abstractmethod
-    def document_exists_in_store(self, document_id: Index) -> bool:
-        """Check if a document exists in the store.
-
-        Args:
-            document_id:
-                The ID of the document to check.
-
-        Returns:
-            Whether the document exists in the store.
-        """
-        ...
 
 
 class NumpyEmbeddingStore(EmbeddingStore):

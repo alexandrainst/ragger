@@ -67,8 +67,8 @@ def documents() -> typing.Generator[list[Document], None, None]:
 
 
 @pytest.fixture(scope="session")
-def document_store_params(documents) -> typing.Generator[dict, None, None]:
-    """Parameters for the document store."""
+def jsonl_document_store_params(documents) -> typing.Generator[dict, None, None]:
+    """Parameters for the JSONL document store."""
     with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
         data_str = "\n".join(document.model_dump_json() for document in documents)
         file.write(data_str)
@@ -77,22 +77,24 @@ def document_store_params(documents) -> typing.Generator[dict, None, None]:
 
 
 @pytest.fixture(scope="session")
-def embedder_params() -> typing.Generator[dict, None, None]:
-    """Parameters for the embedder."""
+def e5_embedder_params() -> typing.Generator[dict, None, None]:
+    """Parameters for the E5 embedder."""
     yield dict(
         name="e5", model_id="intfloat/multilingual-e5-small", document_text_field="text"
     )
 
 
 @pytest.fixture(scope="session")
-def embedding_store_params() -> typing.Generator[dict, None, None]:
-    """Parameters for the embedding store."""
+def numpy_embedding_store_params() -> typing.Generator[dict, None, None]:
+    """Parameters for the Numpy embedding store."""
     yield dict(name="numpy", num_documents_to_retrieve=2, filename=None)
 
 
 @pytest.fixture(scope="session")
-def generator_params(system_prompt, prompt) -> typing.Generator[dict, None, None]:
-    """Parameters for the generator."""
+def openai_generator_params(
+    system_prompt, prompt
+) -> typing.Generator[dict, None, None]:
+    """Parameters for the OpenAI generator."""
     yield dict(
         name="openai",
         api_key_variable_name="OPENAI_API_KEY",
@@ -107,11 +109,27 @@ def generator_params(system_prompt, prompt) -> typing.Generator[dict, None, None
 
 
 @pytest.fixture(scope="session")
+def vllm_generator_params(system_prompt, prompt) -> typing.Generator[dict, None, None]:
+    """Parameters for the vLLM generator."""
+    yield dict(
+        name="vllm",
+        model="ThatsGroes/munin-SkoleGPTOpenOrca-7b-16bit",
+        max_model_len=10_000,
+        gpu_memory_utilization=0.95,
+        temperature=0.0,
+        max_tokens=128,
+        stream=False,
+        system_prompt=system_prompt,
+        prompt=prompt,
+    )
+
+
+@pytest.fixture(scope="session")
 def demo_params() -> typing.Generator[dict, None, None]:
     """Parameters for the demo."""
     with NamedTemporaryFile(mode="w", suffix=".db") as file:
         yield dict(
-            name="danish",
+            name="default",
             host="localhost",
             port=7860,
             share=False,
@@ -131,20 +149,20 @@ def demo_params() -> typing.Generator[dict, None, None]:
 @pytest.fixture(scope="session")
 def full_config(
     dirs_params,
-    document_store_params,
-    embedder_params,
-    embedding_store_params,
-    generator_params,
+    jsonl_document_store_params,
+    e5_embedder_params,
+    numpy_embedding_store_params,
+    openai_generator_params,
     demo_params,
 ) -> typing.Generator[DictConfig, None, None]:
     """A valid Hydra configuration."""
     yield DictConfig(
         dict(
             dirs=dirs_params,
-            document_store=document_store_params,
-            embedder=embedder_params,
-            embedding_store=embedding_store_params,
-            generator=generator_params,
+            document_store=jsonl_document_store_params,
+            embedder=e5_embedder_params,
+            embedding_store=numpy_embedding_store_params,
+            generator=openai_generator_params,
             demo=demo_params,
             verbose=False,
         )

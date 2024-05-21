@@ -3,84 +3,19 @@
 import logging
 import os
 import re
-from abc import ABC, abstractmethod
 
 import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
+from torch.cuda import OutOfMemoryError
 from transformers import AutoConfig, AutoTokenizer
 
-from .data_models import Document, Embedding
+from .data_models import Document, Embedder, Embedding
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 logger = logging.getLogger(__package__)
-
-
-class Embedder(ABC):
-    """An abstract embedder, which embeds documents using a pre-trained model."""
-
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the embedder.
-
-        Args:
-            config:
-                The Hydra configuration.
-        """
-        self.config = config
-
-    def compile(self) -> None:
-        """Compile the embedder.
-
-        This method loads any necessary resources and prepares the embedder for use.
-        """
-        pass
-
-    @abstractmethod
-    def embed_documents(self, documents: list[Document]) -> list[Embedding]:
-        """Embed a list of documents.
-
-        Args:
-            documents:
-                A list of documents to embed.
-
-        Returns:
-            An array of embeddings, where each row corresponds to a document.
-        """
-        ...
-
-    @abstractmethod
-    def embed_query(self, query: str) -> np.ndarray:
-        """Embed a query.
-
-        Args:
-            query:
-                A query.
-
-        Returns:
-            The embedding of the query.
-        """
-        ...
-
-    @abstractmethod
-    def tokenize(self, text: str | list[str]) -> np.array:
-        """Tokenize a text.
-
-        Args:
-            text:
-                The text or texts to tokenize.
-
-        Returns:
-            The tokens of the text.
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def max_context_length(self) -> int:
-        """The maximum length of the context that the embedder can handle."""
-        ...
 
 
 class E5Embedder(Embedder):
@@ -104,7 +39,18 @@ class E5Embedder(Embedder):
         This method loads the E5 model and prepares it for use.
         """
         logger.info("Initialising the E5 model...")
-        self.embedder = SentenceTransformer(self.config.embedder.model_id)
+        try:
+            self.embedder = SentenceTransformer(
+                model_name_or_path=self.config.embedder.model_id
+            )
+        except OutOfMemoryError:
+            logger.error(
+                "Out of memory error occurred while initialising the E5 model. "
+                "Falling back to CPU."
+            )
+            self.embedder = SentenceTransformer(
+                model_name_or_path=self.config.embedder.model_id, device="cpu"
+            )
         logger.info("Finished initialising the E5 model.")
 
     @property
