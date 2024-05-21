@@ -98,7 +98,7 @@ class OpenaiGenerator(Generator):
             stream=self.config.generator.stream,
             stop=["</answer>"],
             # response_format=ResponseFormat(type="json_object"),
-            guided_json=GeneratedAnswer,
+            extra_body=dict(guided_json=GeneratedAnswer),
         )
         breakpoint()
         if isinstance(model_output, Stream):
