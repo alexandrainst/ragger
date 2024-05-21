@@ -93,7 +93,6 @@ class TestVllmGenerator:
         """Test that the generator is initialised correctly."""
         generator = VllmGenerator(config=config)
         assert generator
-        breakpoint()
         del generator
 
     def test_generate(self, config, query, documents) -> None:
