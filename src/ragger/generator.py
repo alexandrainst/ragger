@@ -96,8 +96,9 @@ class OpenaiGenerator(Generator):
             max_tokens=self.config.generator.max_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
-            # stop=["</answer>"],
+            stop=["</answer>"],
             # response_format=ResponseFormat(type="json_object"),
+            guided_json=GeneratedAnswer,
         )
         breakpoint()
         if isinstance(model_output, Stream):
