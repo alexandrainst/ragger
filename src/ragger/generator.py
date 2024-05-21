@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from jinja2 import TemplateError
 from omegaconf import DictConfig
 from openai import OpenAI, Stream
+from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 
@@ -97,10 +98,9 @@ class OpenaiGenerator(Generator):
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
             stop=["</answer>"],
-            # response_format=ResponseFormat(type="json_object"),
+            response_format=ResponseFormat(type="json_object"),
             extra_body=dict(guided_json=GeneratedAnswer.model_json_schema()),
         )
-        breakpoint()
         if isinstance(model_output, Stream):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
