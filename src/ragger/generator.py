@@ -280,3 +280,11 @@ class VLLMGenerator(Generator):
 
         logger.info(f"Generated answer: {generated_obj.answer!r}")
         return generated_obj
+
+    def __del__(self) -> None:
+        """Clear the GPU memory used by the model, and remove the model itself."""
+        if hasattr(self, "model"):
+            del self.model
+        del self
+        destroy_model_parallel()
+        clear_memory()
