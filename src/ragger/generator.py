@@ -11,10 +11,6 @@ from dotenv import load_dotenv
 from jinja2 import TemplateError
 from omegaconf import DictConfig
 from openai import OpenAI, Stream
-from openai.types.chat import (
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
 from pydantic import ValidationError
 from pydantic_core import from_json
 
@@ -83,10 +79,8 @@ class OpenaiGenerator(Generator):
             "documents..."
         )
         messages = [
-            ChatCompletionSystemMessageParam(
-                role="system", content=self.config.generator.system_prompt
-            ),
-            ChatCompletionUserMessageParam(
+            dict(role="system", content=self.config.generator.system_prompt),
+            dict(
                 role="user",
                 content=self.config.generator.prompt.format(
                     documents=json.dumps(
