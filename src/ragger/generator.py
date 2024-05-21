@@ -4,9 +4,7 @@ import importlib.util
 import json
 import logging
 import os
-import sys
 import typing
-from types import MethodType
 
 import torch
 from dotenv import load_dotenv
@@ -20,13 +18,12 @@ from openai.types.chat import (
 from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
-from tqdm import tqdm
 
 from .data_models import Document, GeneratedAnswer, Generator
 from .utils import clear_memory
 
 if importlib.util.find_spec("vllm") is not None:
-    from vllm import LLM, RequestOutput, SamplingParams
+    from vllm import LLM, SamplingParams
     from vllm.model_executor.guided_decoding.outlines_logits_processors import (
         JSONLogitsProcessor,
     )
@@ -206,13 +203,11 @@ class VllmGenerator(Generator):
             seed=config.random_seed,
             tensor_parallel_size=torch.cuda.device_count(),
         )
-        self.model._run_engine = MethodType(
-            _run_engine_with_fixed_progress_bars, self.model
-        )
         self.tokenizer = self.model.get_tokenizer()
         self.logits_processor = JSONLogitsProcessor(
             schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
         )
+        breakpoint()
 
     def generate(
         self, query: str, documents: list[Document]
@@ -297,32 +292,3 @@ class VllmGenerator(Generator):
         except ImportError:
             pass
         clear_memory()
-
-
-def _run_engine_with_fixed_progress_bars(
-    self: "LLM", use_tqdm: bool
-) -> list["RequestOutput"]:
-    if use_tqdm:
-        num_requests = self.llm_engine.get_num_unfinished_requests()
-        pbar = tqdm(
-            total=num_requests, leave=False, disable=hasattr(sys, "_called_from_test")
-        )
-
-    # Run the engine.
-    outputs: list["RequestOutput"] = list()
-    while self.llm_engine.has_unfinished_requests():
-        step_outputs = self.llm_engine.step()
-        for output in step_outputs:
-            if output.finished:
-                outputs.append(output)
-                if use_tqdm:
-                    pbar.update(1)
-
-    if use_tqdm:
-        pbar.close()
-
-    # Sort the outputs by request ID. This is necessary because some requests may be
-    # finished earlier than its previous requests.
-    outputs = sorted(outputs, key=lambda x: int(x.request_id))
-
-    return outputs
