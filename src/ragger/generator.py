@@ -222,6 +222,7 @@ class VLLMGenerator(Generator):
         Returns:
             The generated answer.
         """
+        breakpoint()
         logger.info(
             f"Generating answer for the query {query!r} and {len(documents):,} "
             "documents..."
