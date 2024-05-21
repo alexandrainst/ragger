@@ -207,7 +207,6 @@ class VllmGenerator(Generator):
         self.logits_processor = JSONLogitsProcessor(
             schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
         )
-        breakpoint()
 
     def generate(
         self, query: str, documents: list[Document]
