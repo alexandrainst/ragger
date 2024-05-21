@@ -286,5 +286,8 @@ class VllmGenerator(Generator):
         if hasattr(self, "model"):
             del self.model
         del self
-        destroy_model_parallel()
+        try:
+            destroy_model_parallel()
+        except ImportError:
+            pass
         clear_memory()
