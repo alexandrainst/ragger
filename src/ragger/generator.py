@@ -111,7 +111,6 @@ class OpenaiGenerator(Generator):
                     if chunk_str is None:
                         break
                     generated_output += chunk_str
-                    logger.info(f"Generated output: {generated_output!r}")
                     try:
                         generated_dict = from_json(
                             data=generated_output, allow_partial=True
