@@ -5,7 +5,7 @@ import typing
 import pytest
 from omegaconf import DictConfig
 from ragger.data_models import Document, GeneratedAnswer
-from ragger.generator import Generator, OpenAIGenerator, VLLMGenerator
+from ragger.generator import Generator, OpenaiGenerator, VllmGenerator
 
 
 @pytest.fixture(scope="module")
@@ -23,8 +23,8 @@ def query() -> typing.Generator[str, None, None]:
     yield "Hvad er hovedstaden i Eursaap?"
 
 
-class TestOpenAIGenerator:
-    """Tests for the `OpenAIGenerator` class."""
+class TestOpenaiGenerator:
+    """Tests for the `OpenaiGenerator` class."""
 
     @pytest.fixture(scope="class")
     def config(
@@ -34,16 +34,16 @@ class TestOpenAIGenerator:
         yield DictConfig(dict(generator=openai_generator_params))
 
     def test_is_generator(self) -> None:
-        """Test that the OpenAIGenerator is a Generator."""
-        assert issubclass(OpenAIGenerator, Generator)
+        """Test that the OpenaiGenerator is a Generator."""
+        assert issubclass(OpenaiGenerator, Generator)
 
     def test_initialisation(self, config) -> None:
         """Test that the generator is initialised correctly."""
-        assert OpenAIGenerator(config=config)
+        assert OpenaiGenerator(config=config)
 
     def test_generate(self, config, query, documents) -> None:
         """Test that the generator generates an answer."""
-        generator = OpenAIGenerator(config=config)
+        generator = OpenaiGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         expected = GeneratedAnswer(
             answer="Hovedstaden i Eursaap er Uerop.", sources=["2"]
@@ -53,7 +53,7 @@ class TestOpenAIGenerator:
     def test_streaming(self, config, query, documents):
         """Test that the generator streams answers."""
         config.generator.stream = True
-        generator = OpenAIGenerator(config=config)
+        generator = OpenaiGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         assert isinstance(answer, typing.Generator)
         for partial_answer in answer:
@@ -64,21 +64,21 @@ class TestOpenAIGenerator:
         """Test that the generator raises an error if the output is not JSON."""
         old_max_tokens = config.generator.max_tokens
         config.generator.max_tokens = 1
-        generator = OpenAIGenerator(config=config)
+        generator = OpenaiGenerator(config=config)
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
         config.generator.max_tokens = old_max_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        generator = OpenAIGenerator(config=config)
+        generator = OpenaiGenerator(config=config)
         bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
         with pytest.raises(ValueError):
             generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
 
 
-class TestVLLMGenerator:
-    """Tests for the `VLLMGenerator` class."""
+class TestVllmGenerator:
+    """Tests for the `VllmGenerator` class."""
 
     @pytest.fixture(scope="class")
     def config(self, vllm_generator_params) -> typing.Generator[DictConfig, None, None]:
@@ -86,16 +86,16 @@ class TestVLLMGenerator:
         yield DictConfig(dict(random_seed=703, generator=vllm_generator_params))
 
     def test_is_generator(self) -> None:
-        """Test that the VLLMGenerator is a Generator."""
-        assert issubclass(VLLMGenerator, Generator)
+        """Test that the VllmGenerator is a Generator."""
+        assert issubclass(VllmGenerator, Generator)
 
     def test_initialisation(self, config) -> None:
         """Test that the generator is initialised correctly."""
-        assert VLLMGenerator(config=config)
+        assert VllmGenerator(config=config)
 
     def test_generate(self, config, query, documents) -> None:
         """Test that the generator generates an answer."""
-        generator = VLLMGenerator(config=config)
+        generator = VllmGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         expected = GeneratedAnswer(
             answer="Hovedstaden i Eursaap er Uerop.", sources=["2"]
@@ -105,7 +105,7 @@ class TestVLLMGenerator:
     def test_streaming(self, config, query, documents):
         """Test that the generator streams answers."""
         config.generator.stream = True
-        generator = VLLMGenerator(config=config)
+        generator = VllmGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         assert isinstance(answer, typing.Generator)
         for partial_answer in answer:
@@ -116,14 +116,14 @@ class TestVLLMGenerator:
         """Test that the generator raises an error if the output is not JSON."""
         old_max_tokens = config.generator.max_tokens
         config.generator.max_tokens = 1
-        generator = VLLMGenerator(config=config)
+        generator = VllmGenerator(config=config)
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
         config.generator.max_tokens = old_max_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        generator = VLLMGenerator(config=config)
+        generator = VllmGenerator(config=config)
         bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
         with pytest.raises(ValueError):
             generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
