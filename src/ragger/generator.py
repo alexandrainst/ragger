@@ -196,7 +196,6 @@ class VLLMGenerator(Generator):
         destroy_model_parallel()
         clear_memory()
 
-        breakpoint()
         self.model = LLM(
             model=config.generator.model,
             gpu_memory_utilization=config.generator.gpu_memory_utilization,
@@ -208,6 +207,7 @@ class VLLMGenerator(Generator):
         self.logits_processor = JSONLogitsProcessor(
             schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
         )
+        breakpoint()
 
     def generate(
         self, query: str, documents: list[Document]
