@@ -242,6 +242,7 @@ class VLLMGenerator(Generator):
             logits_processors=[self.logits_processor],
         )
 
+        breakpoint()
         outputs = self.model.generate(prompts=[prompt], sampling_params=sampling_params)
         breakpoint()
 
