@@ -4,11 +4,11 @@ import re
 
 from omegaconf import DictConfig
 
-from .data_models import Document
-from .document_store import DocumentStore, JsonlDocumentStore
-from .embedder import E5Embedder, Embedder
-from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
-from .generator import Generator, OpenAIGenerator
+from .data_models import Components, Document
+from .document_store import JsonlDocumentStore
+from .embedder import E5Embedder
+from .embedding_store import NumpyEmbeddingStore
+from .generator import OpenAIGenerator, VLLMGenerator
 
 
 def format_answer(
@@ -69,11 +69,7 @@ def is_link(text: str) -> bool:
     return re.match(pattern=url_regex, string=text) is not None
 
 
-def load_ragger_components(
-    config: DictConfig,
-) -> dict[
-    str, type[DocumentStore] | type[Embedder] | type[EmbeddingStore] | type[Generator]
-]:
+def load_ragger_components(config: DictConfig) -> Components:
     """Load the components of the RAG system.
 
     Args:
@@ -81,33 +77,32 @@ def load_ragger_components(
             The Hydra configuration.
 
     """
+    components = Components()
+
     match name := config.document_store.name:
         case "jsonl":
-            document_store = JsonlDocumentStore
+            components.document_store = JsonlDocumentStore
         case _:
             raise ValueError(f"The DocumentStore type {name!r} is not supported")
 
     match name := config.embedder.name:
         case "e5":
-            embedder = E5Embedder
+            components.embedder = E5Embedder
         case _:
             raise ValueError(f"The Embedder type {name!r} is not supported")
 
     match name := config.embedding_store.name:
         case "numpy":
-            embedding_store = NumpyEmbeddingStore
+            components.embedding_store = NumpyEmbeddingStore
         case _:
             raise ValueError(f"The EmbeddingStore type {name!r} is not supported")
 
     match name := config.generator.name:
         case "openai":
-            generator = OpenAIGenerator
+            components.generator = OpenAIGenerator
+        case "vllm":
+            components.generator = VLLMGenerator
         case _:
             raise ValueError(f"The Generator type {name!r} is not supported")
 
-    return {
-        "document_store": document_store,
-        "embedder": embedder,
-        "embedding_store": embedding_store,
-        "generator": generator,
-    }
+    return components

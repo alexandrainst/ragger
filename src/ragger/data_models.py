@@ -1,10 +1,15 @@
 """Data models used in the RAG system."""
 
-from typing import Annotated
+from typing import Annotated, Type
 
 import annotated_types
 import numpy as np
 from pydantic import BaseModel, ConfigDict
+
+from .document_store import DocumentStore
+from .embedder import Embedder
+from .embedding_store import EmbeddingStore
+from .generator import Generator
 
 Index = str
 
@@ -30,3 +35,12 @@ class GeneratedAnswer(BaseModel):
 
     sources: list[Annotated[Index, annotated_types.Len(min_length=1)]]
     answer: str = ""
+
+
+class Components(BaseModel):
+    """The components of the RAG system."""
+
+    document_store: Type[DocumentStore] | None = None
+    embedder: Type[Embedder] | None = None
+    embedding_store: Type[EmbeddingStore] | None = None
+    generator: Type[Generator] | None = None
