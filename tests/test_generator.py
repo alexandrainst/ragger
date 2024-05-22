@@ -98,7 +98,7 @@ class TestVllmGenerator:
         """Initialise a configuration for testing."""
         params = deepcopy(vllm_generator_params)
         params["max_tokens"] = 1
-        params["port"] = 9998
+        params["port"] = params["port"] - 1
         config = DictConfig(dict(random_seed=703, generator=params))
         yield VllmGenerator(config=config)
 
