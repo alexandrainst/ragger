@@ -200,9 +200,9 @@ class VllmGenerator(OpenaiGenerator):
                     str(config.generator.max_model_len),
                     "--gpu-memory-utilization",
                     str(config.generator.gpu_memory_utilization),
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                ]
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL,
             )
             config.generator.server = "http://localhost:8000/v1"
             breakpoint()
