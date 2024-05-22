@@ -47,11 +47,14 @@ class OpenaiGenerator(Generator):
         else:
             api_key = None
 
-        self.server = (
-            f"{config.generator.server}:{config.generator.port}/v1"
-            if hasattr(config.generator, "server")
-            else None
-        )
+        self.server: str | None
+        if hasattr(config.generator, "server"):
+            host = config.generator.server
+            if not host.startswith("http"):
+                host = f"http://{host}"
+            self.server = f"{host}:{config.generator.port}/v1"
+        else:
+            self.server = None
 
         self.client = OpenAI(
             base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
