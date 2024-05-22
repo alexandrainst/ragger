@@ -9,3 +9,4 @@ prompt: ${..language.prompt}
 max_model_len: 10_000
 gpu_memory_utilization: 0.95
 server: null
+port: 8000

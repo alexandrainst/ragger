@@ -123,6 +123,7 @@ def vllm_generator_params(system_prompt, prompt) -> typing.Generator[dict, None,
         max_model_len=10_000,
         gpu_memory_utilization=0.95,
         server=None,
+        port=9999,
     )
 
 

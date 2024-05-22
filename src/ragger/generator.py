@@ -18,6 +18,7 @@ from openai.types.chat import (
 from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
+from transformers import AutoTokenizer
 
 from .data_models import Document, GeneratedAnswer, Generator
 
@@ -47,7 +48,9 @@ class OpenaiGenerator(Generator):
             api_key = None
 
         self.server = (
-            config.generator.server if hasattr(config.generator, "server") else None
+            f"{config.generator.server}:{config.generator.host}/v1"
+            if hasattr(config.generator, "server")
+            else None
         )
 
         self.client = OpenAI(
@@ -197,6 +200,8 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
+            config.generator.server = "http://localhost"
+            tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             self.server_process = subprocess.Popen(
                 args=[
                     "python",
@@ -208,13 +213,18 @@ class VllmGenerator(OpenaiGenerator):
                     str(config.generator.max_model_len),
                     "--gpu-memory-utilization",
                     str(config.generator.gpu_memory_utilization),
+                    "--chat-template",
+                    tokenizer.chat_template,
+                    "--host",
+                    config.generator.server,
+                    "--port",
+                    str(config.generator.port),
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
             logger.info("Starting vLLM server...")
             sleep(10)
-            config.generator.server = "http://localhost:8000/v1"
         else:
             self.server_process = None
 
