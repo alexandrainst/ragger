@@ -217,8 +217,8 @@ class VllmGenerator(OpenaiGenerator):
                     tokenizer.chat_template,
                     # "--host",
                     # config.generator.server,
-                    # "--port",
-                    # str(config.generator.port),
+                    "--port",
+                    str(config.generator.port),
                 ]
                 # stdout=subprocess.DEVNULL,
                 # stderr=subprocess.DEVNULL,
