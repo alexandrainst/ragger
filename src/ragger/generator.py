@@ -221,6 +221,8 @@ class VllmGenerator(OpenaiGenerator):
             The inference server process.
         """
         logger.info("Starting vLLM server...")
+
+        # Start server using the vLLM entrypoint
         process = subprocess.Popen(
             args=[
                 "python",
@@ -242,6 +244,8 @@ class VllmGenerator(OpenaiGenerator):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
+
+        # Wait for the server to start
         stderr = process.stderr
         assert stderr is not None
         for seconds in range(self.config.generator.timeout):
@@ -252,6 +256,7 @@ class VllmGenerator(OpenaiGenerator):
             sleep(1)
         else:
             raise RuntimeError("vLLM server failed to start.")
+
         return process
 
     def __del__(self) -> None:
