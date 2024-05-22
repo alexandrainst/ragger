@@ -91,17 +91,6 @@ class TestVllmGenerator:
         config = DictConfig(dict(random_seed=703, generator=vllm_generator_params))
         yield VllmGenerator(config=config)
 
-    @pytest.fixture(scope="class")
-    def generator_with_few_max_tokens(
-        self, vllm_generator_params
-    ) -> typing.Generator[VllmGenerator, None, None]:
-        """Initialise a configuration for testing."""
-        params = deepcopy(vllm_generator_params)
-        params["max_tokens"] = 1
-        params["port"] = params["port"] - 1
-        config = DictConfig(dict(random_seed=703, generator=params))
-        yield VllmGenerator(config=config)
-
     def test_is_generator(self) -> None:
         """Test that the VllmGenerator is a Generator."""
         assert issubclass(VllmGenerator, Generator)
@@ -116,12 +105,15 @@ class TestVllmGenerator:
         expected = GeneratedAnswer(answer="Uerop", sources=["2"])
         assert answer == expected
 
-    def test_error_if_not_json(
-        self, generator_with_few_max_tokens, query, documents
-    ) -> None:
+    def test_error_if_not_json(self, generator, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
+        old_config = generator.config
+        config_copy = deepcopy(old_config)
+        config_copy.generator.max_tokens = 1
+        generator.config = config_copy
         with pytest.raises(ValueError):
-            generator_with_few_max_tokens.generate(query=query, documents=documents)
+            generator.generate(query=query, documents=documents)
+        generator.config = old_config
 
     def test_error_if_not_valid_types(self, generator, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
