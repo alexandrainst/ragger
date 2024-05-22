@@ -219,9 +219,9 @@ class VllmGenerator(OpenaiGenerator):
                     config.generator.server,
                     "--port",
                     str(config.generator.port),
-                ],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                ]
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL,
             )
             logger.info("Starting vLLM server...")
             sleep(10)
