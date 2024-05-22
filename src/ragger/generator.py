@@ -5,6 +5,7 @@ import logging
 import os
 import subprocess
 import typing
+from time import sleep
 
 import torch
 from dotenv import load_dotenv
@@ -200,12 +201,13 @@ class VllmGenerator(OpenaiGenerator):
                     str(config.generator.max_model_len),
                     "--gpu-memory-utilization",
                     str(config.generator.gpu_memory_utilization),
-                ]
-                # stdout=subprocess.DEVNULL,
-                # stderr=subprocess.DEVNULL,
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
+            logger.info("Starting vLLM server...")
+            sleep(10)
             config.generator.server = "http://localhost:8000/v1"
-            breakpoint()
         else:
             self.server_process = None
 
