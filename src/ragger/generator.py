@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import subprocess
-import sys
 import typing
 from time import sleep
 
@@ -20,6 +19,8 @@ from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoTokenizer
+
+from ragger.utils import HiddenPrints
 
 from .data_models import Document, GeneratedAnswer, Generator
 
@@ -207,10 +208,8 @@ class VllmGenerator(OpenaiGenerator):
                 )
 
             # Load the tokenizer without printing any logs
-            sys.stderr = open(os.devnull, "w")
-            breakpoint()
-            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
-            sys.stderr = sys.__stderr__
+            with HiddenPrints():
+                self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
 
             config.generator.server = "0.0.0.0"
             self.server_process = self.start_inference_server()
