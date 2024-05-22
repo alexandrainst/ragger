@@ -48,7 +48,7 @@ class OpenaiGenerator(Generator):
             api_key = None
 
         self.server = (
-            f"{config.generator.server}:{config.generator.host}/v1"
+            f"{config.generator.server}:{config.generator.port}/v1"
             if hasattr(config.generator, "server")
             else None
         )
