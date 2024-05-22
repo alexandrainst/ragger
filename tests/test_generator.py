@@ -88,7 +88,7 @@ class TestVllmGenerator:
         self, vllm_generator_params
     ) -> typing.Generator[VllmGenerator, None, None]:
         """Initialise a configuration for testing."""
-        config = DictConfig(dict(random_seed=703, generator=vllm_generator_params))
+        config = DictConfig(dict(generator=vllm_generator_params))
         yield VllmGenerator(config=config)
 
     def test_is_generator(self) -> None:
