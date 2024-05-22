@@ -192,6 +192,8 @@ class VllmGenerator(OpenaiGenerator):
             config:
                 The Hydra configuration.
         """
+        self.config = config
+
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
         self.server_process: subprocess.Popen | None
