@@ -206,9 +206,8 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
-            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
-
             config.generator.server = "0.0.0.0"
+            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             self.server_process = self.start_inference_server()
         else:
             self.server_process = None
@@ -235,8 +234,8 @@ class VllmGenerator(OpenaiGenerator):
                 str(self.config.generator.gpu_memory_utilization),
                 "--chat-template",
                 self.tokenizer.chat_template,
-                # "--host",
-                # self.config.generator.server,
+                "--host",
+                self.config.generator.server,
                 "--port",
                 str(self.config.generator.port),
             ],
