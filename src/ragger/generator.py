@@ -107,10 +107,9 @@ class OpenaiGenerator(Generator):
                 generated_output = ""
                 generated_obj = GeneratedAnswer(sources=[])
                 for chunk in model_output:
-                    breakpoint()
                     chunk_str = chunk.choices[0].delta.content
                     if chunk_str is None:
-                        break
+                        continue
                     generated_output += chunk_str
                     try:
                         generated_dict = from_json(
