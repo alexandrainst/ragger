@@ -45,7 +45,7 @@ class OpenaiGenerator(Generator):
             env_var_name = config.generator.api_key_variable_name
             api_key = os.environ[env_var_name].strip('"')
         else:
-            api_key = None
+            api_key = "not-set"
 
         self.server: str | None
         if hasattr(config.generator, "server"):
