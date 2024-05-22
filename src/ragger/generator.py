@@ -1,14 +1,14 @@
 """Generation of an answer from a query and a list of relevant documents."""
 
-import importlib.util
 import json
 import logging
 import os
+import subprocess
 import typing
+from time import sleep
 
 import torch
 from dotenv import load_dotenv
-from jinja2 import TemplateError
 from omegaconf import DictConfig
 from openai import OpenAI, Stream
 from openai.types.chat import (
@@ -18,23 +18,9 @@ from openai.types.chat import (
 from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
+from transformers import AutoTokenizer
 
 from .data_models import Document, GeneratedAnswer, Generator
-from .utils import clear_memory
-
-if importlib.util.find_spec("vllm") is not None:
-    from vllm import LLM, SamplingParams
-    from vllm.model_executor.guided_decoding.outlines_logits_processors import (
-        JSONLogitsProcessor,
-    )
-
-    try:
-        from vllm.model_executor.parallel_utils.parallel_state import (
-            destroy_model_parallel,
-        )
-    except ImportError:
-        from vllm.distributed.parallel_state import destroy_model_parallel
-
 
 load_dotenv()
 
@@ -54,9 +40,24 @@ class OpenaiGenerator(Generator):
         """
         super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
-        api_key = os.environ[self.config.generator.api_key_variable_name]
+
+        if hasattr(config.generator, "api_key_variable_name"):
+            env_var_name = config.generator.api_key_variable_name
+            api_key = os.environ[env_var_name].strip('"')
+        else:
+            api_key = None
+
+        self.server: str | None
+        if hasattr(config.generator, "server"):
+            host = config.generator.server
+            if not host.startswith("http"):
+                host = f"http://{host}"
+            self.server = f"{host}:{config.generator.port}/v1"
+        else:
+            self.server = None
+
         self.client = OpenAI(
-            api_key=api_key.strip('"'), timeout=self.config.generator.timeout
+            base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
         )
 
     def generate(
@@ -91,6 +92,11 @@ class OpenaiGenerator(Generator):
                 ),
             ),
         ]
+
+        extra_body = dict()
+        if self.config.generator.name == "vllm":
+            extra_body["guided_json"] = GeneratedAnswer.model_json_schema()
+
         model_output = self.client.chat.completions.create(
             messages=messages,
             model=self.config.generator.model,
@@ -99,7 +105,9 @@ class OpenaiGenerator(Generator):
             stream=self.config.generator.stream,
             stop=["</answer>"],
             response_format=ResponseFormat(type="json_object"),
+            extra_body=extra_body,
         )
+
         if isinstance(model_output, Stream):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
@@ -108,7 +116,7 @@ class OpenaiGenerator(Generator):
                 for chunk in model_output:
                     chunk_str = chunk.choices[0].delta.content
                     if chunk_str is None:
-                        break
+                        continue
                     generated_output += chunk_str
                     try:
                         generated_dict = from_json(
@@ -174,7 +182,7 @@ class OpenaiGenerator(Generator):
         return generated_obj
 
 
-class VllmGenerator(Generator):
+class VllmGenerator(OpenaiGenerator):
     """A generator that uses a vLLM model to generate answers."""
 
     def __init__(self, config: DictConfig) -> None:
@@ -184,110 +192,75 @@ class VllmGenerator(Generator):
             config:
                 The Hydra configuration.
         """
+        self.config = config
+        logging.getLogger("transformers").setLevel(logging.CRITICAL)
+
+        # If an inference server isn't already running then start a new server in a
+        # background process and store the process ID
+        self.server_process: subprocess.Popen | None
+        if config.generator.server is None:
+            # We can only run the inference server if CUDA is available
+            if not torch.cuda.is_available():
+                raise RuntimeError(
+                    "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
+                    "Please ensure that a compatible GPU is available and try again."
+                )
+
+            config.generator.server = "0.0.0.0"
+            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
+            self.server_process = self.start_inference_server()
+        else:
+            self.server_process = None
+
         super().__init__(config=config)
 
-        if not torch.cuda.is_available():
-            raise RuntimeError(
-                "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
-                "Please ensure that a compatible GPU is available and try again."
-            )
-
-        # We need to remove the model from GPU memory before creating a new one
-        destroy_model_parallel()
-        clear_memory()
-
-        self.model = LLM(
-            model=config.generator.model,
-            gpu_memory_utilization=config.generator.gpu_memory_utilization,
-            max_model_len=config.generator.max_model_len,
-            seed=config.random_seed,
-            tensor_parallel_size=torch.cuda.device_count(),
-        )
-        self.tokenizer = self.model.get_tokenizer()
-        self.logits_processor = JSONLogitsProcessor(
-            schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
-        )
-
-    def generate(
-        self, query: str, documents: list[Document]
-    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
-        """Generate an answer from a query and relevant documents.
-
-        Args:
-            query:
-                The query to answer.
-            documents:
-                The relevant documents.
+    def start_inference_server(self) -> subprocess.Popen:
+        """Start the vLLM inference server.
 
         Returns:
-            The generated answer.
+            The inference server process.
         """
-        logger.info(
-            f"Generating answer for the query {query!r} and {len(documents):,} "
-            "documents..."
+        logger.info("Starting vLLM server...")
+
+        # Start server using the vLLM entrypoint
+        process = subprocess.Popen(
+            args=[
+                "python",
+                "-m",
+                "vllm.entrypoints.openai.api_server",
+                "--model",
+                self.config.generator.model,
+                "--max-model-len",
+                str(self.config.generator.max_model_len),
+                "--gpu-memory-utilization",
+                str(self.config.generator.gpu_memory_utilization),
+                "--chat-template",
+                self.tokenizer.chat_template,
+                "--host",
+                self.config.generator.server,
+                "--port",
+                str(self.config.generator.port),
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
         )
 
-        system_prompt = self.config.generator.system_prompt
-        user_prompt = self.config.generator.prompt.format(
-            documents=json.dumps([document.model_dump() for document in documents]),
-            query=query,
-        )
+        # Wait for the server to start
+        stderr = process.stderr
+        assert stderr is not None
+        for seconds in range(self.config.generator.timeout):
+            update = stderr.readline().decode("utf-8")
+            if "Uvicorn running" in update:
+                logger.info(f"vLLM server started after {seconds} seconds.")
+                break
+            sleep(1)
+        else:
+            raise RuntimeError("vLLM server failed to start.")
 
-        chat_template_kwargs = dict(
-            chat_template=self.tokenizer.chat_template,
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        try:
-            prompt = self.tokenizer.apply_chat_template(
-                conversation=[
-                    dict(role="system", content=system_prompt),
-                    dict(role="user", content=user_prompt),
-                ],
-                **chat_template_kwargs,
-            )
-        except TemplateError:
-            prompt = self.tokenizer.apply_chat_template(
-                conversation=[
-                    dict(role="user", content=system_prompt + "\n\n" + user_prompt)
-                ],
-                **chat_template_kwargs,
-            )
-
-        sampling_params = SamplingParams(
-            max_tokens=self.config.generator.max_tokens,
-            temperature=self.config.generator.temperature,
-            stop=["</answer>"],
-            logits_processors=[self.logits_processor],
-        )
-
-        model_output = self.model.generate(
-            prompts=[prompt], sampling_params=sampling_params
-        )
-        generated_output = model_output[0].outputs[0].text
-
-        try:
-            generated_dict = json.loads(generated_output)
-        except json.JSONDecodeError:
-            raise ValueError(
-                f"Could not decode JSON from model output: {generated_output}"
-            )
-
-        try:
-            generated_obj = GeneratedAnswer.model_validate(generated_dict)
-        except ValidationError:
-            raise ValueError(f"Could not validate model output: {generated_dict}")
-
-        logger.info(f"Generated answer: {generated_obj.answer!r}")
-        return generated_obj
+        return process
 
     def __del__(self) -> None:
-        """Clear the GPU memory used by the model, and remove the model itself."""
-        if hasattr(self, "model"):
-            del self.model
+        """Close down the vLLM server, if we started a new one."""
+        if self.server_process is not None:
+            self.server_process.kill()
         del self
-        try:
-            destroy_model_parallel()
-        except ImportError:
-            pass
-        clear_memory()

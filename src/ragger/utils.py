@@ -2,7 +2,9 @@
 
 import gc
 import importlib
+import os
 import re
+import sys
 from typing import Type
 
 import torch
@@ -103,15 +105,27 @@ def get_component_by_name(class_name: str, component_type: str) -> Type:
 
     Returns:
         The class.
+
+    Raises:
+        ValueError:
+            If the module or class cannot be found.
     """
     # Get the snake_case and PascalCase version of the class name
     full_class_name = f"{class_name}_{component_type}"
     name_pascal = snake_to_pascal(snake_string=full_class_name)
 
-    # Get the class from the module
+    # Get the module
     module_name = f"ragger.{component_type}"
-    module = importlib.import_module(name=module_name)
-    class_: Type = getattr(module, name_pascal)
+    try:
+        module = importlib.import_module(name=module_name)
+    except ModuleNotFoundError:
+        raise ValueError(f"Module {module_name!r}' not found.")
+
+    # Get the class from the module
+    try:
+        class_: Type = getattr(module, name_pascal)
+    except AttributeError:
+        raise ValueError(f"Class {name_pascal!r} not found in module {module_name!r}.")
 
     return class_
 
@@ -138,3 +152,21 @@ def load_ragger_components(config: DictConfig) -> Components:
             class_name=config.generator.name, component_type="generator"
         ),
     )
+
+
+class HiddenPrints:
+    """Context manager which removes all terminal output."""
+
+    def __enter__(self):
+        """Enter the context manager."""
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = open(os.devnull, "w")
+        sys.stderr = open(os.devnull, "w")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context manager."""
+        sys.stdout.close()
+        sys.stderr.close()
+        sys.stdout = self._original_stdout
+        sys.stderr = self._original_stderr

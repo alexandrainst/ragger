@@ -95,6 +95,7 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::PendingDeprecationWarning",
     "ignore::ImportWarning",
+    "ignore::ResourceWarning",
 ]
 log_cli_level = "info"
 testpaths = [
