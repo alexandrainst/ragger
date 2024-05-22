@@ -41,11 +41,12 @@ class OpenaiGenerator(Generator):
         super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
 
+        api_key = "not-set"
         if hasattr(config.generator, "api_key_variable_name"):
             env_var_name = config.generator.api_key_variable_name
-            api_key = os.environ[env_var_name].strip('"')
-        else:
-            api_key = "not-set"
+            api_key_from_variable = os.environ[env_var_name].strip('"')
+            if api_key_from_variable:
+                api_key = api_key_from_variable
 
         self.server: str | None
         if hasattr(config.generator, "server"):
