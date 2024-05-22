@@ -72,7 +72,7 @@ class TestOpenaiGenerator:
         config.generator.max_tokens = old_max_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
-        """Test that the generator raises an error if the output is not JSON."""
+        """Test that the generator raises an error if the JSON isn't valid."""
         generator = OpenaiGenerator(config=config)
         bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
         with pytest.raises(ValueError):
@@ -114,9 +114,3 @@ class TestVllmGenerator:
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
         generator.config = old_config
-
-    def test_error_if_not_valid_types(self, generator, query, documents) -> None:
-        """Test that the generator raises an error if the output is not JSON."""
-        bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
-        with pytest.raises(ValueError):
-            generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
