@@ -105,15 +105,27 @@ def get_component_by_name(class_name: str, component_type: str) -> Type:
 
     Returns:
         The class.
+
+    Raises:
+        ValueError:
+            If the module or class cannot be found.
     """
     # Get the snake_case and PascalCase version of the class name
     full_class_name = f"{class_name}_{component_type}"
     name_pascal = snake_to_pascal(snake_string=full_class_name)
 
-    # Get the class from the module
+    # Get the module
     module_name = f"ragger.{component_type}"
-    module = importlib.import_module(name=module_name)
-    class_: Type = getattr(module, name_pascal)
+    try:
+        module = importlib.import_module(name=module_name)
+    except ModuleNotFoundError:
+        raise ValueError(f"Module {module_name!r}' not found.")
+
+    # Get the class from the module
+    try:
+        class_: Type = getattr(module, name_pascal)
+    except AttributeError:
+        raise ValueError(f"Class {name_pascal!r} not found in module {module_name!r}.")
 
     return class_
 
