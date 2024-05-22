@@ -20,8 +20,6 @@ from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoTokenizer
 
-from ragger.utils import HiddenPrints
-
 from .data_models import Document, GeneratedAnswer, Generator
 
 load_dotenv()
@@ -195,6 +193,7 @@ class VllmGenerator(OpenaiGenerator):
                 The Hydra configuration.
         """
         self.config = config
+        logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
@@ -207,9 +206,7 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
-            # Load the tokenizer without printing any logs
-            with HiddenPrints():
-                self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
+            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
 
             config.generator.server = "0.0.0.0"
             self.server_process = self.start_inference_server()
