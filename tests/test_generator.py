@@ -1,6 +1,7 @@
 """Unit tests for the `generator` module."""
 
 import typing
+from copy import deepcopy
 
 import pytest
 import torch
@@ -83,38 +84,47 @@ class TestVllmGenerator:
     """Tests for the `VllmGenerator` class."""
 
     @pytest.fixture(scope="class")
-    def config(self, vllm_generator_params) -> typing.Generator[DictConfig, None, None]:
+    def generator(
+        self, vllm_generator_params
+    ) -> typing.Generator[VllmGenerator, None, None]:
         """Initialise a configuration for testing."""
-        yield DictConfig(dict(random_seed=703, generator=vllm_generator_params))
+        config = DictConfig(dict(random_seed=703, generator=vllm_generator_params))
+        yield VllmGenerator(config=config)
+
+    @pytest.fixture(scope="class")
+    def generator_with_few_max_tokens(
+        self, vllm_generator_params
+    ) -> typing.Generator[VllmGenerator, None, None]:
+        """Initialise a configuration for testing."""
+        params = deepcopy(vllm_generator_params)
+        params["max_tokens"] = 1
+        params["port"] = 9998
+        config = DictConfig(dict(random_seed=703, generator=params))
+        yield VllmGenerator(config=config)
 
     def test_is_generator(self) -> None:
         """Test that the VllmGenerator is a Generator."""
         assert issubclass(VllmGenerator, Generator)
 
-    def test_initialisation(self, config) -> None:
+    def test_initialisation(self, generator) -> None:
         """Test that the generator is initialised correctly."""
-        generator = VllmGenerator(config=config)
         assert generator
 
-    def test_generate(self, config, query, documents) -> None:
+    def test_generate(self, generator, query, documents) -> None:
         """Test that the generator generates an answer."""
-        generator = VllmGenerator(config=config)
         answer = generator.generate(query=query, documents=documents)
         expected = GeneratedAnswer(answer="Uerop", sources=["2"])
         assert answer == expected
 
-    def test_error_if_not_json(self, config, query, documents) -> None:
+    def test_error_if_not_json(
+        self, generator_with_few_max_tokens, query, documents
+    ) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        old_max_tokens = config.generator.max_tokens
-        config.generator.max_tokens = 1
-        generator = VllmGenerator(config=config)
         with pytest.raises(ValueError):
-            generator.generate(query=query, documents=documents)
-        config.generator.max_tokens = old_max_tokens
+            generator_with_few_max_tokens.generate(query=query, documents=documents)
 
-    def test_error_if_not_valid_types(self, config, query, documents) -> None:
+    def test_error_if_not_valid_types(self, generator, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        generator = VllmGenerator(config=config)
         bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
         with pytest.raises(ValueError):
             generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
