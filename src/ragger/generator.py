@@ -208,6 +208,7 @@ class VllmGenerator(OpenaiGenerator):
 
             # Load the tokenizer without printing any logs
             sys.stderr = open(os.devnull, "w")
+            breakpoint()
             self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             sys.stderr = sys.__stderr__
 
