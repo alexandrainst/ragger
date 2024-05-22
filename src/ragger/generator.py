@@ -86,6 +86,11 @@ class OpenaiGenerator(Generator):
                 ),
             ),
         ]
+
+        extra_body = dict()
+        if self.config.generator.name == "vllm":
+            extra_body["guided_json"] = GeneratedAnswer.model_json_schema()
+
         model_output = self.client.chat.completions.create(
             messages=messages,
             model=self.config.generator.model,
@@ -94,8 +99,9 @@ class OpenaiGenerator(Generator):
             stream=self.config.generator.stream,
             stop=["</answer>"],
             response_format=ResponseFormat(type="json_object"),
-            extra_body=dict(guided_json=GeneratedAnswer.model_json_schema()),
+            extra_body=extra_body,
         )
+
         if isinstance(model_output, Stream):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
