@@ -200,7 +200,7 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
-            config.generator.server = "http://0.0.0.0"
+            config.generator.server = "0.0.0.0"
             tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             self.server_process = subprocess.Popen(
                 args=[
