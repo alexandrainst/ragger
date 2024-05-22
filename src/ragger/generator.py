@@ -203,35 +203,48 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
+            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             config.generator.server = "0.0.0.0"
-            tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
-            self.server_process = subprocess.Popen(
-                args=[
-                    "python",
-                    "-m",
-                    "vllm.entrypoints.openai.api_server",
-                    "--model",
-                    config.generator.model,
-                    "--max-model-len",
-                    str(config.generator.max_model_len),
-                    "--gpu-memory-utilization",
-                    str(config.generator.gpu_memory_utilization),
-                    "--chat-template",
-                    tokenizer.chat_template,
-                    # "--host",
-                    # config.generator.server,
-                    "--port",
-                    str(config.generator.port),
-                ]
-                # stdout=subprocess.DEVNULL,
-                # stderr=subprocess.DEVNULL,
-            )
-            logger.info("Starting vLLM server...")
-            sleep(20)
+            self.server_process = self.start_inference_server()
         else:
             self.server_process = None
 
         super().__init__(config=config)
+
+    def start_inference_server(self) -> subprocess.Popen:
+        """Start the vLLM inference server.
+
+        Returns:
+            The inference server process.
+        """
+        logger.info("Starting vLLM server...")
+        process = subprocess.Popen(
+            args=[
+                "python",
+                "-m",
+                "vllm.entrypoints.openai.api_server",
+                "--model",
+                self.config.generator.model,
+                "--max-model-len",
+                str(self.config.generator.max_model_len),
+                "--gpu-memory-utilization",
+                str(self.config.generator.gpu_memory_utilization),
+                "--chat-template",
+                self.tokenizer.chat_template,
+                # "--host",
+                # self.config.generator.server,
+                "--port",
+                str(self.config.generator.port),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        stdout = process.stdout
+        for _ in range(20):
+            if stdout is not None:
+                print(stdout.readline())
+            sleep(1)
+        return process
 
     def __del__(self) -> None:
         """Close down the vLLM server, if we started a new one."""
