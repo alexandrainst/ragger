@@ -238,16 +238,19 @@ class VllmGenerator(OpenaiGenerator):
                 "--port",
                 str(self.config.generator.port),
             ],
-            stdout=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
-        stdout = process.stdout
         stderr = process.stderr
-        for _ in range(20):
-            if stdout is not None and stderr is not None:
-                print("STDOUT:", stdout.readline())
-                print("STDERR:", stderr.readline())
+        assert stderr is not None
+        for seconds in range(self.config.generator.timeout):
+            update = stderr.readline().decode("utf-8")
+            if "Uvicorn running" in update:
+                logger.info(f"vLLM server started after {seconds} seconds.")
+                break
             sleep(1)
+        else:
+            raise RuntimeError("vLLM server failed to start.")
         return process
 
     def __del__(self) -> None:
