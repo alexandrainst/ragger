@@ -224,7 +224,7 @@ class VllmGenerator(OpenaiGenerator):
                 # stderr=subprocess.DEVNULL,
             )
             logger.info("Starting vLLM server...")
-            sleep(10)
+            sleep(20)
         else:
             self.server_process = None
 
