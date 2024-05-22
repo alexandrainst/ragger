@@ -187,7 +187,6 @@ class VllmGenerator(OpenaiGenerator):
 
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
-        breakpoint()
         self.server_process: subprocess.Popen | None
         if config.generator.server is None:
             self.server_process = subprocess.Popen(
