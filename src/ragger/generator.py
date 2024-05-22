@@ -48,7 +48,6 @@ class OpenaiGenerator(Generator):
         self.server = (
             config.generator.server if hasattr(config.generator, "server") else None
         )
-        breakpoint()
 
         self.client = OpenAI(
             base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
@@ -205,6 +204,7 @@ class VllmGenerator(OpenaiGenerator):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
+            config.generator.server = "http://localhost:8000/v1"
         else:
             self.server_process = None
 
