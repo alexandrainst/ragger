@@ -205,6 +205,7 @@ class VllmGenerator(OpenaiGenerator):
                 stderr=subprocess.DEVNULL,
             )
             config.generator.server = "http://localhost:8000/v1"
+            breakpoint()
         else:
             self.server_process = None
 
