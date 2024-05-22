@@ -1,14 +1,13 @@
 """Generation of an answer from a query and a list of relevant documents."""
 
-import importlib.util
 import json
 import logging
 import os
+import subprocess
 import typing
 
 import torch
 from dotenv import load_dotenv
-from jinja2 import TemplateError
 from omegaconf import DictConfig
 from openai import OpenAI, Stream
 from openai.types.chat import (
@@ -20,21 +19,6 @@ from pydantic import ValidationError
 from pydantic_core import from_json
 
 from .data_models import Document, GeneratedAnswer, Generator
-from .utils import clear_memory
-
-if importlib.util.find_spec("vllm") is not None:
-    from vllm import LLM, SamplingParams
-    from vllm.model_executor.guided_decoding.outlines_logits_processors import (
-        JSONLogitsProcessor,
-    )
-
-    try:
-        from vllm.model_executor.parallel_utils.parallel_state import (
-            destroy_model_parallel,
-        )
-    except ImportError:
-        from vllm.distributed.parallel_state import destroy_model_parallel
-
 
 load_dotenv()
 
@@ -54,16 +38,18 @@ class OpenaiGenerator(Generator):
         """
         super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
-        api_key = os.environ[self.config.generator.api_key_variable_name].strip('"')
-        # self.client = OpenAI(
-        #     api_key=api_key, timeout=self.config.generator.timeout
-        # )
-        self.client = OpenAI(
-            base_url="http://localhost:8000/v1",
-            api_key=api_key,
-            timeout=self.config.generator.timeout,
+
+        api_key = os.getenv(self.config.generator.api_key_variable_name)
+        if isinstance(api_key, str):
+            api_key = api_key.strip('"')
+
+        self.server = (
+            config.generator.server if hasattr(config.generator, "server") else None
         )
-        self.model = self.client.models.list().data[0].id
+
+        self.client = OpenAI(
+            base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
+        )
 
     def generate(
         self, query: str, documents: list[Document]
@@ -99,7 +85,7 @@ class OpenaiGenerator(Generator):
         ]
         model_output = self.client.chat.completions.create(
             messages=messages,
-            model=self.model,  # self.config.generator.model,
+            model=self.config.generator.model,
             max_tokens=self.config.generator.max_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
@@ -107,7 +93,6 @@ class OpenaiGenerator(Generator):
             response_format=ResponseFormat(type="json_object"),
             extra_body=dict(guided_json=GeneratedAnswer.model_json_schema()),
         )
-        breakpoint()
         if isinstance(model_output, Stream):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
@@ -182,7 +167,7 @@ class OpenaiGenerator(Generator):
         return generated_obj
 
 
-class VllmGenerator(Generator):
+class VllmGenerator(OpenaiGenerator):
     """A generator that uses a vLLM model to generate answers."""
 
     def __init__(self, config: DictConfig) -> None:
@@ -192,110 +177,38 @@ class VllmGenerator(Generator):
             config:
                 The Hydra configuration.
         """
-        super().__init__(config=config)
-
         if not torch.cuda.is_available():
             raise RuntimeError(
                 "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
                 "Please ensure that a compatible GPU is available and try again."
             )
 
-        # We need to remove the model from GPU memory before creating a new one
-        destroy_model_parallel()
-        clear_memory()
-
-        self.model = LLM(
-            model=config.generator.model,
-            gpu_memory_utilization=config.generator.gpu_memory_utilization,
-            max_model_len=config.generator.max_model_len,
-            seed=config.random_seed,
-            tensor_parallel_size=torch.cuda.device_count(),
-        )
-        self.tokenizer = self.model.get_tokenizer()
-        self.logits_processor = JSONLogitsProcessor(
-            schema=GeneratedAnswer, tokenizer=self.tokenizer, whitespace_pattern=r" ?"
-        )
-
-    def generate(
-        self, query: str, documents: list[Document]
-    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
-        """Generate an answer from a query and relevant documents.
-
-        Args:
-            query:
-                The query to answer.
-            documents:
-                The relevant documents.
-
-        Returns:
-            The generated answer.
-        """
-        logger.info(
-            f"Generating answer for the query {query!r} and {len(documents):,} "
-            "documents..."
-        )
-
-        system_prompt = self.config.generator.system_prompt
-        user_prompt = self.config.generator.prompt.format(
-            documents=json.dumps([document.model_dump() for document in documents]),
-            query=query,
-        )
-
-        chat_template_kwargs = dict(
-            chat_template=self.tokenizer.chat_template,
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        try:
-            prompt = self.tokenizer.apply_chat_template(
-                conversation=[
-                    dict(role="system", content=system_prompt),
-                    dict(role="user", content=user_prompt),
+        # If an inference server isn't already running then start a new server in a
+        # background process and store the process ID
+        breakpoint()
+        self.server_process: subprocess.Popen | None
+        if config.generator.server is None:
+            self.server_process = subprocess.Popen(
+                args=[
+                    "python",
+                    "-m",
+                    "vllm.entrypoints.openai.api_server",
+                    "--model",
+                    config.generator.model,
+                    "--max-model-len",
+                    str(config.generator.max_model_len),
+                    "--gpu-memory-utilization",
+                    str(config.generator.gpu_memory_utilization),
                 ],
-                **chat_template_kwargs,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
-        except TemplateError:
-            prompt = self.tokenizer.apply_chat_template(
-                conversation=[
-                    dict(role="user", content=system_prompt + "\n\n" + user_prompt)
-                ],
-                **chat_template_kwargs,
-            )
+        else:
+            self.server_process = None
 
-        sampling_params = SamplingParams(
-            max_tokens=self.config.generator.max_tokens,
-            temperature=self.config.generator.temperature,
-            stop=["</answer>"],
-            logits_processors=[self.logits_processor],
-        )
-
-        model_output = self.model.generate(
-            prompts=[prompt], sampling_params=sampling_params
-        )
-        generated_output = model_output[0].outputs[0].text
-
-        try:
-            generated_dict = json.loads(generated_output)
-        except json.JSONDecodeError:
-            raise ValueError(
-                f"Could not decode JSON from model output: {generated_output}"
-            )
-
-        try:
-            generated_obj = GeneratedAnswer.model_validate(generated_dict)
-        except ValidationError:
-            raise ValueError(f"Could not validate model output: {generated_dict}")
-
-        logger.info(f"Generated answer: {generated_obj.answer!r}")
-        return generated_obj
+        super().__init__(config=config)
 
     def __del__(self) -> None:
-        """Clear the GPU memory used by the model, and remove the model itself."""
-        if hasattr(self, "model"):
-            del self.model
-        del self
-        try:
-            destroy_model_parallel()
-        except ImportError:
-            pass
-        clear_memory()
+        """Close down the vLLM server, if we started a new one."""
+        if self.server_process is not None:
+            self.server_process.kill()

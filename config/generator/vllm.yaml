@@ -7,3 +7,4 @@ max_tokens: 256
 stream: true
 system_prompt: ${..language.system_prompt}
 prompt: ${..language.prompt}
+server: null
