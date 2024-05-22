@@ -85,6 +85,7 @@ class OpenaiGenerator(Generator):
                 ),
             ),
         ]
+        breakpoint()
         model_output = self.client.chat.completions.create(
             messages=messages,
             model=self.config.generator.model,
