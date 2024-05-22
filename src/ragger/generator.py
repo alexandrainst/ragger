@@ -256,5 +256,6 @@ class VllmGenerator(OpenaiGenerator):
 
     def __del__(self) -> None:
         """Close down the vLLM server, if we started a new one."""
+        breakpoint()
         if self.server_process is not None:
             self.server_process.kill()
