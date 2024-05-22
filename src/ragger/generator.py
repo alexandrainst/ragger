@@ -215,8 +215,8 @@ class VllmGenerator(OpenaiGenerator):
                     str(config.generator.gpu_memory_utilization),
                     "--chat-template",
                     tokenizer.chat_template,
-                    "--host",
-                    config.generator.server,
+                    # "--host",
+                    # config.generator.server,
                     "--port",
                     str(config.generator.port),
                 ]
