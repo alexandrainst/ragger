@@ -114,13 +114,15 @@ def vllm_generator_params(system_prompt, prompt) -> typing.Generator[dict, None,
     yield dict(
         name="vllm",
         model="ThatsGroes/munin-SkoleGPTOpenOrca-7b-16bit",
-        max_model_len=10_000,
-        gpu_memory_utilization=0.95,
         temperature=0.0,
         max_tokens=128,
         stream=False,
+        timeout=60,
         system_prompt=system_prompt,
         prompt=prompt,
+        max_model_len=10_000,
+        gpu_memory_utilization=0.95,
+        server=None,
     )
 
 

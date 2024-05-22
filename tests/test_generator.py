@@ -95,7 +95,6 @@ class TestVllmGenerator:
         """Test that the generator is initialised correctly."""
         generator = VllmGenerator(config=config)
         assert generator
-        del generator
 
     def test_generate(self, config, query, documents) -> None:
         """Test that the generator generates an answer."""
