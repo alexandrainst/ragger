@@ -180,16 +180,17 @@ class VllmGenerator(OpenaiGenerator):
             config:
                 The Hydra configuration.
         """
-        if not torch.cuda.is_available():
-            raise RuntimeError(
-                "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
-                "Please ensure that a compatible GPU is available and try again."
-            )
-
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
         self.server_process: subprocess.Popen | None
         if config.generator.server is None:
+            # We can only run the inference server if CUDA is available
+            if not torch.cuda.is_available():
+                raise RuntimeError(
+                    "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
+                    "Please ensure that a compatible GPU is available and try again."
+                )
+
             self.server_process = subprocess.Popen(
                 args=[
                     "python",
