@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 import typing
 from time import sleep
 
@@ -205,7 +206,11 @@ class VllmGenerator(OpenaiGenerator):
                     "Please ensure that a compatible GPU is available and try again."
                 )
 
+            # Load the tokenizer without printing any logs
+            sys.stderr = open(os.devnull, "w")
             self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
+            sys.stderr = sys.__stderr__
+
             config.generator.server = "0.0.0.0"
             self.server_process = self.start_inference_server()
         else:
