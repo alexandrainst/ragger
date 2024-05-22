@@ -242,9 +242,11 @@ class VllmGenerator(OpenaiGenerator):
             stderr=subprocess.PIPE,
         )
         stdout = process.stdout
+        stderr = process.stderr
         for _ in range(20):
-            if stdout is not None:
-                print(stdout.readline())
+            if stdout is not None and stderr is not None:
+                print("STDOUT:", stdout.readline())
+                print("STDERR:", stderr.readline())
             sleep(1)
         return process
 
