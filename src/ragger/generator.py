@@ -48,6 +48,7 @@ class OpenaiGenerator(Generator):
         self.server = (
             config.generator.server if hasattr(config.generator, "server") else None
         )
+        breakpoint()
 
         self.client = OpenAI(
             base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
@@ -85,7 +86,6 @@ class OpenaiGenerator(Generator):
                 ),
             ),
         ]
-        breakpoint()
         model_output = self.client.chat.completions.create(
             messages=messages,
             model=self.config.generator.model,
