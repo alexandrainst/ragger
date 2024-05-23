@@ -7,7 +7,7 @@ from typing import Annotated, Type
 import annotated_types
 import numpy as np
 from omegaconf import DictConfig
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 Index = str
 
@@ -31,7 +31,9 @@ class Embedding(BaseModel):
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: list[Annotated[Index, annotated_types.Len(min_length=1)]]
+    sources: Annotated[
+        list[Annotated[Index, annotated_types.Len(min_length=1)]], Field(max_length=5)
+    ]
     answer: str = ""
 
 
@@ -57,6 +59,19 @@ class DocumentStore(ABC):
 
         Returns:
             The document with the given ID.
+        """
+        ...
+
+    @abstractmethod
+    def __contains__(self, index: Index) -> bool:
+        """Check if a document with the given ID exists in the store.
+
+        Args:
+            index:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
         """
         ...
 
@@ -195,6 +210,19 @@ class Generator(ABC):
                 The Hydra configuration.
         """
         self.config = config
+
+    @abstractmethod
+    def prompt_too_long(self, prompt: str) -> bool:
+        """Check if a prompt is too long for the generator.
+
+        Args:
+            prompt:
+                The prompt to check.
+
+        Returns:
+            Whether the prompt is too long for the generator.
+        """
+        ...
 
     @abstractmethod
     def generate(

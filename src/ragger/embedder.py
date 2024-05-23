@@ -7,7 +7,6 @@ import re
 import numpy as np
 from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
-from torch.cuda import OutOfMemoryError
 from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, Embedder, Embedding
@@ -28,7 +27,7 @@ class E5Embedder(Embedder):
             config:
                 The Hydra configuration.
         """
-        super().__init__(config)
+        super().__init__(config=config)
         self.embedder = None
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.embedder.model_id)
         self.model_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
@@ -39,18 +38,10 @@ class E5Embedder(Embedder):
         This method loads the E5 model and prepares it for use.
         """
         logger.info("Initialising the E5 model...")
-        try:
-            self.embedder = SentenceTransformer(
-                model_name_or_path=self.config.embedder.model_id
-            )
-        except OutOfMemoryError:
-            logger.error(
-                "Out of memory error occurred while initialising the E5 model. "
-                "Falling back to CPU."
-            )
-            self.embedder = SentenceTransformer(
-                model_name_or_path=self.config.embedder.model_id, device="cpu"
-            )
+        device = "cpu" if self.config.generator.name == "vllm" else None
+        self.embedder = SentenceTransformer(
+            model_name_or_path=self.config.embedder.model_id, device=device
+        )
         logger.info("Finished initialising the E5 model.")
 
     @property

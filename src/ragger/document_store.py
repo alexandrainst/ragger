@@ -51,6 +51,18 @@ class JsonlDocumentStore(DocumentStore):
             raise KeyError(f"Document with ID {index!r} not found")
         return self._documents[index]
 
+    def __contains__(self, index: Index) -> bool:
+        """Check if a document with the given ID exists in the store.
+
+        Args:
+            index:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        return index in self._documents
+
     def get_all_documents(self) -> list[Document]:
         """Fetch all documents from the store.
 

@@ -109,17 +109,21 @@ class RagSystem:
                 answer = GeneratedAnswer(sources=[])
                 for answer in generated_answer:
                     assert isinstance(answer, GeneratedAnswer)
-                    yield (
-                        answer.answer,
-                        [self.document_store[i] for i in answer.sources],
-                    )
+                    source_documents = [
+                        self.document_store[i]
+                        for i in answer.sources
+                        if i in self.document_store
+                    ]
+                    yield (answer.answer, source_documents)
 
             return streamer()
         else:
-            return (
-                generated_answer.answer,
-                [self.document_store[i] for i in generated_answer.sources],
-            )
+            source_documents = [
+                self.document_store[i]
+                for i in generated_answer.sources
+                if i in self.document_store
+            ]
+            return (generated_answer.answer, source_documents)
 
     def answer_formatted(self, query: str) -> str | typing.Generator[str, None, None]:
         """Answer a query in a formatted single string.

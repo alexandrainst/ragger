@@ -7,6 +7,7 @@ import subprocess
 import typing
 from time import sleep
 
+import tiktoken
 import torch
 from dotenv import load_dotenv
 from omegaconf import DictConfig
@@ -58,8 +59,25 @@ class OpenaiGenerator(Generator):
             self.server = None
 
         self.client = OpenAI(
-            base_url=self.server, api_key=api_key, timeout=self.config.generator.timeout
+            base_url=self.server,
+            api_key=api_key,
+            timeout=self.config.generator.timeout,
+            max_retries=self.config.generator.max_retries,
         )
+
+    def prompt_too_long(self, prompt: str) -> bool:
+        """Check if a prompt is too long for the generator.
+
+        Args:
+            prompt:
+                The prompt to check.
+
+        Returns:
+            Whether the prompt is too long for the generator.
+        """
+        encoding = tiktoken.encoding_for_model(model_name=self.config.generator.model)
+        num_tokens = len(encoding.encode(text=prompt))
+        return num_tokens > self.config.generator.max_input_tokens
 
     def generate(
         self, query: str, documents: list[Document]
@@ -75,24 +93,32 @@ class OpenaiGenerator(Generator):
         Returns:
             The generated answer.
         """
-        logger.info(
-            f"Generating answer for the query {query!r} and {len(documents):,} "
-            "documents..."
-        )
-        messages = [
-            ChatCompletionSystemMessageParam(
-                role="system", content=self.config.generator.system_prompt
-            ),
-            ChatCompletionUserMessageParam(
-                role="user",
-                content=self.config.generator.prompt.format(
-                    documents=json.dumps(
-                        [document.model_dump() for document in documents]
-                    ),
-                    query=query,
+        for num_documents_to_include in range(len(documents), -1, -1):
+            logger.info(
+                f"Generating answer for the query {query!r} and "
+                f"{num_documents_to_include:,} documents..."
+            )
+            messages = [
+                ChatCompletionSystemMessageParam(
+                    role="system", content=self.config.generator.system_prompt
                 ),
-            ),
-        ]
+                ChatCompletionUserMessageParam(
+                    role="user",
+                    content=self.config.generator.prompt.format(
+                        documents=json.dumps(
+                            [
+                                document.model_dump()
+                                for document in documents[:num_documents_to_include]
+                            ]
+                        ),
+                        query=query,
+                    ),
+                ),
+            ]
+            if not self.prompt_too_long(prompt=json.dumps(messages)):
+                break
+        else:
+            return GeneratedAnswer(sources=[], answer="Prompt too long.")
 
         extra_body = dict()
         if self.config.generator.name == "vllm":
@@ -101,7 +127,7 @@ class OpenaiGenerator(Generator):
         model_output = self.client.chat.completions.create(
             messages=messages,
             model=self.config.generator.model,
-            max_tokens=self.config.generator.max_tokens,
+            max_tokens=self.config.generator.max_output_tokens,
             temperature=self.config.generator.temperature,
             stream=self.config.generator.stream,
             stop=["</answer>"],
@@ -167,17 +193,21 @@ class OpenaiGenerator(Generator):
         else:
             generated_output = model_output.choices[0].message.content.strip()
 
-        try:
-            generated_dict = json.loads(generated_output)
-        except json.JSONDecodeError:
-            raise ValueError(
-                f"Could not decode JSON from model output: {generated_output}"
-            )
+        for suffix in ["", "}", '"}']:
+            try:
+                generated_dict = json.loads(generated_output + suffix)
+                break
+            except json.JSONDecodeError:
+                continue
+        else:
+            logger.error(f"Could not decode JSON from model output: {generated_output}")
+            return GeneratedAnswer(sources=[], answer="Not JSON-decodable.")
 
         try:
             generated_obj = GeneratedAnswer.model_validate(generated_dict)
         except ValidationError:
-            raise ValueError(f"Could not validate model output: {generated_dict}")
+            logger.error(f"Could not validate model output: {generated_dict}")
+            return GeneratedAnswer(sources=[], answer="JSON not valid.")
 
         logger.info(f"Generated answer: {generated_obj.answer!r}")
         return generated_obj
@@ -193,8 +223,10 @@ class VllmGenerator(OpenaiGenerator):
             config:
                 The Hydra configuration.
         """
-        self.config = config
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
+
+        self.config = config
+        self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
 
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
@@ -208,12 +240,24 @@ class VllmGenerator(OpenaiGenerator):
                 )
 
             config.generator.server = "0.0.0.0"
-            self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
             self.server_process = self.start_inference_server()
         else:
             self.server_process = None
 
         super().__init__(config=config)
+
+    def prompt_too_long(self, prompt: str) -> bool:
+        """Check if a prompt is too long for the generator.
+
+        Args:
+            prompt:
+                The prompt to check.
+
+        Returns:
+            Whether the prompt is too long for the generator.
+        """
+        num_tokens = len(self.tokenizer.encode(prompt))
+        return num_tokens > self.config.generator.max_input_tokens
 
     def start_inference_server(self) -> subprocess.Popen:
         """Start the vLLM inference server.
@@ -224,6 +268,11 @@ class VllmGenerator(OpenaiGenerator):
         logger.info("Starting vLLM server...")
 
         # Start server using the vLLM entrypoint
+        max_model_len = str(
+            self.config.generator.max_input_tokens
+            + self.config.generator.max_output_tokens
+            + 100
+        )
         process = subprocess.Popen(
             args=[
                 "python",
@@ -232,7 +281,7 @@ class VllmGenerator(OpenaiGenerator):
                 "--model",
                 self.config.generator.model,
                 "--max-model-len",
-                str(self.config.generator.max_model_len),
+                max_model_len,
                 "--gpu-memory-utilization",
                 str(self.config.generator.gpu_memory_utilization),
                 "--chat-template",
@@ -241,6 +290,8 @@ class VllmGenerator(OpenaiGenerator):
                 self.config.generator.server,
                 "--port",
                 str(self.config.generator.port),
+                "--swap-space",
+                "0",
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
@@ -256,12 +307,13 @@ class VllmGenerator(OpenaiGenerator):
                 break
             sleep(1)
         else:
+            process.kill()
             raise RuntimeError("vLLM server failed to start.")
 
         return process
 
     def __del__(self) -> None:
         """Close down the vLLM server, if we started a new one."""
-        if self.server_process is not None:
+        if hasattr(self, "server_process") and self.server_process is not None:
             self.server_process.kill()
         del self
