@@ -5,13 +5,15 @@ import logging
 import os
 import subprocess
 import typing
+from functools import cached_property
 from time import sleep
 
 import tiktoken
 import torch
 from dotenv import load_dotenv
+from httpx import ReadTimeout, RemoteProtocolError
 from omegaconf import DictConfig
-from openai import OpenAI, Stream
+from openai import APITimeoutError, InternalServerError, OpenAI, Stream
 from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
@@ -19,7 +21,7 @@ from openai.types.chat import (
 from openai.types.chat.completion_create_params import ResponseFormat
 from pydantic import ValidationError
 from pydantic_core import from_json
-from transformers import AutoTokenizer
+from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, GeneratedAnswer, Generator
 
@@ -115,25 +117,39 @@ class OpenaiGenerator(Generator):
                     ),
                 ),
             ]
-            if not self.prompt_too_long(prompt=json.dumps(messages)):
-                break
+
+            if self.prompt_too_long(prompt=json.dumps(messages)):
+                continue
+
+            extra_body = dict()
+            if self.config.generator.name == "vllm":
+                extra_body["guided_json"] = GeneratedAnswer.model_json_schema()
+
+            try:
+                model_output = self.client.chat.completions.create(
+                    messages=messages,
+                    model=self.config.generator.model,
+                    max_tokens=self.config.generator.max_output_tokens,
+                    temperature=self.config.generator.temperature,
+                    stream=self.config.generator.stream,
+                    stop=["</answer>"],
+                    response_format=ResponseFormat(type="json_object"),
+                    extra_body=extra_body,
+                )
+            except (InternalServerError, APITimeoutError):
+                continue
+
+            # If we are streaming we try to get a sample from the stream to check if
+            # the prompt is too long, as we cannot check for this in advance
+            if isinstance(model_output, Stream):
+                try:
+                    next(iter(model_output))
+                except (RemoteProtocolError, ReadTimeout):
+                    continue
+
+            break
         else:
             return GeneratedAnswer(sources=[], answer="Prompt too long.")
-
-        extra_body = dict()
-        if self.config.generator.name == "vllm":
-            extra_body["guided_json"] = GeneratedAnswer.model_json_schema()
-
-        model_output = self.client.chat.completions.create(
-            messages=messages,
-            model=self.config.generator.model,
-            max_tokens=self.config.generator.max_output_tokens,
-            temperature=self.config.generator.temperature,
-            stream=self.config.generator.stream,
-            stop=["</answer>"],
-            response_format=ResponseFormat(type="json_object"),
-            extra_body=extra_body,
-        )
 
         if isinstance(model_output, Stream):
 
@@ -227,6 +243,7 @@ class VllmGenerator(OpenaiGenerator):
 
         self.config = config
         self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
+        self.hf_config = AutoConfig.from_pretrained(config.generator.model)
 
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
@@ -246,6 +263,39 @@ class VllmGenerator(OpenaiGenerator):
 
         super().__init__(config=config)
 
+    @cached_property
+    def max_model_length(self) -> int:
+        """Get the maximum model length.
+
+        Returns:
+            The maximum model length.
+        """
+        max_model_len_candidates = [
+            self.config.generator.max_input_tokens
+            + self.config.generator.max_output_tokens,
+            10_000 - self.config.generator.max_output_tokens,  # Upper limit of 10k
+        ]
+        if (
+            hasattr(self.tokenizer, "model_max_length")
+            and self.tokenizer.model_max_length
+        ):
+            max_model_len_candidates.append(
+                self.tokenizer.model_max_length
+                - self.config.generator.max_output_tokens
+            )
+        if (
+            hasattr(self.hf_config, "max_position_embeddings")
+            and self.hf_config.max_position_embeddings
+        ):
+            max_model_len_candidates.append(
+                self.hf_config.max_position_embeddings
+                - self.config.generator.max_output_tokens
+            )
+
+        max_model_len = min(max_model_len_candidates)
+        logger.info(f"Max model length set to {max_model_len:,} tokens.")
+        return max_model_len
+
     def prompt_too_long(self, prompt: str) -> bool:
         """Check if a prompt is too long for the generator.
 
@@ -257,7 +307,7 @@ class VllmGenerator(OpenaiGenerator):
             Whether the prompt is too long for the generator.
         """
         num_tokens = len(self.tokenizer.encode(prompt))
-        return num_tokens > self.config.generator.max_input_tokens
+        return num_tokens > self.max_model_length
 
     def start_inference_server(self) -> subprocess.Popen:
         """Start the vLLM inference server.
@@ -265,44 +315,54 @@ class VllmGenerator(OpenaiGenerator):
         Returns:
             The inference server process.
         """
-        logger.info("Starting vLLM server...")
+        logger.info("Loading/downloading model and starting vLLM server...")
 
-        # Start server using the vLLM entrypoint
-        max_model_len = str(
-            self.config.generator.max_input_tokens
-            + self.config.generator.max_output_tokens
-            + 100
-        )
+        process_args = [
+            "python",
+            "-m",
+            "vllm.entrypoints.openai.api_server",
+            "--swap-space",
+            "0",
+            "--enforce-eager",
+            "--model",
+            self.config.generator.model,
+            "--max-model-len",
+            str(self.max_model_length),
+            "--gpu-memory-utilization",
+            str(self.config.generator.gpu_memory_utilization),
+            "--host",
+            self.config.generator.server,
+            "--port",
+            str(self.config.generator.port),
+        ]
+        if self.tokenizer.chat_template:
+            process_args.extend(["--chat-template", self.tokenizer.chat_template])
+
         process = subprocess.Popen(
-            args=[
-                "python",
-                "-m",
-                "vllm.entrypoints.openai.api_server",
-                "--model",
-                self.config.generator.model,
-                "--max-model-len",
-                max_model_len,
-                "--gpu-memory-utilization",
-                str(self.config.generator.gpu_memory_utilization),
-                "--chat-template",
-                self.tokenizer.chat_template,
-                "--host",
-                self.config.generator.server,
-                "--port",
-                str(self.config.generator.port),
-                "--swap-space",
-                "0",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
+            args=process_args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE
         )
 
-        # Wait for the server to start
+        # Get the stderr output from the process
         stderr = process.stderr
         assert stderr is not None
-        for seconds in range(self.config.generator.timeout):
-            update = stderr.readline().decode("utf-8")
-            if "Uvicorn running" in update:
+
+        # Wait for the server to start. The `set_blocking` removes blocking from the
+        # `readline` method, so that we can check for updates from the server while
+        # waiting for it to start.
+        os.set_blocking(stderr.fileno(), False)
+        error_message = ""
+        for seconds in range(self.config.generator.server_start_timeout):
+            update = stderr.readline().decode()
+            if not update and error_message:
+                process.kill()
+                raise RuntimeError(
+                    "vLLM server failed to start with the error message "
+                    + error_message.strip()
+                )
+            elif "error" in update.lower() or error_message:
+                error_message += update
+                continue
+            elif "Uvicorn running" in update:
                 logger.info(f"vLLM server started after {seconds} seconds.")
                 break
             sleep(1)
