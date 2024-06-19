@@ -80,11 +80,8 @@ convention = "google"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
-    '--verbose',
     '--durations=10',
     '--color=yes',
-    '-s',
-    '-vv',
     '--doctest-modules',
     '--cov=src/ragger',
 ]
