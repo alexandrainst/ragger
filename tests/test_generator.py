@@ -64,12 +64,12 @@ class TestOpenaiGenerator:
 
     def test_error_if_not_json(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
-        old_max_tokens = config.generator.max_tokens
-        config.generator.max_tokens = 1
+        old_max_output_tokens = config.generator.max_output_tokens
+        config.generator.max_output_tokens = 1
         generator = OpenaiGenerator(config=config)
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
-        config.generator.max_tokens = old_max_tokens
+        config.generator.max_output_tokens = old_max_output_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the JSON isn't valid."""
@@ -109,7 +109,7 @@ class TestVllmGenerator:
         """Test that the generator raises an error if the output is not JSON."""
         old_config = generator.config
         config_copy = deepcopy(old_config)
-        config_copy.generator.max_tokens = 1
+        config_copy.generator.max_output_tokens = 1
         generator.config = config_copy
         with pytest.raises(ValueError):
             generator.generate(query=query, documents=documents)
