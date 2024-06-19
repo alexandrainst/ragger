@@ -93,6 +93,7 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",
     "ignore::ImportWarning",
     "ignore::ResourceWarning",
+    "ignore::FutureWarning",
 ]
 log_cli_level = "info"
 testpaths = [
