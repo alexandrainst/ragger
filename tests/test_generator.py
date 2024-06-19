@@ -65,18 +65,20 @@ class TestOpenaiGenerator:
     def test_error_if_not_json(self, config, query, documents) -> None:
         """Test that the generator raises an error if the output is not JSON."""
         old_max_output_tokens = config.generator.max_output_tokens
-        config.generator.max_output_tokens = 1
+        config.generator.max_output_tokens = 3
         generator = OpenaiGenerator(config=config)
-        with pytest.raises(ValueError):
-            generator.generate(query=query, documents=documents)
+        answer = generator.generate(query=query, documents=documents)
+        expected = GeneratedAnswer(answer="Not JSON-decodable.", sources=[])
+        assert answer == expected
         config.generator.max_output_tokens = old_max_output_tokens
 
     def test_error_if_not_valid_types(self, config, query, documents) -> None:
         """Test that the generator raises an error if the JSON isn't valid."""
         generator = OpenaiGenerator(config=config)
         bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
-        with pytest.raises(ValueError):
-            generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
+        answer = generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
+        expected = GeneratedAnswer(answer="JSON not valid.", sources=[])
+        assert answer == expected
 
 
 @pytest.mark.skipif(condition=not torch.cuda.is_available(), reason="No GPU available.")
