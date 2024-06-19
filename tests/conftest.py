@@ -102,6 +102,7 @@ def openai_generator_params(
         temperature=0.0,
         stream=False,
         timeout=60,
+        max_retries=3,
         max_tokens=128,
         system_prompt=system_prompt,
         prompt=prompt,
