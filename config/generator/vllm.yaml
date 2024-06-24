@@ -1,7 +1,8 @@
 name: vllm
 model: ThatsGroes/munin-SkoleGPTOpenOrca-7b-16bit
 temperature: 0.0
-max_tokens: 256
+max_input_tokens: 32_768
+max_output_tokens: 256
 stream: true
 timeout: 60
 system_prompt: ${..language.system_prompt}

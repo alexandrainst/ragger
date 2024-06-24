@@ -80,11 +80,8 @@ convention = "google"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
-    '--verbose',
     '--durations=10',
     '--color=yes',
-    '-s',
-    '-vv',
     '--doctest-modules',
     '--cov=src/ragger',
 ]
@@ -96,6 +93,7 @@ filterwarnings = [
     "ignore::PendingDeprecationWarning",
     "ignore::ImportWarning",
     "ignore::ResourceWarning",
+    "ignore::FutureWarning",
 ]
 log_cli_level = "info"
 testpaths = [
