@@ -26,8 +26,8 @@ Developer(s):
 
 The RAG demo can also be run using Docker, using the following steps:
 
-1. Build the Docker image using `docker build --tag rag-demo`.
-2. Run the demo using `docker run --name rag-demo`
+1. Build the Docker image using `docker build --tag rag-demo . `.
+2. Run the demo using `docker run -d -p 7860:7860 --name rag-demo rag-demo`
 
 
 ## Overview
