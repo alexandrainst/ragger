@@ -63,7 +63,7 @@ def default_embedding_store(
 @pytest.fixture(scope="session")
 def default_generator() -> typing.Generator[Generator, None, None]:
     """A generator for testing."""
-    yield OpenaiGenerator(stream=False)
+    yield OpenaiGenerator()
 
 
 @pytest.fixture(scope="session")

@@ -50,7 +50,7 @@ class OpenaiGenerator(Generator):
         max_input_tokens: int = 130_000,
         max_output_tokens: int = 256,
         temperature: float = 0.0,
-        stream: bool = True,
+        stream: bool = False,
         language: typing.Literal["da", "en"] = "da",
         system_prompt: str | None = None,
         prompt: str | None = None,
@@ -83,7 +83,7 @@ class OpenaiGenerator(Generator):
             temperature (optional):
                 The temperature of the model. Defaults to 0.0.
             stream (optional):
-                Whether to stream the output. Defaults to True.
+                Whether to stream the output. Defaults to False.
             language (optional):
                 The language of the model. Can be "da" (Danish) or "en" (English).
                 Defaults to "da".
