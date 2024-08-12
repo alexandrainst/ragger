@@ -3,7 +3,13 @@
 import typing
 
 import pytest
-from ragger.data_models import Document
+from ragger.data_models import (
+    Document,
+    DocumentStore,
+    Embedder,
+    EmbeddingStore,
+    Generator,
+)
 from ragger.rag_system import RagSystem
 
 
@@ -29,10 +35,10 @@ def test_initialisation(rag_system):
 
 def test_compile(compiled_rag_system):
     """Test that the RagSystem can be compiled."""
-    assert compiled_rag_system.document_store
-    assert compiled_rag_system.embedder
-    assert compiled_rag_system.embedding_store
-    assert compiled_rag_system.generator
+    assert isinstance(compiled_rag_system.document_store, DocumentStore)
+    assert isinstance(compiled_rag_system.embedder, Embedder)
+    assert isinstance(compiled_rag_system.embedding_store, EmbeddingStore)
+    assert isinstance(compiled_rag_system.generator, Generator)
 
 
 def test_answer_is_non_empty(answer_and_documents):
