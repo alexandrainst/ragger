@@ -25,7 +25,15 @@ Developer(s):
 Install the project as follows:
 
 ```bash
-pip install git+ssh://git@github.com/alexandrainst/ragger.git
+pip install ragger[all]@git+ssh://git@github.com/alexandrainst/ragger.git
+```
+
+You can replace `[all]` with any comma-separated combination of `vllm`, `openai` and
+`demo` to install only the components you need. For example, to install only the
+`vllm` and `demo` components, you can run:
+
+```bash
+pip install ragger[vllm,demo]@git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
 Then you can initialise a RAG system with default settings as follows:
