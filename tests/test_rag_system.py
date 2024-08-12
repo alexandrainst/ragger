@@ -3,42 +3,20 @@
 import typing
 
 import pytest
-from ragger.data_models import (
-    Document,
-    DocumentStore,
-    Embedder,
-    EmbeddingStore,
-    Generator,
-)
-from ragger.rag_system import RagSystem
-
-
-@pytest.fixture(scope="module")
-def compiled_rag_system(rag_system) -> typing.Generator[RagSystem, None, None]:
-    """A compiled RagSystem for testing."""
-    rag_system.compile()
-    yield rag_system
+from ragger.data_models import Document
 
 
 @pytest.fixture(scope="module")
 def answer_and_documents(
-    compiled_rag_system,
+    rag_system,
 ) -> typing.Generator[tuple[str, list[Document]], None, None]:
     """An answer and supporting documents for testing."""
-    yield compiled_rag_system.answer("Hvad farve har Sutsko?")
+    yield rag_system.answer("Hvad farve har Sutsko?")
 
 
 def test_initialisation(rag_system):
     """Test that the RagSystem can be initialised."""
     assert rag_system
-
-
-def test_compile(compiled_rag_system):
-    """Test that the RagSystem can be compiled."""
-    assert isinstance(compiled_rag_system.document_store, DocumentStore)
-    assert isinstance(compiled_rag_system.embedder, Embedder)
-    assert isinstance(compiled_rag_system.embedding_store, EmbeddingStore)
-    assert isinstance(compiled_rag_system.generator, Generator)
 
 
 def test_answer_is_non_empty(answer_and_documents):

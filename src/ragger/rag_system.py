@@ -233,7 +233,7 @@ class RagSystem:
         embeddings = self.embedder.embed_documents(documents=document_objects)
         self.embedding_store.add_embeddings(embeddings=embeddings)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the RAG system."""
         return (
             "RagSystem("

@@ -114,7 +114,7 @@ class DocumentStore(ABC):
         """
         ...
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the document store.
 
         Returns:
@@ -191,7 +191,7 @@ class Embedder(ABC):
         """The maximum length of the context that the embedder can handle."""
         ...
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the embedder.
 
         Returns:
@@ -273,7 +273,7 @@ class EmbeddingStore(ABC):
         """Clear all embeddings from the store."""
         ...
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the embedding store.
 
         Returns:
@@ -333,7 +333,7 @@ class Generator(ABC):
         """
         ...
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the generator.
 
         Returns:
