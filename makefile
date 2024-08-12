@@ -42,8 +42,7 @@ install: ## Install dependencies
 	@$(MAKE) --quiet install-dependencies
 	@$(MAKE) --quiet setup-environment-variables
 	@$(MAKE) --quiet setup-git
-	@echo "Installed the 'ragger' project. You can now activate your virtual environment with 'source .venv/bin/activate'."
-	@echo "Note that this is a Poetry project. Use 'poetry add <package>' to install new dependencies and 'poetry remove <package>' to remove them."
+	@echo "Installed the 'ragger' project. If you want to use pre-commit hooks, run 'make install-pre-commit'."
 
 install-brew:
 	@if [ $$(uname) = "Darwin" ] && [ "$(shell which brew)" = "" ]; then \
@@ -74,6 +73,18 @@ install-poetry:
 install-dependencies:
 	@poetry env use python3.11 && poetry install --extras all
 
+install-pre-commit:  ## Install pre-commit hooks
+	@poetry run pre-commit install
+
+lint:  ## Lint the code
+	@poetry run ruff check . --fix
+
+format:  ## Format the code
+	@poetry run ruff format .
+
+type-check:  ## Run type checking
+	@poetry run mypy . --install-types --non-interactive --ignore-missing-imports --show-error-codes --check-untyped-defs
+
 setup-environment-variables:
 	@poetry run python src/scripts/fix_dot_env_file.py
 
@@ -85,7 +96,6 @@ setup-git:
 	@git init
 	@git config --local user.name ${GIT_NAME}
 	@git config --local user.email ${GIT_EMAIL}
-	@poetry run pre-commit install
 
 test:  ## Run tests
 	@poetry run pytest && poetry run readme-cov
