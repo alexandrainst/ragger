@@ -6,10 +6,18 @@ import logging
 import zipfile
 from collections import defaultdict
 from pathlib import Path
+from typing import Iterable
 
 import numpy as np
 
-from .data_models import Embedding, EmbeddingStore, Index
+from .data_models import (
+    DocumentStore,
+    Embedder,
+    Embedding,
+    EmbeddingStore,
+    Generator,
+    Index,
+)
 
 logger = logging.getLogger(__package__)
 
@@ -34,6 +42,32 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.index_to_row_id: dict[Index, int] = defaultdict()
         self.load_embeddings_if_exists()
 
+    def compile(
+        self,
+        document_store: "DocumentStore",
+        embedder: "Embedder",
+        generator: "Generator",
+    ) -> None:
+        """Compile the embedding store by adding all embeddings from the document store.
+
+        Args:
+            document_store:
+                The document store to use.
+            embedder:
+                The embedder to use.
+            generator:
+                The generator to use.
+        """
+        documents_not_in_embedding_store = [
+            document
+            for document in document_store
+            if not self.document_exists_in_store(document_id=document.id)
+        ]
+        embeddings = embedder.embed_documents(
+            documents=documents_not_in_embedding_store
+        )
+        self.add_embeddings(embeddings=embeddings)
+
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
         if self.path and self.path.exists():
@@ -44,12 +78,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """Return a mapping of row IDs to indices."""
         return {row_id: index for index, row_id in self.index_to_row_id.items()}
 
-    def add_embeddings(self, embeddings: list[Embedding]) -> None:
+    def add_embeddings(self, embeddings: Iterable[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
             embeddings:
-                A list of embeddings to add to the store.
+                An iterable of embeddings to add to the store.
 
         Raises:
             ValueError:
@@ -57,8 +91,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         if not embeddings:
             return
-
-        logger.info(f"Adding {len(embeddings):,} embeddings to the embedding store...")
 
         already_existing_indices = [
             embedding.id
@@ -79,6 +111,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
         ]
         if not embeddings:
             return
+
+        logger.info(f"Adding {len(embeddings):,} embeddings to the embedding store...")
 
         embedding_matrix = np.stack(
             arrays=[embedding.embedding for embedding in embeddings]

@@ -3,7 +3,7 @@
 import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Iterable
 
 import annotated_types
 import numpy as np
@@ -87,11 +87,21 @@ class DocumentStore(ABC):
         ...
 
     @abstractmethod
-    def get_all_documents(self) -> list[Document]:
-        """Fetch all documents from the store.
+    def __iter__(self) -> typing.Generator[Document, None, None]:
+        """Iterate over the documents in the store.
 
-        Returns:
-            A list of all documents in the store.
+        Yields:
+            The documents in the store.
+        """
+        ...
+
+    @abstractmethod
+    def add_documents(self, documents: Iterable[Document]) -> None:
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
         """
         ...
 
@@ -120,12 +130,12 @@ class Embedder(ABC):
         pass
 
     @abstractmethod
-    def embed_documents(self, documents: list[Document]) -> list[Embedding]:
+    def embed_documents(self, documents: Iterable[Document]) -> list[Embedding]:
         """Embed a list of documents.
 
         Args:
             documents:
-                A list of documents to embed.
+                An iterable of documents to embed.
 
         Returns:
             An array of embeddings, where each row corresponds to a document.
@@ -189,12 +199,12 @@ class EmbeddingStore(ABC):
         pass
 
     @abstractmethod
-    def add_embeddings(self, embeddings: list[Embedding]) -> None:
+    def add_embeddings(self, embeddings: Iterable[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
             embeddings:
-                A list of embeddings to add to the store.
+                An iterable of embeddings to add to the store.
         """
         ...
 

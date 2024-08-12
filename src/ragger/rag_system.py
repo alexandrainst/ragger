@@ -102,18 +102,6 @@ class RagSystem:
             embedder=self.embedder,
             embedding_store=self.embedding_store,
         )
-
-        documents = self.document_store.get_all_documents()
-        documents_not_in_embedding_store = [
-            document
-            for document in documents
-            if not self.embedding_store.document_exists_in_store(document.id)
-        ]
-
-        embeddings = self.embedder.embed_documents(
-            documents=documents_not_in_embedding_store
-        )
-        self.embedding_store.add_embeddings(embeddings=embeddings)
         return self
 
     def get_relevant_documents(self, query: str) -> list[Document]:
@@ -203,3 +191,14 @@ class RagSystem:
             documents=documents,
             no_documents_reply=self.no_documents_reply,
         )
+
+    def add_documents(self, documents: typing.Iterable[Document]) -> None:
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store
+        """
+        self.document_store.add_documents(documents=documents)
+        embeddings = self.embedder.embed_documents(documents=documents)
+        self.embedding_store.add_embeddings(embeddings=embeddings)

@@ -1,6 +1,7 @@
 """Store and fetch documents from a database."""
 
 import json
+import typing
 from pathlib import Path
 
 from .data_models import Document, DocumentStore, Index
@@ -61,10 +62,25 @@ class JsonlDocumentStore(DocumentStore):
         """
         return index in self._documents
 
-    def get_all_documents(self) -> list[Document]:
-        """Fetch all documents from the store.
+    def __iter__(self) -> typing.Generator[Document, None, None]:
+        """Iterate over the documents in the store.
 
-        Returns:
-            A list of all documents in the store.
+        Yields:
+            The documents in the store.
         """
-        return list(self._documents.values())
+        yield from self._documents.values()
+
+    def add_documents(self, documents: typing.Iterable[Document]) -> None:
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
+        """
+        for document in documents:
+            self._documents[document.id] = document
+
+        # Write the documents to the file
+        if self.path:
+            data_str = "\n".join(document.model_dump_json() for document in documents)
+            self.path.write_text(data_str)

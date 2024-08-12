@@ -3,6 +3,7 @@
 import logging
 import os
 import re
+from typing import Iterable
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -62,12 +63,12 @@ class E5Embedder(Embedder):
         """
         return self.tokenizer.tokenize(text)
 
-    def embed_documents(self, documents: list[Document]) -> list[Embedding]:
+    def embed_documents(self, documents: Iterable[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
 
         Args:
             documents:
-                A list of documents to embed.
+                An iterable of documents to embed.
 
         Returns:
             A list of embeddings, where each row corresponds to a document.
@@ -82,14 +83,14 @@ class E5Embedder(Embedder):
         if not documents:
             return list()
 
-        logger.info(
-            f"Building embeddings of {len(documents):,} documents with the E5 "
-            f"model {self.embedder_model_id}..."
-        )
-
         # Prepare the texts for embedding
         texts = [document.text for document in documents]
         prepared_texts = self._prepare_texts_for_embedding(texts=texts)
+
+        logger.info(
+            f"Embedding {len(prepared_texts):,} documents with the E5 model "
+            f"{self.embedder_model_id}..."
+        )
 
         # Embed the texts
         assert self.embedder is not None
