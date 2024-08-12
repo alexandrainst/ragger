@@ -87,21 +87,21 @@ class DocumentStore(ABC):
         ...
 
     @abstractmethod
-    def __iter__(self) -> typing.Generator[Document, None, None]:
-        """Iterate over the documents in the store.
-
-        Yields:
-            The documents in the store.
-        """
-        ...
-
-    @abstractmethod
     def add_documents(self, documents: Iterable[Document]) -> None:
         """Add documents to the store.
 
         Args:
             documents:
                 An iterable of documents to add to the store.
+        """
+        ...
+
+    @abstractmethod
+    def __iter__(self) -> typing.Generator[Document, None, None]:
+        """Iterate over the documents in the store.
+
+        Yields:
+            The documents in the store.
         """
         ...
 

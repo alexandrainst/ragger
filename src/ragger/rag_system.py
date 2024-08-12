@@ -192,13 +192,36 @@ class RagSystem:
             no_documents_reply=self.no_documents_reply,
         )
 
-    def add_documents(self, documents: typing.Iterable[Document]) -> None:
+    def add_documents(self, documents: list[Document | str | dict[str, str]]) -> None:
         """Add documents to the store.
 
         Args:
             documents:
                 An iterable of documents to add to the store
         """
-        self.document_store.add_documents(documents=documents)
-        embeddings = self.embedder.embed_documents(documents=documents)
+        document_objects = [doc for doc in documents if isinstance(doc, Document)]
+        raw_documents = [doc for doc in documents if isinstance(doc, str)]
+
+        # In case dictionaries have been passed, we convert them to documents
+        dictionary_documents = [doc for doc in documents if isinstance(doc, dict)]
+        for doc in dictionary_documents:
+            if "text" not in doc:
+                raise ValueError("The dictionary documents must have a 'text' key.")
+            if "id" not in doc:
+                raw_documents.append(doc["text"])
+            else:
+                new_document = Document(id=doc["id"], text=doc["text"])
+                document_objects.append(new_document)
+
+        # In case raw strings have been passed, we find unused unique IDs for them
+        if raw_documents:
+            new_idx = 0
+            for text in raw_documents:
+                while str(new_idx) in self.document_store:
+                    new_idx += 1
+                new_document = Document(id=str(new_idx), text=text)
+                document_objects.append(new_document)
+
+        self.document_store.add_documents(documents=document_objects)
+        embeddings = self.embedder.embed_documents(documents=document_objects)
         self.embedding_store.add_embeddings(embeddings=embeddings)
