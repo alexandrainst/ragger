@@ -1,6 +1,6 @@
 # This ensures that we can call `make <target>` even if `<target>` exists as a file or
 # directory.
-.PHONY: docs help
+.PHONY: help
 
 # Exports all variables defined in the makefile available to scripts
 .EXPORT_ALL_VARIABLES:
@@ -86,17 +86,6 @@ setup-git:
 	@git config --local user.name ${GIT_NAME}
 	@git config --local user.email ${GIT_EMAIL}
 	@poetry run pre-commit install
-
-view-docs:  ## View documentation
-	@echo "Viewing API documentation..."
-	@uname=$$(uname); \
-		case $${uname} in \
-			(*Linux*) openCmd='xdg-open'; ;; \
-			(*Darwin*) openCmd='open'; ;; \
-			(*CYGWIN*) openCmd='cygstart'; ;; \
-			(*) echo 'Error: Unsupported platform: $${uname}'; exit 2; ;; \
-		esac; \
-		"$${openCmd}" docs/ragger.html
 
 test:  ## Run tests
 	@poetry run pytest && poetry run readme-cov
