@@ -25,7 +25,7 @@ Developer(s):
 Install the project as follows:
 
 ```bash
-pip install git+ssh://github.com/alexandrainst/ragger.git
+pip install git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
 Then you can initialise a RAG system with default settings as follows:
