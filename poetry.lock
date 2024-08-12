@@ -1125,7 +1125,7 @@ files = [
 name = "jinja2"
 version = "3.1.4"
 description = "A very fast and expressive template engine."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "jinja2-3.1.4-py3-none-any.whl", hash = "sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d"},
@@ -1479,7 +1479,7 @@ testing = ["coverage", "pytest", "pytest-cov", "pytest-regressions"]
 name = "markupsafe"
 version = "2.1.5"
 description = "Safely add untrusted strings to HTML/XML markup."
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "MarkupSafe-2.1.5-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a17a92de5231666cfbe003f0e4b9b3a7ae3afb1ec2845aadc2bacc93ff85febc"},
@@ -2407,25 +2407,6 @@ test = ["hypothesis (>=6.46.1)", "pytest (>=7.3.2)", "pytest-xdist (>=2.2.0)"]
 xml = ["lxml (>=4.9.2)"]
 
 [[package]]
-name = "pdoc"
-version = "14.6.0"
-description = "API Documentation for Python Projects"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pdoc-14.6.0-py3-none-any.whl", hash = "sha256:36c42c546a317d8e3e8c0b39645f24161374de0c7066ccaae76628d721e49ba5"},
-    {file = "pdoc-14.6.0.tar.gz", hash = "sha256:6e98a24c5e0ca5d188397969cf82581836eaef13f172fc3820047bfe15c61c9a"},
-]
-
-[package.dependencies]
-Jinja2 = ">=2.11.0"
-MarkupSafe = "*"
-pygments = ">=2.12.0"
-
-[package.extras]
-dev = ["hypothesis", "mypy", "pdoc-pyo3-sample-library (==1.0.11)", "pygments (>=2.14.0)", "pytest", "pytest-cov", "pytest-timeout", "ruff", "tox", "types-pygments"]
-
-[[package]]
 name = "pillow"
 version = "10.4.0"
 description = "Python Imaging Library (Fork)"
@@ -2798,7 +2779,7 @@ files = [
 name = "pygments"
 version = "2.18.0"
 description = "Pygments is a syntax highlighting package written in Python."
-optional = false
+optional = true
 python-versions = ">=3.8"
 files = [
     {file = "pygments-2.18.0-py3-none-any.whl", hash = "sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a"},
@@ -4655,4 +4636,4 @@ vllm = ["transformers", "vllm"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "03684f6c9d4a1db9d2d82eaca658581cc24e9f560c5a534619d44c45751c5081"
+content-hash = "e7ede017037ec51e24aa247c26b496569289a05bdb04a858c5d454bfe3093f5f"

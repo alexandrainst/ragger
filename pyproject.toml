@@ -21,6 +21,16 @@ tiktoken = { version = ">=0.7.0,<1.0.0", optional = true }
 openai = { version = "^1.23.2", optional = true }
 vllm = { markers = "sys_platform != 'darwin'", version = "^0.4.0", optional = true }
 
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.1.1"
+pytest-cov = ">=4.1.0"
+pre-commit = ">=3.6.2"
+readme-coverage-badger = ">=0.1.2"
+click = ">=8.1.7"
+ruff = ">=0.3.2"
+mypy = ">=1.9.0"
+nbstripout = ">=0.7.1"
+
 [tool.poetry.extras]
 vllm = [
     "vllm",
@@ -46,16 +56,6 @@ all = [
     "gradio",
 ]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.1.1"
-pytest-cov = ">=4.1.0"
-pre-commit = ">=3.6.2"
-pdoc = ">=14.1.0"
-readme-coverage-badger = ">=0.1.2"
-click = ">=8.1.7"
-ruff = ">=0.3.2"
-mypy = ">=1.9.0"
-nbstripout = ">=0.7.1"
 
 [[tool.poetry.source]]
 name = "pypi"
