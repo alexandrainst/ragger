@@ -4,11 +4,18 @@ import logging
 import typing
 
 from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
-from .data_models import Document, GeneratedAnswer
-from .document_store import DocumentStore, JsonlDocumentStore
-from .embedder import E5Embedder, Embedder
-from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
-from .generator import Generator, OpenaiGenerator
+from .data_models import (
+    Document,
+    DocumentStore,
+    Embedder,
+    EmbeddingStore,
+    GeneratedAnswer,
+    Generator,
+)
+from .document_store import JsonlDocumentStore
+from .embedder import E5Embedder
+from .embedding_store import NumpyEmbeddingStore
+from .generator import OpenaiGenerator
 from .utils import format_answer
 
 logger = logging.getLogger(__package__)
