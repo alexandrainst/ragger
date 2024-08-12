@@ -99,3 +99,15 @@ setup-git:
 
 test:  ## Run tests
 	@poetry run pytest && poetry run readme-cov
+
+bump-major:  ## Bump the major version
+	@poetry run python -m src.scripts.versioning --major
+	@echo "Bumped major version!"
+
+bump-minor:  ## Bump the minor version
+	@poetry run python -m src.scripts.versioning --minor
+	@echo "Bumped minor version!"
+
+bump-patch:  ## Bump the patch version
+	@poetry run python -m src.scripts.versioning --patch
+	@echo "Bumped patch version!"
