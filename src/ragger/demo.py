@@ -302,6 +302,8 @@ class Demo:
             self.push_to_hub()
             return
 
+        self.demo.queue().launch()
+
     def push_to_hub(self) -> None:
         """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
         if self.persistent_sharing_config is None:
