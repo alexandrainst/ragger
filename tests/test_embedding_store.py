@@ -46,7 +46,7 @@ class TestNumpyEmbeddingStore:
 
     def test_initialisation(self, embedding_store):
         """Test that the NumpyEmbeddingStore can be initialised."""
-        assert embedding_store
+        assert isinstance(embedding_store, NumpyEmbeddingStore)
 
     def test_add_embeddings(self, embedding_store, embeddings):
         """Test that embeddings can be added to the NumpyEmbeddingStore."""
