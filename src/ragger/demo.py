@@ -56,7 +56,7 @@ class Demo:
         feedback_db_path: Path = Path("feedback.db"),
         feedback_mode: typing.Literal[
             "strict-feedback", "feedback", "no-feedback"
-        ] = "strict-feedback",
+        ] = "feedback",
         gradio_theme: str = "monochrome",
         title: str | None = None,
         description: str | None = None,
