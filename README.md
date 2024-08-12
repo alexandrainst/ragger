@@ -48,3 +48,11 @@ rag_system.add_documents([
 ])
 answer, supporting_documents = rag_system.answer("What is the capital of Denmark?")
 ```
+
+You can also start a demo server as follows:
+
+```python
+from ragger import Demo
+demo = Demo(rag_system=rag_system)
+demo.launch()
+```
