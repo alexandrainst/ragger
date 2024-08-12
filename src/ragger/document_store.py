@@ -32,6 +32,21 @@ class JsonlDocumentStore(DocumentStore):
             dct["id"]: Document.model_validate(dct) for dct in data_dicts
         }
 
+    def add_documents(self, documents: typing.Iterable[Document]) -> None:
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
+        """
+        for document in documents:
+            self._documents[document.id] = document
+
+        # Write the documents to the file
+        if self.path:
+            data_str = "\n".join(document.model_dump_json() for document in documents)
+            self.path.write_text(data_str)
+
     def __getitem__(self, index: Index) -> Document:
         """Fetch a document by its ID.
 
@@ -70,17 +85,10 @@ class JsonlDocumentStore(DocumentStore):
         """
         yield from self._documents.values()
 
-    def add_documents(self, documents: typing.Iterable[Document]) -> None:
-        """Add documents to the store.
+    def __len__(self) -> int:
+        """Return the number of documents in the store.
 
-        Args:
-            documents:
-                An iterable of documents to add to the store.
+        Returns:
+            The number of documents in the store.
         """
-        for document in documents:
-            self._documents[document.id] = document
-
-        # Write the documents to the file
-        if self.path:
-            data_str = "\n".join(document.model_dump_json() for document in documents)
-            self.path.write_text(data_str)
+        return len(self._documents)

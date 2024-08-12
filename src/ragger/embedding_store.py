@@ -59,9 +59,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 The generator to use.
         """
         documents_not_in_embedding_store = [
-            document
-            for document in document_store
-            if not self.document_exists_in_store(document_id=document.id)
+            document for document in document_store if document.id in self
         ]
         embeddings = embedder.embed_documents(
             documents=documents_not_in_embedding_store
@@ -208,7 +206,15 @@ class NumpyEmbeddingStore(EmbeddingStore):
         logger.info(f"Found nearest neighbours with indices {top_indices}.")
         return nearest_neighbours
 
-    def document_exists_in_store(self, document_id: Index) -> bool:
+    def clear(self) -> None:
+        """Clear all embeddings from the store."""
+        self.embeddings = np.zeros(shape=(0, self.embedding_dim))
+        self.index_to_row_id = defaultdict()
+        if self.path:
+            self.path.unlink(missing_ok=True)
+        logger.info("Cleared the embedding store.")
+
+    def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
 
         Args:
@@ -220,10 +226,10 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """
         return document_id in self.index_to_row_id
 
-    def clear(self) -> None:
-        """Clear all embeddings from the store."""
-        self.embeddings = np.zeros(shape=(0, self.embedding_dim))
-        self.index_to_row_id = defaultdict()
-        if self.path:
-            self.path.unlink(missing_ok=True)
-        logger.info("Cleared the embedding store.")
+    def __len__(self) -> int:
+        """Return the number of embeddings in the store.
+
+        Returns:
+            The number of embeddings in the store.
+        """
+        return self.embeddings.shape[0]

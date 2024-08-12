@@ -105,6 +105,23 @@ class DocumentStore(ABC):
         """
         ...
 
+    @abstractmethod
+    def __len__(self) -> int:
+        """Return the number of documents in the store.
+
+        Returns:
+            The number of documents in the store.
+        """
+        ...
+
+    def __str__(self) -> str:
+        """Return a string representation of the document store.
+
+        Returns:
+            A string representation of the document store.
+        """
+        return f"{self.__class__.__name__}({len(self):,} documents)"
+
 
 class Embedder(ABC):
     """An abstract embedder, which embeds documents using a pre-trained model."""
@@ -174,6 +191,14 @@ class Embedder(ABC):
         """The maximum length of the context that the embedder can handle."""
         ...
 
+    def __str__(self) -> str:
+        """Return a string representation of the embedder.
+
+        Returns:
+            A string representation of the embedder.
+        """
+        return f"{self.__class__.__name__}({self.embedding_dim}-dim embeddings)"
+
 
 class EmbeddingStore(ABC):
     """An abstract embedding store, which fetches embeddings from a database."""
@@ -222,7 +247,7 @@ class EmbeddingStore(ABC):
         ...
 
     @abstractmethod
-    def document_exists_in_store(self, document_id: Index) -> bool:
+    def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
 
         Args:
@@ -235,9 +260,26 @@ class EmbeddingStore(ABC):
         ...
 
     @abstractmethod
+    def __len__(self) -> int:
+        """Return the number of embeddings in the store.
+
+        Returns:
+            The number of embeddings in the store.
+        """
+        ...
+
+    @abstractmethod
     def clear(self) -> None:
         """Clear all embeddings from the store."""
         ...
+
+    def __str__(self) -> str:
+        """Return a string representation of the embedding store.
+
+        Returns:
+            A string representation of the embedding store.
+        """
+        return f"{self.__class__.__name__}({len(self):,} embeddings)"
 
 
 class Generator(ABC):
@@ -290,6 +332,14 @@ class Generator(ABC):
             The generated answer.
         """
         ...
+
+    def __str__(self) -> str:
+        """Return a string representation of the generator.
+
+        Returns:
+            A string representation of the generator.
+        """
+        return f"{self.__class__.__name__}()"
 
 
 class PersistentSharingConfig(BaseModel):
