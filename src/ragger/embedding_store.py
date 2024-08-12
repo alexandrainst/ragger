@@ -59,7 +59,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 The generator to use.
         """
         documents_not_in_embedding_store = [
-            document for document in document_store if document.id in self
+            document for document in document_store if document.id not in self
         ]
         embeddings = embedder.embed_documents(
             documents=documents_not_in_embedding_store
