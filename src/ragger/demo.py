@@ -1,5 +1,6 @@
 """A Gradio demo of the RAG system."""
 
+import importlib.util
 import json
 import logging
 import os
@@ -8,7 +9,6 @@ import typing
 import warnings
 from pathlib import Path
 
-import gradio as gr
 from huggingface_hub import CommitScheduler, HfApi
 from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
@@ -32,6 +32,12 @@ from .data_models import Document, PersistentSharingConfig
 from .generator import OpenaiGenerator
 from .rag_system import RagSystem
 from .utils import format_answer
+
+if importlib.util.find_spec("gradio") is not None:
+    import gradio as gr
+
+if typing.TYPE_CHECKING:
+    import gradio as gr
 
 Message = str | None
 Exchange = tuple[Message, Message]
@@ -202,7 +208,7 @@ class Demo:
 
         self.retrieved_documents: list[Document] = list()
 
-    def build_demo(self) -> gr.Blocks:
+    def build_demo(self) -> "gr.Blocks":
         """Build the demo.
 
         Returns:
@@ -482,7 +488,7 @@ class Demo:
         history[-1] = (None, generated_answer)
         yield history
 
-    def vote(self, data: gr.LikeData, history: History):
+    def vote(self, data: "gr.LikeData", history: History):
         """Record the vote in the database.
 
         Args:
