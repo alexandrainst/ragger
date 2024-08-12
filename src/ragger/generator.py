@@ -12,17 +12,22 @@ import tiktoken
 import torch
 from dotenv import load_dotenv
 from httpx import ReadTimeout, RemoteProtocolError
-from omegaconf import DictConfig
 from openai import APITimeoutError, InternalServerError, OpenAI, Stream
 from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
-from openai.types.chat.completion_create_params import ResponseFormat
+from openai.types.shared_params import ResponseFormatJSONObject
 from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoConfig, AutoTokenizer
 
+from .constants import (
+    DANISH_SYSTEM_PROMPT,
+    DANISH_USER_PROMPT,
+    ENGLISH_SYSTEM_PROMPT,
+    ENGLISH_USER_PROMPT,
+)
 from .data_models import Document, GeneratedAnswer, Generator
 
 load_dotenv()
@@ -34,37 +39,97 @@ logger = logging.getLogger(__package__)
 class OpenaiGenerator(Generator):
     """A generator that uses an OpenAI model to generate answers."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(
+        self,
+        model_id: str = "gpt-4o-mini",
+        api_key: str | None = None,
+        host: str | None = None,
+        port: int = 8000,
+        timeout: int = 60,
+        max_retries: int = 3,
+        max_input_tokens: int = 130_000,
+        max_output_tokens: int = 256,
+        temperature: float = 0.0,
+        stream: bool = True,
+        language: typing.Literal["da", "en"] = "da",
+        system_prompt: str | None = None,
+        prompt: str | None = None,
+        **additional_generation_kwargs,
+    ) -> None:
         """Initialise the OpenAI generator.
 
         Args:
-            config:
-                The Hydra configuration.
+            model_id (optional):
+                The OpenAI model ID. Defaults to "gpt-4o-mini".
+            api_key (optional):
+                The OpenAI API key, or None if it should be read from the environment
+                variable "OPENAI_API_KEY", or if it is simply not needed (e.g., if
+                `host` is provided).
+            host (optional):
+                The host of the OpenAI server, if different from the default.
+            port (optional):
+                The port of the OpenAI server. Defaults to 8000.
+            timeout (optional):
+                The timeout for the OpenAI requests, in seconds. Defaults to 60.
+            max_retries (optional):
+                The maximum number of retries for the OpenAI requests. Defaults
+                to 3.
+            max_input_tokens (optional):
+                The maximum number of tokens allowed in the input. Defaults to
+                130,000.
+            max_output_tokens (optional):
+                The maximum number of tokens allowed in the output. Defaults to
+                256.
+            temperature (optional):
+                The temperature of the model. Defaults to 0.0.
+            stream (optional):
+                Whether to stream the output. Defaults to True.
+            language (optional):
+                The language of the model. Can be "da" (Danish) or "en" (English).
+                Defaults to "da".
+            system_prompt (optional):
+                The system prompt to use. If None, the default system prompt
+                corresponding to the chosen language will be used.
+            prompt (optional):
+                The prompt to use. If None, the default prompt corresponding to
+                the chosen language will be used.
+            additional_generation_kwargs (optional):
+                Additional keyword arguments to pass to the generation function.
         """
-        super().__init__(config=config)
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
+        self.model_id = model_id
+        self.api_key = api_key
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+        self.temperature = temperature
+        self.stream = stream
+        self.language = language
+        self.additional_generation_kwargs = additional_generation_kwargs
 
-        api_key = "not-set"
-        if hasattr(config.generator, "api_key_variable_name"):
-            env_var_name = config.generator.api_key_variable_name
-            api_key_from_variable = os.environ[env_var_name].strip('"')
-            if api_key_from_variable:
-                api_key = api_key_from_variable
+        # Set the system and user prompts based on the language
+        system_prompt_mapping = dict(da=DANISH_SYSTEM_PROMPT, en=ENGLISH_SYSTEM_PROMPT)
+        user_prompt_mapping = dict(da=DANISH_USER_PROMPT, en=ENGLISH_USER_PROMPT)
+        self.system_prompt = system_prompt or system_prompt_mapping[self.language]
+        self.prompt = prompt or user_prompt_mapping[self.language]
 
+        # Set the server URL, if a host is provided
         self.server: str | None
-        if hasattr(config.generator, "server"):
-            host = config.generator.server
-            if not host.startswith("http"):
-                host = f"http://{host}"
-            self.server = f"{host}:{config.generator.port}/v1"
+        if self.host is not None:
+            if not self.host.startswith("http"):
+                self.host = f"http://{host}"
+            self.server = f"{self.host}:{self.port}/v1"
         else:
             self.server = None
 
         self.client = OpenAI(
             base_url=self.server,
             api_key=api_key,
-            timeout=self.config.generator.timeout,
-            max_retries=self.config.generator.max_retries,
+            timeout=self.timeout,
+            max_retries=self.max_retries,
         )
 
     def prompt_too_long(self, prompt: str) -> bool:
@@ -77,9 +142,9 @@ class OpenaiGenerator(Generator):
         Returns:
             Whether the prompt is too long for the generator.
         """
-        encoding = tiktoken.encoding_for_model(model_name=self.config.generator.model)
+        encoding = tiktoken.encoding_for_model(model_name=self.model_id)
         num_tokens = len(encoding.encode(text=prompt))
-        return num_tokens > self.config.generator.max_input_tokens
+        return num_tokens > self.max_input_tokens
 
     def generate(
         self, query: str, documents: list[Document]
@@ -102,11 +167,11 @@ class OpenaiGenerator(Generator):
             )
             messages = [
                 ChatCompletionSystemMessageParam(
-                    role="system", content=self.config.generator.system_prompt
+                    role="system", content=self.system_prompt
                 ),
                 ChatCompletionUserMessageParam(
                     role="user",
-                    content=self.config.generator.prompt.format(
+                    content=self.prompt.format(
                         documents=json.dumps(
                             [
                                 document.model_dump()
@@ -121,20 +186,16 @@ class OpenaiGenerator(Generator):
             if self.prompt_too_long(prompt=json.dumps(messages)):
                 continue
 
-            extra_body = dict()
-            if self.config.generator.name == "vllm":
-                extra_body["guided_json"] = GeneratedAnswer.model_json_schema()
-
             try:
                 model_output = self.client.chat.completions.create(
                     messages=messages,
-                    model=self.config.generator.model,
-                    max_tokens=self.config.generator.max_output_tokens,
-                    temperature=self.config.generator.temperature,
-                    stream=self.config.generator.stream,
+                    model=self.model_id,
+                    max_tokens=self.max_output_tokens,
+                    temperature=self.temperature,
+                    stream=self.stream,
                     stop=["</answer>"],
-                    response_format=ResponseFormat(type="json_object"),
-                    extra_body=extra_body,
+                    response_format=ResponseFormatJSONObject(type="json_object"),
+                    extra_body=self.additional_generation_kwargs,
                 )
             except (InternalServerError, APITimeoutError):
                 continue
@@ -232,36 +293,102 @@ class OpenaiGenerator(Generator):
 class VllmGenerator(OpenaiGenerator):
     """A generator that uses a vLLM model to generate answers."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(
+        self,
+        model_id: str,
+        host: str | None = None,
+        port: int = 8000,
+        timeout: int = 60,
+        max_retries: int = 3,
+        max_input_tokens: int = 10_000,
+        max_output_tokens: int = 256,
+        temperature: float = 0.0,
+        stream: bool = True,
+        language: typing.Literal["da", "en"] = "da",
+        system_prompt: str | None = None,
+        prompt: str | None = None,
+        gpu_memory_utilization: float = 0.95,
+        server_start_timeout: int = 60,
+    ) -> None:
         """Initialise the vLLM generator.
 
         Args:
-            config:
-                The Hydra configuration.
+            model_id:
+                The model ID of the generative model to use.
+            host (optional):
+                The host of the vLLM server, if it is already running. If None, a new
+                server will be started.
+            port (optional):
+                The port of the vLLM server. Defaults to 8000.
+            timeout (optional):
+                The timeout for the vLLM requests, in seconds. Defaults to 60.
+            max_retries (optional):
+                The maximum number of retries for the vLLM requests. Defaults
+                to 3.
+            max_input_tokens (optional):
+                The maximum number of tokens allowed in the input. Defaults to
+                10,000.
+            max_output_tokens (optional):
+                The maximum number of tokens allowed in the output. Defaults to
+                256.
+            temperature (optional):
+                The temperature of the model. Defaults to 0.0.
+            stream (optional):
+                Whether to stream the output. Defaults to True.
+            language (optional):
+                The language of the model. Can be "da" (Danish) or "en" (English).
+                Defaults to "da".
+            system_prompt (optional):
+                The system prompt to use. If None, the default system prompt
+                corresponding to the chosen language will be used.
+            prompt (optional):
+                The prompt to use. If None, the default prompt corresponding to
+                the chosen language will be used.
+            gpu_memory_utilization (optional):
+                The fraction of the GPU memory to use. Defaults to 0.95.
+            server_start_timeout (optional):
+                The timeout for the vLLM server to start, in seconds. Only relevant if
+                `host` has been set. Defaults to 60.
         """
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
-        self.config = config
-        self.tokenizer = AutoTokenizer.from_pretrained(config.generator.model)
-        self.hf_config = AutoConfig.from_pretrained(config.generator.model)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+        self.hf_config = AutoConfig.from_pretrained(model_id)
+        self.gpu_memory_utilization = gpu_memory_utilization
+        self.server_start_timeout = server_start_timeout
 
         # If an inference server isn't already running then start a new server in a
         # background process and store the process ID
         self.server_process: subprocess.Popen | None
-        if config.generator.server is None:
+        if host is None:
             # We can only run the inference server if CUDA is available
             if not torch.cuda.is_available():
                 raise RuntimeError(
                     "The `vLLMGenerator` requires a CUDA-compatible GPU to run. "
                     "Please ensure that a compatible GPU is available and try again."
                 )
-
-            config.generator.server = "0.0.0.0"
-            self.server_process = self.start_inference_server()
+            host = "0.0.0.0"
+            self.server_process = self.start_inference_server(host=host, port=port)
         else:
             self.server_process = None
 
-        super().__init__(config=config)
+        super().__init__(
+            model_id=model_id,
+            host=host,
+            port=port,
+            timeout=timeout,
+            max_retries=max_retries,
+            max_input_tokens=max_input_tokens,
+            max_output_tokens=max_output_tokens,
+            temperature=temperature,
+            stream=stream,
+            language=language,
+            system_prompt=system_prompt,
+            prompt=prompt,
+            additional_generation_kwargs=dict(
+                guided_json=GeneratedAnswer.model_json_schema()
+            ),
+        )
 
     @cached_property
     def max_model_length(self) -> int:
@@ -271,25 +398,22 @@ class VllmGenerator(OpenaiGenerator):
             The maximum model length.
         """
         max_model_len_candidates = [
-            self.config.generator.max_input_tokens
-            + self.config.generator.max_output_tokens,
-            10_000 - self.config.generator.max_output_tokens,  # Upper limit of 10k
+            self.max_input_tokens + self.max_output_tokens,
+            10_000 - self.max_output_tokens,  # Upper limit of 10k
         ]
         if (
             hasattr(self.tokenizer, "model_max_length")
             and self.tokenizer.model_max_length
         ):
             max_model_len_candidates.append(
-                self.tokenizer.model_max_length
-                - self.config.generator.max_output_tokens
+                self.tokenizer.model_max_length - self.max_output_tokens
             )
         if (
             hasattr(self.hf_config, "max_position_embeddings")
             and self.hf_config.max_position_embeddings
         ):
             max_model_len_candidates.append(
-                self.hf_config.max_position_embeddings
-                - self.config.generator.max_output_tokens
+                self.hf_config.max_position_embeddings - self.max_output_tokens
             )
 
         max_model_len = min(max_model_len_candidates)
@@ -309,8 +433,14 @@ class VllmGenerator(OpenaiGenerator):
         num_tokens = len(self.tokenizer.encode(prompt))
         return num_tokens > self.max_model_length
 
-    def start_inference_server(self) -> subprocess.Popen:
+    def start_inference_server(self, host: str, port: int) -> subprocess.Popen:
         """Start the vLLM inference server.
+
+        Args:
+            host:
+                The host to start the server on.
+            port:
+                The port to start the server on.
 
         Returns:
             The inference server process.
@@ -325,15 +455,15 @@ class VllmGenerator(OpenaiGenerator):
             "0",
             "--enforce-eager",
             "--model",
-            self.config.generator.model,
+            self.model_id,
             "--max-model-len",
             str(self.max_model_length),
             "--gpu-memory-utilization",
-            str(self.config.generator.gpu_memory_utilization),
+            str(self.gpu_memory_utilization),
             "--host",
-            self.config.generator.server,
+            host,
             "--port",
-            str(self.config.generator.port),
+            str(port),
         ]
         if self.tokenizer.chat_template:
             process_args.extend(["--chat-template", self.tokenizer.chat_template])
@@ -351,7 +481,7 @@ class VllmGenerator(OpenaiGenerator):
         # waiting for it to start.
         os.set_blocking(stderr.fileno(), False)
         error_message = ""
-        for seconds in range(self.config.generator.server_start_timeout):
+        for seconds in range(self.server_start_timeout):
             update = stderr.readline().decode()
             if not update and error_message:
                 process.kill()

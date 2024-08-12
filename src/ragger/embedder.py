@@ -5,11 +5,11 @@ import os
 import re
 
 import numpy as np
-from omegaconf import DictConfig
 from sentence_transformers import SentenceTransformer
 from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, Embedder, Embedding
+from .utils import get_device
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -20,36 +20,37 @@ logger = logging.getLogger(__package__)
 class E5Embedder(Embedder):
     """An embedder that uses an E5 model to embed documents."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(
+        self,
+        embedder_model_id: str = "intfloat/multilingual-e5-large",
+        device: str = "auto",
+    ) -> None:
         """Initialise the E5 embedder.
 
         Args:
-            config:
-                The Hydra configuration.
+            embedder_model_id (optional):
+                The model ID of the embedder to use. Defaults to
+                "intfloat/multilingual-e5-large".
+            device (optional):
+                The device to use. If "auto", the device is chosen automatically based
+                on hardware availability. Defaults to "auto".
         """
-        super().__init__(config=config)
-        self.embedder = None
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config.embedder.model_id)
-        self.model_config = AutoConfig.from_pretrained(self.config.embedder.model_id)
+        self.embedder_model_id = embedder_model_id
+        self.device = get_device() if device == "auto" else device
 
-    def compile(self) -> None:
-        """Compile the E5 embedder.
-
-        This method loads the E5 model and prepares it for use.
-        """
-        logger.info("Initialising the E5 model...")
-        device = "cpu" if self.config.generator.name == "vllm" else None
         self.embedder = SentenceTransformer(
-            model_name_or_path=self.config.embedder.model_id, device=device
+            model_name_or_path=self.embedder_model_id, device=self.device
         )
-        logger.info("Finished initialising the E5 model.")
+        self.tokenizer = AutoTokenizer.from_pretrained(self.embedder_model_id)
+        self.model_config = AutoConfig.from_pretrained(self.embedder_model_id)
+        self.embedding_dim = self.model_config.hidden_size
 
     @property
     def max_context_length(self) -> int:
         """The maximum length of the context that the embedder can handle."""
         return self.tokenizer.model_max_length
 
-    def tokenize(self, text: str | list[str]) -> np.array:
+    def tokenize(self, text: str | list[str]) -> np.ndarray:
         """Tokenize a text.
 
         Args:
@@ -70,16 +71,20 @@ class E5Embedder(Embedder):
 
         Returns:
             A list of embeddings, where each row corresponds to a document.
+
+        Raises:
+            ValueError:
+                If the embedder has not been compiled.
         """
         if self.embedder is None:
-            self.compile()
+            raise ValueError("The embedder has not been compiled.")
 
         if not documents:
-            return []
+            return list()
 
         logger.info(
             f"Building embeddings of {len(documents):,} documents with the E5 "
-            f"model {self.config.embedder.model_id}..."
+            f"model {self.embedder_model_id}..."
         )
 
         # Prepare the texts for embedding
@@ -89,10 +94,7 @@ class E5Embedder(Embedder):
         # Embed the texts
         assert self.embedder is not None
         embedding_matrix = self.embedder.encode(
-            sentences=prepared_texts,
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-            show_progress_bar=self.config.verbose,
+            sentences=prepared_texts, normalize_embeddings=True, convert_to_numpy=True
         )
         assert isinstance(embedding_matrix, np.ndarray)
         embeddings = [
@@ -111,10 +113,15 @@ class E5Embedder(Embedder):
 
         Returns:
             The embedding of the query.
+
+        Raises:
+            ValueError:
+                If the embedder has not been compiled.
         """
         if self.embedder is None:
-            self.compile()
-        logger.info(f"Embedding the query '{query}' with the E5 model...")
+            raise ValueError("The embedder has not been compiled.")
+
+        logger.info(f"Embedding the query {query!r} with the E5 model...")
         prepared_query = self._prepare_query_for_embedding(query=query)
 
         assert self.embedder is not None

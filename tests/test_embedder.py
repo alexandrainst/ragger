@@ -4,7 +4,6 @@ import typing
 
 import numpy as np
 import pytest
-from omegaconf import DictConfig
 from ragger.data_models import Document, Embedding
 from ragger.embedder import E5Embedder, Embedder
 
@@ -13,24 +12,9 @@ class TestE5Embedder:
     """Tests for the `Embedder` class."""
 
     @pytest.fixture(scope="class")
-    def config(
-        self, dirs_params, e5_embedder_params, vllm_generator_params
-    ) -> typing.Generator[DictConfig, None, None]:
-        """Initialise a configuration for testing."""
-        yield DictConfig(
-            dict(
-                dirs=dirs_params,
-                embedder=e5_embedder_params,
-                generator=vllm_generator_params,
-                verbose=False,
-            )
-        )
-
-    @pytest.fixture(scope="class")
-    def embedder(self, config) -> typing.Generator[E5Embedder, None, None]:
+    def embedder(self) -> typing.Generator[E5Embedder, None, None]:
         """Initialise an Embedder for testing."""
-        embedder = E5Embedder(config=config)
-        yield embedder
+        yield E5Embedder(embedder_model_id="intfloat/multilingual-e5-small")
 
     @pytest.fixture(scope="class")
     def documents(self) -> list[Document]:

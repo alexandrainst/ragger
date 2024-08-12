@@ -3,30 +3,28 @@
 import json
 from pathlib import Path
 
-from omegaconf import DictConfig
-
 from .data_models import Document, DocumentStore, Index
 
 
 class JsonlDocumentStore(DocumentStore):
     """A document store that fetches documents from a JSONL file."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(self, path: Path = Path("document-store.jsonl")) -> None:
         """Initialise the document store.
 
         Args:
-            config:
-                The Hydra configuration.
+            path:
+                The path to the JSONL file where the documents are stored.
         """
-        super().__init__(config)
-        data_path = (
-            Path(self.config.dirs.data)
-            / self.config.dirs.processed
-            / self.config.document_store.filename
-        )
+        self.path = path
+
+        # Ensure the file exists
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.touch(exist_ok=True)
+
         data_dicts = [
             json.loads(line)
-            for line in data_path.read_text().splitlines()
+            for line in self.path.read_text().splitlines()
             if line.strip()
         ]
         self._documents = {

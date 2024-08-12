@@ -1,7 +1,6 @@
 """Unit tests for the `rag_system` module."""
 
 import typing
-from copy import deepcopy
 
 import pytest
 from ragger.data_models import Document
@@ -9,22 +8,23 @@ from ragger.rag_system import RagSystem
 
 
 @pytest.fixture(scope="module")
-def compiled_rag_system(full_config) -> typing.Generator[RagSystem, None, None]:
+def compiled_rag_system(rag_system) -> typing.Generator[RagSystem, None, None]:
     """A compiled RagSystem for testing."""
-    rag_system = RagSystem(config=full_config)
     rag_system.compile()
     yield rag_system
 
 
 @pytest.fixture(scope="module")
-def answer_and_documents(compiled_rag_system):
+def answer_and_documents(
+    compiled_rag_system,
+) -> typing.Generator[tuple[str, list[Document]], None, None]:
     """An answer and supporting documents for testing."""
     yield compiled_rag_system.answer("Hvad farve har Sutsko?")
 
 
-def test_initialisation(full_config):
+def test_initialisation(rag_system):
     """Test that the RagSystem can be initialised."""
-    assert RagSystem(config=full_config)
+    assert rag_system
 
 
 def test_compile(compiled_rag_system):
@@ -32,6 +32,7 @@ def test_compile(compiled_rag_system):
     assert compiled_rag_system.document_store
     assert compiled_rag_system.embedder
     assert compiled_rag_system.embedding_store
+    assert compiled_rag_system.generator
 
 
 def test_answer_is_non_empty(answer_and_documents):
@@ -70,12 +71,3 @@ def test_documents_are_correct(answer_and_documents):
     """Test that the documents are correct."""
     _, documents = answer_and_documents
     assert documents == [Document(id="2", text="Den sorte kat hedder Sutsko.")]
-
-
-def test_error_if_invalid_config(full_config):
-    """Test that the RagSystem raises an error if the configuration is invalid."""
-    invalid_config = deepcopy(full_config)
-    invalid_config.document_store.name = "invalid-type"
-    invalid_config.generator.name = "invalid-type"
-    with pytest.raises(ValueError):
-        RagSystem(config=invalid_config)

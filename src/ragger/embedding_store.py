@@ -8,8 +8,6 @@ from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
-from omegaconf import DictConfig
-from transformers import AutoConfig
 
 from .data_models import Embedding, EmbeddingStore, Index
 
@@ -19,50 +17,32 @@ logger = logging.getLogger(__package__)
 class NumpyEmbeddingStore(EmbeddingStore):
     """An embedding store that fetches embeddings from a NumPy file."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(
+        self, embedding_dim: int, path: Path = Path("embedding-store.zip")
+    ) -> None:
         """Initialise the NumPy embedding store.
 
         Args:
-            config:
-                The Hydra configuration.
+            embedding_dim:
+                The dimension of the embeddings.
+            path:
+                The path to the zipfile where the embeddings are stored.
         """
-        super().__init__(config=config)
-        self.embedding_dim = self._get_embedding_dimension()
+        self.path = path
+        self.embedding_dim = embedding_dim
         self.embeddings = np.zeros((0, self.embedding_dim))
         self.index_to_row_id: dict[Index, int] = defaultdict()
-        self.embedding_store_path = (
-            (
-                Path(self.config.dirs.data)
-                / self.config.dirs.processed
-                / self.config.embedding_store.filename
-            )
-            if self.config.embedding_store.filename is not None
-            else None
-        )
         self.load_embeddings_if_exists()
 
     def load_embeddings_if_exists(self) -> None:
         """Load the embeddings from disk if they exist."""
-        if self.embedding_store_path is None:
-            return
-        if self.embedding_store_path.exists():
-            self.load(path=self.embedding_store_path)
+        if self.path and self.path.exists():
+            self.load(path=self.path)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
         """Return a mapping of row IDs to indices."""
         return {row_id: index for index, row_id in self.index_to_row_id.items()}
-
-    def _get_embedding_dimension(self) -> int:
-        """This returns the embedding dimension for the embedding model.
-
-        Returns:
-            The embedding dimension.
-        """
-        model_config = AutoConfig.from_pretrained(
-            self.config.embedder.model_id, cache_dir=self.config.dirs.models
-        )
-        return model_config.hidden_size
 
     def add_embeddings(self, embeddings: list[Embedding]) -> None:
         """Add embeddings to the store.
@@ -91,15 +71,20 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 f"{num_already_existing_indices:,} embeddings already existed in the "
                 "embedding store and was ignored."
             )
-        embedding_matrix = np.stack(
-            [
-                embedding.embedding
-                for embedding in embeddings
-                if embedding.id not in self.index_to_row_id
-            ]
-        )
 
+        embeddings = [
+            embedding
+            for embedding in embeddings
+            if embedding.id not in self.index_to_row_id
+        ]
+        if not embeddings:
+            return
+
+        embedding_matrix = np.stack(
+            arrays=[embedding.embedding for embedding in embeddings]
+        )
         self.embeddings = np.vstack([self.embeddings, embedding_matrix])
+
         for i, embedding in enumerate(embeddings):
             self.index_to_row_id[embedding.id] = (
                 self.embeddings.shape[0] - len(embeddings) + i
@@ -107,15 +92,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Added embeddings to the embedding store.")
 
-        if self.embedding_store_path is not None:
-            self.save(path=self.embedding_store_path)
-
-    def reset(self) -> None:
-        """This resets the embeddings store."""
-        self.embeddings = np.zeros((0, self.embedding_dim))
-        self.index_to_row_id = defaultdict()
-        self.row_id_to_index
-        logger.info("Reset the embeddings store.")
+        if self.path is not None:
+            self.save(path=self.path)
 
     def save(self, path: Path | str) -> None:
         """Save the embedding store to disk.
@@ -123,9 +101,8 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Args:
             path:
                 The path to the embeddings store in. This should be a .zip-file. This
-                zip file will contain the embeddings matrix in the file
-                `embeddings.npy` and the row ID to index mapping in the file
-                `index_to_row_id.json`.
+                zip file will contain the embeddings matrix in the file `embeddings.npy`
+                and the row ID to index mapping in the file `index_to_row_id.json`.
 
         Raises:
             ValueError:
@@ -167,12 +144,16 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.row_id_to_index
         logger.info("Loaded embeddings.")
 
-    def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
+    def get_nearest_neighbours(
+        self, embedding: np.ndarray, num_docs: int = 5
+    ) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
 
         Args:
             embedding:
                 The embedding to find nearest neighbours for.
+            num_docs (optional):
+                The number of documents to retrieve. Defaults to 5.
 
         Returns:
             A list of indices of the nearest neighbours.
@@ -182,12 +163,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 If the number of documents in the store is less than the number of
                 documents to retrieve.
         """
-        num_docs = self.config.embedding_store.num_documents_to_retrieve
-        if self.embeddings.shape[0] < num_docs:
-            raise ValueError(
-                "The number of documents in the store is less than the number of "
-                "documents to retrieve."
-            )
+        # Ensure that the number of documents to retrieve is less than the number of
+        # documents in the store
+        num_docs = max(num_docs, self.embeddings.shape[0])
 
         logger.info(f"Finding {num_docs:,} nearest neighbours...")
         scores = self.embeddings @ embedding
@@ -207,3 +185,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
             Whether the document exists in the store.
         """
         return document_id in self.index_to_row_id
+
+    def clear(self) -> None:
+        """Clear all embeddings from the store."""
+        self.embeddings = np.zeros(shape=(0, self.embedding_dim))
+        self.index_to_row_id = defaultdict()
+        if self.path:
+            self.path.unlink(missing_ok=True)
+        logger.info("Cleared the embedding store.")

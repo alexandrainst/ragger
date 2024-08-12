@@ -1,9 +1,10 @@
 """Unit tests for the `document_store` module."""
 
 import typing
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import pytest
-from omegaconf import DictConfig
 from ragger.document_store import DocumentStore, JsonlDocumentStore
 
 
@@ -11,21 +12,15 @@ class TestJsonlDocumentStore:
     """Tests for the `JsonlDocumentStore` class."""
 
     @pytest.fixture(scope="class")
-    def config(
-        self, dirs_params, jsonl_document_store_params
-    ) -> typing.Generator[DictConfig, None, None]:
-        """Initialise a configuration for testing."""
-        yield DictConfig(
-            dict(dirs=dirs_params, document_store=jsonl_document_store_params)
-        )
-
-    @pytest.fixture(scope="class")
     def document_store(
-        self, config
+        self, documents
     ) -> typing.Generator[JsonlDocumentStore, None, None]:
         """Initialise a JsonlDocumentStore for testing."""
-        store = JsonlDocumentStore(config=config)
-        yield store
+        with NamedTemporaryFile(mode="w", suffix=".jsonl") as file:
+            data_str = "\n".join(document.model_dump_json() for document in documents)
+            file.write(data_str)
+            file.flush()
+            yield JsonlDocumentStore(path=Path(file.name))
 
     def test_is_document_store(self):
         """Test that the JsonlDocumentStore is a DocumentStore."""

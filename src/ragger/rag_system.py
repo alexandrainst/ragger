@@ -2,16 +2,14 @@
 
 import logging
 import typing
-from pathlib import Path
 
-from omegaconf import DictConfig
-
+from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
 from .data_models import Document, GeneratedAnswer
-from .document_store import DocumentStore
-from .embedder import Embedder
-from .embedding_store import EmbeddingStore
-from .generator import Generator
-from .utils import format_answer, load_ragger_components
+from .document_store import DocumentStore, JsonlDocumentStore
+from .embedder import E5Embedder, Embedder
+from .embedding_store import EmbeddingStore, NumpyEmbeddingStore
+from .generator import Generator, OpenaiGenerator
+from .utils import format_answer
 
 logger = logging.getLogger(__package__)
 
@@ -19,18 +17,55 @@ logger = logging.getLogger(__package__)
 class RagSystem:
     """The main entry point for the RAG system, orchestrating the other components."""
 
-    def __init__(self, config: DictConfig):
+    def __init__(
+        self,
+        document_store: DocumentStore | None = None,
+        embedder: Embedder | None = None,
+        embedding_store: EmbeddingStore | None = None,
+        generator: Generator | None = None,
+        language: typing.Literal["da", "en"] = "da",
+        no_documents_reply: str | None = None,
+    ) -> None:
         """Initialise the RAG system.
 
         Args:
-            config:
-                The Hydra configuration.
+            document_store (optional):
+                The document store to use, or None to use the default.
+            embedder (optional):
+                The embedder to use, or None to use the default.
+            embedding_store (optional):
+                The embedding store to use, or None to use the default.
+            generator (optional):
+                The generator to use, or None to use the default.
+            language (optional):
+                The language to use for the system. Can be "da" (Danish) or "en"
+                (English). Defaults to "da".
+            no_documents_reply (optional):
+                The reply to use when no documents are found. If None, a default
+                reply is used, based on the chosen language. Defaults to None.
         """
-        self.config = config
-        self.document_store: DocumentStore
-        self.embedder: Embedder
-        self.embedding_store: EmbeddingStore
-        self.generator: Generator
+        if document_store is None:
+            document_store = JsonlDocumentStore()
+        if embedder is None:
+            embedder = E5Embedder()
+        if embedding_store is None:
+            embedding_store = NumpyEmbeddingStore(embedding_dim=embedder.embedding_dim)
+        if generator is None:
+            generator = OpenaiGenerator(language=language)
+
+        self.document_store = document_store
+        self.embedder = embedder
+        self.embedding_store = embedding_store
+        self.generator = generator
+        self.language = language
+
+        no_documents_reply_mapping = dict(
+            da=DANISH_NO_DOCUMENTS_REPLY, en=ENGLISH_NO_DOCUMENTS_REPLY
+        )
+        self.no_documents_reply = (
+            no_documents_reply or no_documents_reply_mapping[language]
+        )
+
         self.compile()
 
     def compile(self, force: bool = False) -> "RagSystem":
@@ -44,18 +79,29 @@ class RagSystem:
                 Whether to force a recompilation. This deletes the existing embedding
                 store and rebuilds it.
         """
-        components = load_ragger_components(config=self.config)
-        for component_name, component_class in components.model_dump().items():
-            if not hasattr(self, component_name) or force:
-                setattr(self, component_name, component_class(config=self.config))
-
         if force:
-            embedding_store_path = (
-                Path(self.config.dirs.data)
-                / self.config.dirs.processed
-                / self.config.embedding_store.filename
-            )
-            embedding_store_path.unlink(missing_ok=True)
+            self.embedding_store.clear()
+
+        self.document_store.compile(
+            embedder=self.embedder,
+            embedding_store=self.embedding_store,
+            generator=self.generator,
+        )
+        self.embedder.compile(
+            document_store=self.document_store,
+            embedding_store=self.embedding_store,
+            generator=self.generator,
+        )
+        self.embedding_store.compile(
+            document_store=self.document_store,
+            embedder=self.embedder,
+            generator=self.generator,
+        )
+        self.generator.compile(
+            document_store=self.document_store,
+            embedder=self.embedder,
+            embedding_store=self.embedding_store,
+        )
 
         documents = self.document_store.get_all_documents()
         documents_not_in_embedding_store = [
@@ -147,7 +193,7 @@ class RagSystem:
                     yield format_answer(
                         answer=answer,
                         documents=documents,
-                        no_documents_reply=self.config.demo.no_documents_reply,
+                        no_documents_reply=self.no_documents_reply,
                     )
 
             return streamer()
@@ -155,5 +201,5 @@ class RagSystem:
         return format_answer(
             answer=answer,
             documents=documents,
-            no_documents_reply=self.config.demo.no_documents_reply,
+            no_documents_reply=self.no_documents_reply,
         )

@@ -2,11 +2,11 @@
 
 import typing
 from abc import ABC, abstractmethod
-from typing import Annotated, Type
+from pathlib import Path
+from typing import Annotated
 
 import annotated_types
 import numpy as np
-from omegaconf import DictConfig
 from pydantic import BaseModel, ConfigDict, Field
 
 Index = str
@@ -40,14 +40,25 @@ class GeneratedAnswer(BaseModel):
 class DocumentStore(ABC):
     """An abstract document store, which fetches documents from a database."""
 
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the document store.
+    path: Path | None = None
+
+    def compile(
+        self,
+        embedder: "Embedder",
+        embedding_store: "EmbeddingStore",
+        generator: "Generator",
+    ) -> None:
+        """Compile the embedder.
 
         Args:
-            config:
-                The Hydra configuration.
+            embedder:
+                The embedder to use.
+            embedding_store:
+                The embedding store to use.
+            generator:
+                The generator to use.
         """
-        self.config = config
+        pass
 
     @abstractmethod
     def __getitem__(self, index: Index) -> Document:
@@ -88,19 +99,23 @@ class DocumentStore(ABC):
 class Embedder(ABC):
     """An abstract embedder, which embeds documents using a pre-trained model."""
 
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the embedder.
+    embedding_dim: int
 
-        Args:
-            config:
-                The Hydra configuration.
-        """
-        self.config = config
-
-    def compile(self) -> None:
+    def compile(
+        self,
+        document_store: "DocumentStore",
+        embedding_store: "EmbeddingStore",
+        generator: "Generator",
+    ) -> None:
         """Compile the embedder.
 
-        This method loads any necessary resources and prepares the embedder for use.
+        Args:
+            document_store:
+                The document store to use.
+            embedding_store:
+                The embedding store to use.
+            generator:
+                The generator to use.
         """
         pass
 
@@ -153,14 +168,25 @@ class Embedder(ABC):
 class EmbeddingStore(ABC):
     """An abstract embedding store, which fetches embeddings from a database."""
 
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the embedding store.
+    path: Path | None = None
+
+    def compile(
+        self,
+        document_store: "DocumentStore",
+        embedder: "Embedder",
+        generator: "Generator",
+    ) -> None:
+        """Compile the embedder.
 
         Args:
-            config:
-                The Hydra configuration.
+            document_store:
+                The document store to use.
+            embedder:
+                The embedder to use.
+            generator:
+                The generator to use.
         """
-        self.config = config
+        pass
 
     @abstractmethod
     def add_embeddings(self, embeddings: list[Embedding]) -> None:
@@ -198,18 +224,32 @@ class EmbeddingStore(ABC):
         """
         ...
 
+    @abstractmethod
+    def clear(self) -> None:
+        """Clear all embeddings from the store."""
+        ...
+
 
 class Generator(ABC):
     """An abstract generator of answers from a query and relevant documents."""
 
-    def __init__(self, config: DictConfig) -> None:
-        """Initialise the generator.
+    def compile(
+        self,
+        document_store: "DocumentStore",
+        embedder: "Embedder",
+        embedding_store: "EmbeddingStore",
+    ) -> None:
+        """Compile the embedder.
 
         Args:
-            config:
-                The Hydra configuration.
+            document_store:
+                The document store to use.
+            embedder:
+                The embedder to use.
+            embedding_store:
+                The embedding store to use.
         """
-        self.config = config
+        pass
 
     @abstractmethod
     def prompt_too_long(self, prompt: str) -> bool:
@@ -242,10 +282,10 @@ class Generator(ABC):
         ...
 
 
-class Components(BaseModel):
-    """The components of the RAG system."""
+class PersistentSharingConfig(BaseModel):
+    """The configuration for persistent sharing of a demo."""
 
-    document_store: Type[DocumentStore] | None = None
-    embedder: Type[Embedder] | None = None
-    embedding_store: Type[EmbeddingStore] | None = None
-    generator: Type[Generator] | None = None
+    space_repo_id: str
+    database_repo_id: str
+    database_update_frequency: int
+    hf_token_variable_name: str

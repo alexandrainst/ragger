@@ -7,19 +7,29 @@ import sqlite3
 import typing
 import warnings
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import gradio as gr
-import huggingface_hub
 from huggingface_hub import CommitScheduler, HfApi
-from huggingface_hub.utils import (
-    EntryNotFoundError,
-    LocalTokenNotFoundError,
-    RepositoryNotFoundError,
-)
-from omegaconf import DictConfig, OmegaConf
+from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
-from .data_models import Document
+from .constants import (
+    DANISH_DEMO_TITLE,
+    DANISH_DESCRIPTION,
+    DANISH_FEEDBACK_INSTRUCTION,
+    DANISH_INPUT_BOX_PLACEHOLDER,
+    DANISH_NO_DOCUMENTS_REPLY,
+    DANISH_SUBMIT_BUTTON_VALUE,
+    DANISH_THANK_YOU_FEEDBACK,
+    ENGLISH_DEMO_TITLE,
+    ENGLISH_DESCRIPTION,
+    ENGLISH_FEEDBACK_INSTRUCTION,
+    ENGLISH_INPUT_BOX_PLACEHOLDER,
+    ENGLISH_NO_DOCUMENTS_REPLY,
+    ENGLISH_SUBMIT_BUTTON_VALUE,
+    ENGLISH_THANK_YOU_FEEDBACK,
+)
+from .data_models import Document, PersistentSharingConfig
+from .generator import OpenaiGenerator
 from .rag_system import RagSystem
 from .utils import format_answer
 
@@ -34,20 +44,112 @@ logger = logging.getLogger(__package__)
 class Demo:
     """A Gradio demo of the RAG system."""
 
-    def __init__(self, config: DictConfig) -> None:
+    def __init__(
+        self,
+        rag_system: RagSystem,
+        feedback_db_path: Path = Path("feedback.db"),
+        feedback_mode: typing.Literal[
+            "strict-feedback", "feedback", "no-feedback"
+        ] = "strict-feedback",
+        gradio_theme: str = "monochrome",
+        title: str | None = None,
+        description: str | None = None,
+        feedback_instruction: str | None = None,
+        thank_you_feedback: str | None = None,
+        input_box_placeholder: str | None = None,
+        submit_button_value: str | None = None,
+        no_documents_reply: str | None = None,
+        persistent_sharing_config: PersistentSharingConfig | None = None,
+    ) -> None:
         """Initialise the demo.
 
         Args:
-            config:
-                The Hydra configuration.
+            rag_system:
+                The RAG system to use.
+            feedback_db_path (optional):
+                The path to the feedback database. Defaults to "feedback.db".
+            feedback_mode (optional):
+                The feedback mode to use. Can be "strict-feedback", "feedback", or
+                "no-feedback". Defaults to "strict-feedback".
+            gradio_theme (optional):
+                The Gradio theme to use. Defaults to "monochrome".
+            title (optional):
+                The title of the demo. If None then a default title is used, based on
+                the language of the RAG system. Defaults to None.
+            description (optional):
+                The description of the demo. If None then a default description is used,
+                based on the language of the RAG system. Defaults to None.
+            feedback_instruction (optional):
+                The instruction to display to the user after they have submitted
+                feedback. If None then a default instruction is used, based on the
+                language of the RAG system. Defaults to None.
+            thank_you_feedback (optional):
+                The message to display to the user after they have submitted feedback.
+                If None then a default message is used, based on the language of the RAG
+                system. Defaults to None.
+            input_box_placeholder (optional):
+                The placeholder text to display in the input box. If None then a default
+                placeholder is used, based on the language of the RAG system. Defaults
+                to None.
+            submit_button_value (optional):
+                The value to display on the submit button. If None then a default value
+                is used, based on the language of the RAG system. Defaults to None.
+            no_documents_reply (optional):
+                The reply to use when no documents are found. If None then a default
+                reply is used, based on the language of the RAG system. Defaults to None.
+            persistent_sharing_config (optional):
+                The configuration for persistent sharing of the demo. If None then no
+                persistent sharing is used. Defaults to None.
         """
-        self.config = config
+        title_mapping = dict(da=DANISH_DEMO_TITLE, en=ENGLISH_DEMO_TITLE)
+        description_mapping = dict(da=DANISH_DESCRIPTION, en=ENGLISH_DESCRIPTION)
+        feedback_instruction_mapping = dict(
+            da=DANISH_FEEDBACK_INSTRUCTION, en=ENGLISH_FEEDBACK_INSTRUCTION
+        )
+        thank_you_feedback_mapping = dict(
+            da=DANISH_THANK_YOU_FEEDBACK, en=ENGLISH_THANK_YOU_FEEDBACK
+        )
+        input_box_placeholder_mapping = dict(
+            da=DANISH_INPUT_BOX_PLACEHOLDER, en=ENGLISH_INPUT_BOX_PLACEHOLDER
+        )
+        submit_button_value_mapping = dict(
+            da=DANISH_SUBMIT_BUTTON_VALUE, en=ENGLISH_SUBMIT_BUTTON_VALUE
+        )
+        no_documents_reply_mapping = dict(
+            da=DANISH_NO_DOCUMENTS_REPLY, en=ENGLISH_NO_DOCUMENTS_REPLY
+        )
 
-        self.db_path = Path(config.dirs.data) / config.demo.db_path
-        match self.config.demo.feedback:
+        self.rag_system = rag_system
+        self.feedback_db_path = feedback_db_path
+        self.feedback_mode = feedback_mode
+        self.gradio_theme = gradio_theme
+        self.title = title or title_mapping[rag_system.language]
+        self.description = description or description_mapping[rag_system.language]
+        self.feedback_instruction = (
+            feedback_instruction or feedback_instruction_mapping[rag_system.language]
+        )
+        self.thank_you_feedback = (
+            thank_you_feedback or thank_you_feedback_mapping[rag_system.language]
+        )
+        self.input_box_placeholder = (
+            input_box_placeholder or input_box_placeholder_mapping[rag_system.language]
+        )
+        self.submit_button_value = (
+            submit_button_value or submit_button_value_mapping[rag_system.language]
+        )
+        self.no_documents_reply = (
+            no_documents_reply or no_documents_reply_mapping[rag_system.language]
+        )
+        self.persistent_sharing_config = persistent_sharing_config
+
+        # Ensure the database file exists
+        self.feedback_db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.feedback_db_path.touch(exist_ok=True)
+
+        match self.feedback_mode:
             case "strict-feedback" | "feedback":
-                logger.info(f"Using the {self.config.demo.feedback!r} feedback mode.")
-                with sqlite3.connect(self.db_path) as connection:
+                logger.info(f"Using the {self.feedback_mode!r} feedback mode.")
+                with sqlite3.connect(self.feedback_db_path) as connection:
                     table_empty = not connection.execute("""
                         SELECT name FROM sqlite_master
                         WHERE type='table' AND name='feedback'
@@ -67,7 +169,7 @@ class Demo:
                 )
 
         # This will only run when the demo is running in a Hugging Face Space
-        if os.getenv("RUNNING_IN_SPACE") == "1":
+        if os.getenv("RUNNING_IN_SPACE") == "1" and self.persistent_sharing_config:
             logger.info("Running in a Hugging Face space.")
 
             # Suppress warnings when running in a Hugging Face space, as this causes
@@ -76,10 +178,10 @@ class Demo:
 
             # Initialise commit scheduler, which will commit files to the Hub at
             # regular intervals
-            if self.config.demo.feedback in {"strict-feedback", "feedback"}:
-                backup_dir = self.db_path.parent
-                db_repo_id = self.config.demo.persistent_sharing.database_repo_id
-                every = self.config.demo.db_update_frequency
+            if self.feedback_mode in {"strict-feedback", "feedback"}:
+                backup_dir = self.feedback_db_path.parent
+                db_repo_id = self.persistent_sharing_config.database_repo_id
+                every = self.persistent_sharing_config.database_update_frequency
                 assert backup_dir.exists(), f"{backup_dir!r} does not exist!"
                 self.scheduler = CommitScheduler(
                     repo_id=db_repo_id,
@@ -89,7 +191,7 @@ class Demo:
                     squash_history=True,
                     every=every,
                     token=os.getenv(
-                        self.config.demo.persistent_sharing.token_variable_name
+                        self.persistent_sharing_config.hf_token_variable_name
                     ),
                     private=True,
                 )
@@ -99,7 +201,6 @@ class Demo:
                 )
 
         self.retrieved_documents: list[Document] = list()
-        self.rag_system = RagSystem(config=config)
 
     def build_demo(self) -> gr.Blocks:
         """Build the demo.
@@ -109,11 +210,11 @@ class Demo:
         """
         logger.info("Building the demo...")
         with gr.Blocks(
-            theme=self.config.demo.theme, title=self.config.demo.title, fill_height=True
+            theme=self.gradio_theme, title=self.title, fill_height=True
         ) as demo:
-            gr.components.HTML(f"<center><h1>{self.config.demo.title}</h1></center>")
+            gr.components.HTML(f"<center><h1>{self.title}</h1></center>")
             directions = gr.components.HTML(
-                f"<b><center>{self.config.demo.description}</b></center>", label="p"
+                f"<b><center>{self.description}</b></center>", label="p"
             )
             chatbot = gr.Chatbot(
                 value=[], elem_id="chatbot", bubble_full_width=False, scale=1
@@ -122,12 +223,10 @@ class Demo:
                 input_box = gr.Textbox(
                     scale=4,
                     show_label=False,
-                    placeholder=self.config.demo.input_box_placeholder,
+                    placeholder=self.input_box_placeholder,
                     container=False,
                 )
-            submit_button = gr.Button(
-                value=self.config.demo.submit_button_value, variant="primary"
-            )
+            submit_button = gr.Button(value=self.submit_button_value, variant="primary")
             submit_button_has_added_text_and_asked = submit_button.click(
                 fn=self.add_text,
                 inputs=[chatbot, input_box, submit_button],
@@ -141,12 +240,12 @@ class Demo:
                 queue=False,
             ).then(fn=self.ask, inputs=chatbot, outputs=chatbot)
 
-            if self.config.demo.feedback in ["strict-feedback", "feedback"]:
+            if self.feedback_mode in ["strict-feedback", "feedback"]:
                 submit_button_has_added_text_and_asked.then(
                     fn=lambda: gr.update(
                         value=f"""
                             <b><center>
-                            {self.config.demo.feedback_instruction}
+                            {self.feedback_instruction}
                             </center></b>
                         """
                     ),
@@ -158,7 +257,7 @@ class Demo:
                     fn=lambda: gr.update(
                         value=f"""
                             <b><center>
-                            {self.config.demo.feedback_instruction}
+                            {self.feedback_instruction}
                             </center></b>
                         """
                     ),
@@ -175,9 +274,7 @@ class Demo:
                 ).then(
                     fn=lambda: gr.update(
                         value=(
-                            "<b><center>"
-                            f"{self.config.demo.thank_you_feedback}"
-                            "</center></b>"
+                            "<b><center>" f"{self.thank_you_feedback}" "</center></b>"
                         )
                     ),
                     outputs=[directions],
@@ -188,99 +285,34 @@ class Demo:
 
     def launch(self) -> None:
         """Launch the demo."""
-        if self.config.demo.share not in {"no-share", "temporary", "persistent"}:
-            raise ValueError(
-                "The `demo.share` field in the config must be one of 'temporary', "
-                "'persistent', or 'no-share'. It is currently set to "
-                f"{self.config.demo.share!r}. Please change it and try again."
-            )
-
         self.demo = self.build_demo()
 
         # If we are storing the demo persistently we push it to the Hugging Face Hub,
         # unless we are already running this from the Hub
         if (
-            self.config.demo.share == "persistent"
+            self.persistent_sharing_config is not None
             and os.getenv("RUNNING_IN_SPACE") != "1"
         ):
             self.push_to_hub()
             return
 
-        logger.info("Launching the demo...")
-
-        launch_kwargs = dict(
-            server_name=self.config.demo.host, server_port=self.config.demo.port
-        )
-
-        # Add password protection to the demo, if required
-        auth = None
-        username = self.config.demo.temporary_sharing.username
-        password = self.config.demo.temporary_sharing.password
-        if (
-            isinstance(username, str)
-            and username != ""
-            and isinstance(password, str)
-            and password != ""
-        ):
-            auth = (username, password)
-        launch_kwargs["auth"] = auth
-
-        if self.config.demo.share == "temporary":
-            launch_kwargs["share"] = True
-
-        self.demo.queue().launch(**launch_kwargs)
-
     def push_to_hub(self) -> None:
         """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
-        if self.config.demo.share != "persistent":
+        if self.persistent_sharing_config is None:
             raise ValueError(
                 "The demo must be shared persistently to push it to the hub. Please "
-                "set the `demo.share` field to 'persistent' in the config and try "
-                "again."
+                "set the `persistent_sharing_config` field and try again."
             )
-
-        space_repo_id = self.config.demo.persistent_sharing.space_repo_id
-        if space_repo_id is None:
-            raise ValueError(
-                "The `demo.persistent_sharing.space_repo_id` field must be set in the "
-                "config to push the demo to the hub. Please set it and try again."
-            )
-
-        database_repo_id = self.config.demo.persistent_sharing.database_repo_id
-        if database_repo_id is None:
-            raise ValueError(
-                "The `demo.persistent_sharing.database_repo_id` field must be set in "
-                "the config to push the demo to the hub. Please set it and try again."
-            )
-
-        # Check that all environment variables are set
-        required_env_vars: list[str] = []
-        try:
-            huggingface_hub.whoami()
-        except LocalTokenNotFoundError:
-            required_env_vars.append(
-                self.config.demo.persistent_sharing.token_variable_name
-            )
-        if self.config.generator.name == "openai":
-            required_env_vars.append(self.config.generator.api_key_variable_name)
-        for env_var in required_env_vars:
-            if env_var not in os.environ:
-                raise ValueError(
-                    f"{env_var} environment variable is not set. Please set it in "
-                    "your `.env` file or in your environment, and try again."
-                )
 
         logger.info("Pushing the demo to the hub...")
 
         api = HfApi(
-            token=os.getenv(
-                self.config.demo.persistent_sharing.token_variable_name, True
-            )
+            token=os.getenv(self.persistent_sharing_config.hf_token_variable_name, True)
         )
 
-        if not api.repo_exists(repo_id=space_repo_id):
+        if not api.repo_exists(repo_id=self.persistent_sharing_config.space_repo_id):
             api.create_repo(
-                repo_id=space_repo_id,
+                repo_id=self.persistent_sharing_config.space_repo_id,
                 repo_type="space",
                 space_sdk="docker",
                 exist_ok=True,
@@ -291,30 +323,34 @@ class Demo:
         # This environment variable is used to trigger the creation of a commit
         # scheduler when the demo is initialised, which will commit the final data
         # directory to the Hub at regular intervals.
-        api.add_space_variable(repo_id=space_repo_id, key="RUNNING_IN_SPACE", value="1")
+        api.add_space_variable(
+            repo_id=self.persistent_sharing_config.space_repo_id,
+            key="RUNNING_IN_SPACE",
+            value="1",
+        )
 
         api.add_space_secret(
-            repo_id=space_repo_id,
-            key=self.config.demo.persistent_sharing.token_variable_name,
-            value=os.environ[self.config.demo.persistent_sharing.token_variable_name],
+            repo_id=self.persistent_sharing_config.space_repo_id,
+            key=self.persistent_sharing_config.hf_token_variable_name,
+            value=os.environ[self.persistent_sharing_config.hf_token_variable_name],
         )
-        if self.config.generator.name == "openai":
+        if isinstance(self.rag_system.generator, OpenaiGenerator):
             api.add_space_secret(
-                repo_id=space_repo_id,
-                key=self.config.generator.api_key_variable_name,
-                value=os.environ[self.config.generator.api_key_variable_name],
+                repo_id=self.persistent_sharing_config.space_repo_id,
+                key="OPENAI_API_KEY",
+                value=self.rag_system.generator.api_key or os.environ["OPENAI_API_KEY"],
             )
 
         logger.info("Added environment variables and secrets to the space.")
 
         # The feedback database is stored in a separate repo, so we need to pull the
         # newest version of the database before pushing the demo to the hub
-        if self.config.demo.feedback in {"strict-feedback", "feedback"}:
+        if self.feedback_mode in {"strict-feedback", "feedback"}:
             try:
                 api.hf_hub_download(
-                    repo_id=database_repo_id,
+                    repo_id=self.persistent_sharing_config.database_repo_id,
                     repo_type="dataset",
-                    filename=str(self.db_path),
+                    filename=str(self.feedback_db_path),
                     force_download=True,
                     local_dir=".",
                 )
@@ -327,38 +363,25 @@ class Demo:
                     "The feedback database or database repo does not exist. Skipping."
                 )
 
-        # Upload config separately, as the user might have created overrides when
-        # running this current session
-        with TemporaryDirectory() as temp_dir:
-            api.upload_folder(
-                repo_id=space_repo_id,
-                repo_type="space",
-                folder_path=temp_dir,
-                path_in_repo="config",
-                commit_message="Create config folder.",
-            )
-        with NamedTemporaryFile(mode="w", suffix=".yaml") as file:
-            config_yaml = OmegaConf.to_yaml(cfg=self.config)
-            file.write(config_yaml)
-            file.flush()
-            api.upload_file(
-                repo_id=space_repo_id,
-                repo_type="space",
-                path_or_fileobj=file.name,
-                path_in_repo="config/ragger_config.yaml",
-                commit_message="Upload config to the hub.",
-            )
-
-        folders_to_upload: list[Path] = [
-            Path("src"),
-            Path(self.config.dirs.data) / self.config.dirs.processed,
-            Path(self.config.dirs.data) / self.config.dirs.final,
-        ]
+        folders_to_upload: list[Path] = [Path("src")]
         files_to_upload: list[Path] = [
             Path("Dockerfile"),
             Path("pyproject.toml"),
             Path("poetry.lock"),
         ]
+
+        if (document_store_path := self.rag_system.document_store.path) is not None:
+            if document_store_path.is_dir():
+                folders_to_upload.append(document_store_path)
+            else:
+                files_to_upload.append(document_store_path)
+
+        if (embedding_store_path := self.rag_system.embedding_store.path) is not None:
+            if embedding_store_path.is_dir():
+                folders_to_upload.append(embedding_store_path)
+            else:
+                files_to_upload.append(embedding_store_path)
+
         for path in folders_to_upload + files_to_upload:
             if not path.exists():
                 raise FileNotFoundError(
@@ -368,7 +391,7 @@ class Demo:
         for folder in folders_to_upload:
             logger.info(f"Uploading {str(folder)!r} folder to the hub...")
             api.upload_folder(
-                repo_id=space_repo_id,
+                repo_id=self.persistent_sharing_config.space_repo_id,
                 repo_type="space",
                 folder_path=str(folder),
                 path_in_repo=str(folder),
@@ -378,7 +401,7 @@ class Demo:
         for path in files_to_upload:
             logger.info(f"Uploading {str(path)!r} to the hub...")
             api.upload_file(
-                repo_id=space_repo_id,
+                repo_id=self.persistent_sharing_config.space_repo_id,
                 repo_type="space",
                 path_or_fileobj=str(path),
                 path_in_repo=str(path),
@@ -387,7 +410,7 @@ class Demo:
 
         logger.info(
             f"Pushed the demo to the hub! You can access it at "
-            f"https://hf.co/spaces/{space_repo_id}."
+            f"https://hf.co/spaces/{self.persistent_sharing_config.space_repo_id}."
         )
 
     def close(self) -> None:
@@ -414,7 +437,7 @@ class Demo:
             The updated chat history, the textbox and updated submit button.
         """
         history = history + [(input_text, None)]
-        if self.config.demo.feedback == "strict-feedback":
+        if self.feedback_mode == "strict-feedback":
             return (
                 history,
                 gr.update(value="", interactive=False, visible=False),
@@ -444,7 +467,7 @@ class Demo:
                 formatted_answer = format_answer(
                     answer=generated_answer,
                     documents=documents,
-                    no_documents_reply=self.config.demo.no_documents_reply,
+                    no_documents_reply=self.no_documents_reply,
                 )
                 history[-1] = (None, formatted_answer)
                 yield history
@@ -453,7 +476,7 @@ class Demo:
         generated_answer = format_answer(
             answer=generated_answer,
             documents=documents,
-            no_documents_reply=self.config.demo.no_documents_reply,
+            no_documents_reply=self.no_documents_reply,
         )
         self.retrieved_documents = documents
         history[-1] = (None, generated_answer)
@@ -485,7 +508,7 @@ class Demo:
         } | retrieved_document_data
 
         # Add the record to the table "feedback" in the database.
-        with sqlite3.connect(self.db_path) as connection:
+        with sqlite3.connect(self.feedback_db_path) as connection:
             connection.execute(
                 "INSERT INTO feedback VALUES (:query, :response, :liked, :id)", record
             )
