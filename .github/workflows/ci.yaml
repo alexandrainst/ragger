@@ -29,15 +29,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL server
+      - name: Setup PostgreSQL server
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql
-
-      - name: Start PostgreSQL server and set up "postgres" user
-        run: |
           sudo service postgresql start
-          sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD postgres;"
+          sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'postgres';"
 
       - name: Install Poetry
         run: pipx install poetry==1.8.2
