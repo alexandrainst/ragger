@@ -132,10 +132,10 @@ class InMemoryDocumentStore(DocumentStore):
 		self.documents.extend(documents)
 
 	def __getitem__(self, index: Index) -> str:
-		return self.documents[index]
+		return self.documents[int(index)]
 
 	def __contains__(self, index: Index) -> bool:
-		return item in self.documents
+		return 0 <= int(index) < len(self.documents)
 
 	def __iter__(self) -> typing.Generator[Document, None, None]:
 		yield from self.documents
