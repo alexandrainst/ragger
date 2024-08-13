@@ -34,6 +34,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql
 
+      - name: Start PostgreSQL server and set up "postgres" user
+        run: |
+          sudo service postgresql start
+          sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD postgres;"
+
       - name: Install Poetry
         run: pipx install poetry==1.8.2
 
@@ -51,9 +56,8 @@ jobs:
           poetry env use "${{ matrix.python-version }}"
           poetry install --extras all
 
-      - name: Start PostgreSQL server and test with pytest
+      - name: Test with pytest
         run: |
-          sudo service postgresql start
           poetry run pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
