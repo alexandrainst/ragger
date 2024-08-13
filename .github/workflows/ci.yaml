@@ -46,6 +46,12 @@ jobs:
           poetry env use "${{ matrix.python-version }}"
           poetry install --extras all
 
+      - name: Install and start PostgreSQL server
+        run: |
+          sudo apt-get update
+          sudo apt-get install postgresql
+          sudo service postgresql start
+
       - name: Test with pytest
         run: poetry run pytest
         env:
