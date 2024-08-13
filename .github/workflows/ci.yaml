@@ -29,11 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install and start PostgreSQL server
+      - name: Install PostgreSQL server
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql
-          sudo service postgresql start
 
       - name: Install Poetry
         run: pipx install poetry==1.8.2
@@ -52,7 +51,9 @@ jobs:
           poetry env use "${{ matrix.python-version }}"
           poetry install --extras all
 
-      - name: Test with pytest
-        run: poetry run pytest
+      - name: Start PostgreSQL server and test with pytest
+        run: |
+          sudo service postgresql start
+          poetry run pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
