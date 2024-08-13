@@ -110,7 +110,9 @@ imported from `ragger.embedding_store`.
   (default)
 - `PostgresEmbeddingStore`: An embedding store that uses a PostgreSQL database to store
   embeddings, using the `pgvector` extension. This assumes that the PostgreSQL server is
-  already running, and that the `pgvector` extension is installed.
+  already running, and that the `pgvector` extension is installed. See
+  [here](https://github.com/pgvector/pgvector?tab=readme-ov-file#installation) for more
+  information on how to install the extension.
 
 
 ### Generators
