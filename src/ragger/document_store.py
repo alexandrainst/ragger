@@ -181,7 +181,6 @@ class SqliteDocumentStore(DocumentStore):
                 """,
                 [(document.id, document.text) for document in documents],
             )
-            conn.commit()
         return self
 
     def remove(self) -> None:
@@ -317,7 +316,9 @@ class PostgresDocumentStore(DocumentStore):
         self.text_column = text_column
 
         with self._connect() as conn:
-            conn.cursor().execute(
+            cursor = conn.cursor()
+            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+            cursor.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {table_name} (
                     {id_column} TEXT PRIMARY KEY,
@@ -340,6 +341,7 @@ class PostgresDocumentStore(DocumentStore):
             port=self.port,
             dbname=self.database_name,
         )
+        connection.autocommit = True
         yield connection
         connection.close()
 
@@ -363,7 +365,6 @@ class PostgresDocumentStore(DocumentStore):
                 """,
                 [(document.id, document.text) for document in documents],
             )
-            conn.commit()
         return self
 
     def remove(self) -> None:
