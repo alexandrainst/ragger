@@ -80,6 +80,8 @@ imported from `ragger.document_store`.
 
 - `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
 - `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
+- `PostgresDocumentStore`: A document store that uses a PostgreSQL database to store
+  documents. This assumes that the PostgreSQL server is already running.
 
 
 ### Embedders
