@@ -1,10 +1,13 @@
 """Store and fetch embeddings from a database."""
 
+import importlib.util
 import io
 import json
 import logging
+import typing
 import zipfile
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterable
 
@@ -18,6 +21,12 @@ from .data_models import (
     Generator,
     Index,
 )
+
+if importlib.util.find_spec("psycopg2") is not None:
+    import psycopg2
+
+if typing.TYPE_CHECKING:
+    import psycopg2
 
 logger = logging.getLogger(__package__)
 
@@ -80,7 +89,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """Return a mapping of row IDs to indices."""
         return {row_id: index for index, row_id in self.index_to_row_id.items()}
 
-    def add_embeddings(self, embeddings: Iterable[Embedding]) -> None:
+    def add_embeddings(self, embeddings: Iterable[Embedding]) -> "EmbeddingStore":
         """Add embeddings to the store.
 
         Args:
@@ -92,7 +101,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 If any of the embeddings already exist in the store.
         """
         if not embeddings:
-            return
+            return self
 
         already_existing_indices = [
             embedding.id
@@ -112,7 +121,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             if embedding.id not in self.index_to_row_id
         ]
         if not embeddings:
-            return
+            return self
 
         # In case we haven't inferred the embedding dimension yet, we do it now
         if self.embedding_dim is None or self.embeddings is None:
@@ -135,6 +144,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         logger.info("Added embeddings to the embedding store.")
 
         self._save(path=self.path)
+        return self
 
     def _save(self, path: Path | str) -> None:
         """Save the embedding store to disk.
@@ -255,3 +265,187 @@ class NumpyEmbeddingStore(EmbeddingStore):
         if self.embeddings is None:
             return 0
         return self.embeddings.shape[0]
+
+
+class PostgresEmbeddingStore(EmbeddingStore):
+    """An embedding store that fetches embeddings from a PostgreSQL database."""
+
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 5432,
+        user: str | None = "postgres",
+        password: str | None = "postgres",
+        database_name: str = "postgres",
+        table_name: str = "embeddings",
+        id_column: str = "id",
+        embedding_column: str = "embedding",
+    ) -> None:
+        """Initialise the PostgreSQL embedding store.
+
+        Args:
+            host (optional):
+                The hostname of the PostgreSQL server. Defaults to "localhost".
+            port (optional):
+                The port of the PostgreSQL server. Defaults to 5432.
+            user (optional):
+                The username to use when connecting to the PostgreSQL server. Defaults
+                to "postgres".
+            password (optional):
+                The password to use when connecting to the PostgreSQL server. Defaults
+                to "postgres".
+            database_name (optional):
+                The name of the database to use. Defaults to "postgres".
+            table_name (optional):
+                The name of the table to use. Defaults to "documents".
+            id_column (optional):
+                The name of the column containing the document IDs. Defaults to "id".
+            embedding_column (optional):
+                The name of the column containing the embeddings. Defaults to
+                "embedding".
+        """
+        psycopg2_not_installed = importlib.util.find_spec("psycopg2") is None
+        if psycopg2_not_installed:
+            raise ImportError(
+                "The `postgres` extra is required to use the `PostgresDocumentStore`. "
+                "Please install it by running `pip install ragger[postgres]@"
+                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
+            )
+
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.database_name = database_name
+        self.table_name = table_name
+        self.id_column = id_column
+        self.embedding_column = embedding_column
+
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            try:
+                cursor.execute(f"CREATE DATABASE {database_name}")
+            except psycopg2.errors.DuplicateDatabase:
+                pass
+            try:
+                cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
+            except psycopg2.errors.UniqueViolation:
+                pass
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    {id_column} TEXT PRIMARY KEY,
+                    {embedding_column} VECTOR
+                )
+                """
+            )
+
+    @contextmanager
+    def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
+        """Connect to the PostgreSQL database.
+
+        Yields:
+            The connection to the database.
+        """
+        connection = psycopg2.connect(
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            dbname=self.database_name,
+        )
+        connection.autocommit = True
+        yield connection
+        connection.close()
+
+    def add_embeddings(
+        self, embeddings: typing.Iterable[Embedding]
+    ) -> "EmbeddingStore":
+        """Add embeddings to the store.
+
+        Args:
+            embeddings:
+                An iterable of embeddings to add to the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                f"""
+                INSERT INTO {self.table_name} ({self.id_column}, {self.embedding_column})
+                VALUES (%s, %s)
+                """,
+                [(embedding.id, embedding.embedding) for embedding in embeddings],
+            )
+        return self
+
+    def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
+        """Get the nearest neighbours to a given embedding.
+
+        Args:
+            embedding:
+                The embedding to find nearest neighbours for.
+
+        Returns:
+            A list of indices of the nearest neighbours.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT {self.id_column}
+                FROM {self.table_name}
+                ORDER BY {self.embedding_column} <=> %s
+                LIMIT 5
+                """,
+                (embedding,),
+            )
+            return [row[0] for row in cursor.fetchall()]
+
+    def __contains__(self, document_id: Index) -> bool:
+        """Check if a document exists in the store.
+
+        Args:
+            document_id:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT 1
+                FROM {self.table_name}
+                WHERE {self.id_column} = %s
+                """,
+                (document_id,),
+            )
+            return cursor.fetchone() is not None
+
+    def __len__(self) -> int:
+        """Return the number of embeddings in the store.
+
+        Returns:
+            The number of embeddings in the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+            result = cursor.fetchone()
+            assert result is not None
+            return result[0]
+
+    def clear(self) -> None:
+        """Clear all embeddings from the store."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE {self.table_name} SET {self.embedding_column} = NULL"
+            )
+
+    def remove(self) -> None:
+        """Remove the embedding store."""
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"DROP TABLE {self.table_name}")

@@ -101,6 +101,9 @@ imported from `ragger.embedding_store`.
 
 - `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
   (default)
+- `PostgresEmbeddingStore`: An embedding store that uses a PostgreSQL database to store
+  embeddings, using the `pgvector` extension. This assumes that the PostgreSQL server is
+  already running, and that the `pgvector` extension is installed.
 
 
 ### Generators

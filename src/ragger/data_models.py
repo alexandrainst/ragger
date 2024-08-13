@@ -216,7 +216,9 @@ class EmbeddingStore(ABC):
         pass
 
     @abstractmethod
-    def add_embeddings(self, embeddings: typing.Iterable[Embedding]) -> None:
+    def add_embeddings(
+        self, embeddings: typing.Iterable[Embedding]
+    ) -> "EmbeddingStore":
         """Add embeddings to the store.
 
         Args:
