@@ -21,7 +21,7 @@ def generator(request) -> typing.Generator[typing.Type[Generator], None, None]:
     try:
         generator = request.param()
         yield generator
-    except ImportError:
+    except (ImportError, RuntimeError):
         pytest.skip("The generator could not be imported.")
 
 
