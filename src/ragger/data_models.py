@@ -6,7 +6,7 @@ from pathlib import Path
 
 import annotated_types
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 Index = str
 
@@ -52,16 +52,13 @@ class Embedding(BaseModel):
         """
         if not isinstance(other, Embedding):
             return False
-        return self.id == other.id and np.array_equal(self.embedding, other.embedding)
+        return self.id == other.id and np.allclose(self.embedding, other.embedding)
 
 
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: typing.Annotated[
-        list[typing.Annotated[Index, annotated_types.Len(min_length=1)]],
-        Field(max_length=5),
-    ]
+    sources: list[typing.Annotated[Index, annotated_types.Len(min_length=1)]]
     answer: str = ""
 
 

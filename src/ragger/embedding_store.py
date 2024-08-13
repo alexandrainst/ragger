@@ -371,20 +371,20 @@ class PostgresEmbeddingStore(EmbeddingStore):
             except psycopg2.errors.UniqueViolation:
                 pass
 
+        self._create_table()
+
     def _create_table(self) -> None:
         """Create the table in the database."""
         if self.embedding_dim is None:
             return
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                f"""
+            cursor.execute(f"""
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     {self.id_column} TEXT PRIMARY KEY,
                     {self.embedding_column} VECTOR({self.embedding_dim})
                 )
-                """
-            )
+            """)
             cursor.execute(f"""
                 CREATE INDEX IF NOT EXISTS cosine_hnsw_embedding_idx
                 ON {self.table_name}
@@ -421,13 +421,17 @@ class PostgresEmbeddingStore(EmbeddingStore):
         if not embeddings:
             return self
 
-        id_embedding_pairs = [
-            (embedding.id, embedding.embedding.tolist()) for embedding in embeddings
-        ]
+        # Ensure that we can access the embeddings multiple times
+        embeddings = list(embeddings)
 
         if self.embedding_dim is None:
-            self.embedding_dim = len(id_embedding_pairs[0][1])
+            self.embedding_dim = embeddings[0].embedding.shape[0]
             self._create_table()
+
+        id_embedding_pairs = [
+            (embedding.id, json.dumps(embedding.embedding.tolist()))
+            for embedding in embeddings
+        ]
 
         with self._connect() as conn:
             cursor = conn.cursor()
@@ -467,7 +471,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 ORDER BY {self.embedding_column} <=> %s
                 LIMIT {num_docs}
                 """,
-                (embedding.tolist(),),
+                (json.dumps(embedding.tolist()),),
             )
             return [row[0] for row in cursor.fetchall()]
 
@@ -501,7 +505,8 @@ class PostgresEmbeddingStore(EmbeddingStore):
             result = cursor.fetchone()
             if result is None:
                 raise KeyError(f"The document ID {document_id!r} does not exist.")
-            return Embedding(id=document_id, embedding=np.array(result[0]))
+            embedding = np.asarray(json.loads(result[0]))
+            return Embedding(id=document_id, embedding=embedding)
 
     def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
@@ -545,7 +550,8 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 """
             )
             for row in cursor.fetchall():
-                yield Embedding(id=row[0], embedding=np.array(row[1]))
+                embedding = np.asarray(json.loads(row[1]))
+                yield Embedding(id=row[0], embedding=embedding)
 
     def __len__(self) -> int:
         """Return the number of embeddings in the store.
