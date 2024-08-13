@@ -70,34 +70,54 @@ demo.launch()
 Ragger supports the following components:
 
 ### Document Stores
+
+These are the databases carrying all the documents. Documents are represented as objects
+of the `Document` data class, which has an `id` and a `text` field. These can all be
+imported from `ragger.document_store`.
+
 - `JsonlDocumentStore`: A document store that reads from a JSONL file.
 
+
 ### Embedders
+
+Embedders are used to embed documents. These can all be imported from `ragger.embedder`.
+
 - `E5Embedder`: An embedder that uses an E5 model.
 
+
 ### Embedding Stores
+
+Embedding stores are used to store embeddings. Embeddings are represented as objects of
+the `Embedding` data class, which has an `id` and an `embedding` field. These can all be
+imported from `ragger.embedding_store`.
+
 - `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
 
+
 ### Generators
+
+Generators are used to generate answers from the retrieved documents and the question.
+These can all be imported from `ragger.generator`.
+
 - `OpenAIGenerator`: A generator that uses the OpenAI API.
-- `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging Face Hub.
+- `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging
+  Face Hub.
 
 
 ## Custom Components
 
 You can also create custom components by subclassing the following classes:
 
-- `ragger.data_models.DocumentStore`
-- `ragger.data_models.Embedder`
-- `ragger.data_models.EmbeddingStore`
-- `ragger.data_models.Generator`
+- `DocumentStore`
+- `Embedder`
+- `EmbeddingStore`
+- `Generator`
 
 These can then simply be added to a `RagSystem`. Here is an example:
 
 ```python
 import typing
-from ragger import RagSystem
-from ragger.data_models import DocumentStore, Document, Index
+from ragger import RagSystem, DocumentStore, Document, Index
 
 class InMemoryDocumentStore(DocumentStore):
 	"""A silly document store that just keeps all documents in memory."""
