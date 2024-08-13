@@ -125,7 +125,7 @@ import typing
 from ragger import RagSystem, DocumentStore, Document, Index
 
 class InMemoryDocumentStore(DocumentStore):
-	"""A silly document store that just keeps all documents in memory."""
+	"""A document store that just keeps all documents in memory."""
 
 	def __init__(self, documents: list[str]):
 		self.documents = [
