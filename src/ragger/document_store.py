@@ -453,3 +453,93 @@ class PostgresDocumentStore(DocumentStore):
             if result is None:
                 return 0
             return result[0]
+
+
+class TxtDocumentStore(DocumentStore):
+    """A document store that fetches documents from a TXT file."""
+
+    def __init__(self, path: Path = Path("document-store.txt")) -> None:
+        """Initialise the document store.
+
+        Args:
+            path (optional):
+                The path to the TXT file where the documents are stored. Defaults to
+                "document-store.txt".
+        """
+        self.path = path
+
+        # Ensure the file exists
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.touch(exist_ok=True)
+
+        lines = [line for line in self.path.read_text().splitlines() if line.strip()]
+        self._documents = {
+            str(i): Document(id=str(i), text=line) for i, line in enumerate(lines)
+        }
+
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
+        """
+        for document in documents:
+            self._documents[document.id] = document
+
+        # Write the documents to the file
+        with self.path.open("a") as file:
+            for document in documents:
+                file.write(document.text + "\n")
+
+        return self
+
+    def remove(self) -> None:
+        """Remove the document store."""
+        self.path.unlink(missing_ok=True)
+
+    def __getitem__(self, index: Index) -> Document:
+        """Fetch a document by its ID.
+
+        Args:
+            index:
+                The ID of the document to fetch.
+
+        Returns:
+            The document with the given ID.
+
+        Raises:
+            KeyError:
+                If the document with the given ID is not found.
+        """
+        if index not in self._documents:
+            raise KeyError(f"Document with ID {index!r} not found")
+        return self._documents[index]
+
+    def __contains__(self, index: Index) -> bool:
+        """Check if a document with the given ID exists in the store.
+
+        Args:
+            index:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        return index in self._documents
+
+    def __iter__(self) -> typing.Generator[Document, None, None]:
+        """Iterate over the documents in the store.
+
+        Yields:
+            The documents in the store.
+        """
+        yield from self._documents.values()
+
+    def __len__(self) -> int:
+        """Return the number of documents in the store.
+
+        Returns:
+            The number of documents in the store.
+        """
+        return len(self._documents)

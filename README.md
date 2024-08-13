@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-71%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-72%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
@@ -82,6 +82,8 @@ imported from `ragger.document_store`.
 - `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
 - `PostgresDocumentStore`: A document store that uses a PostgreSQL database to store
   documents. This assumes that the PostgreSQL server is already running.
+- `TxtDocumentStore`: A document store that reads documents from a single text file,
+  separated by newlines.
 
 
 ### Embedders
