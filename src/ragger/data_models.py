@@ -3,7 +3,6 @@
 import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Annotated, Iterable, Self
 
 import annotated_types
 import numpy as np
@@ -31,8 +30,9 @@ class Embedding(BaseModel):
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: Annotated[
-        list[Annotated[Index, annotated_types.Len(min_length=1)]], Field(max_length=5)
+    sources: typing.Annotated[
+        list[typing.Annotated[Index, annotated_types.Len(min_length=1)]],
+        Field(max_length=5),
     ]
     answer: str = ""
 
@@ -61,7 +61,7 @@ class DocumentStore(ABC):
         pass
 
     @abstractmethod
-    def add_documents(self, documents: Iterable[Document]) -> Self:
+    def add_documents(self, documents: typing.Iterable[Document]) -> typing.Self:
         """Add documents to the store.
 
         Args:
@@ -152,7 +152,7 @@ class Embedder(ABC):
         pass
 
     @abstractmethod
-    def embed_documents(self, documents: Iterable[Document]) -> list[Embedding]:
+    def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:
         """Embed a list of documents.
 
         Args:
@@ -229,7 +229,7 @@ class EmbeddingStore(ABC):
         pass
 
     @abstractmethod
-    def add_embeddings(self, embeddings: Iterable[Embedding]) -> None:
+    def add_embeddings(self, embeddings: typing.Iterable[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
