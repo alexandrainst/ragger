@@ -9,7 +9,7 @@
 
 # Ragger
 
-A repository for general-purpose RAG applications.
+A package for general-purpose RAG applications.
 
 ______________________________________________________________________
 [![Code Coverage](https://img.shields.io/badge/Coverage-66%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
