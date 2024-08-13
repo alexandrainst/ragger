@@ -28,7 +28,7 @@ def test_initialisation(embedder):
     assert isinstance(embedder, Embedder)
 
 
-def test_embed(embedder, documents):
+def test_embed_documents(embedder, documents):
     """Test that the embedder can embed text."""
     embeddings = embedder.embed_documents(documents)
     assert isinstance(embeddings, list)
@@ -41,3 +41,9 @@ def test_embed_query(embedder, query):
     """Test that the embedder can embed a query."""
     embeddings = embedder.embed_query(query)
     assert isinstance(embeddings, np.ndarray)
+
+
+def test_max_context_length(embedder):
+    """Test that the embedder can return the maximum context length."""
+    assert isinstance(embedder.max_context_length, int)
+    assert embedder.max_context_length > 0

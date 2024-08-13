@@ -31,10 +31,16 @@ def documents() -> typing.Generator[list[Document], None, None]:
     ]
 
 
-@pytest.fixture(scope="class")
-def query() -> str:
+@pytest.fixture(scope="session")
+def query() -> typing.Generator[str, None, None]:
     """Initialise a query for testing."""
-    return "Hvad hedder den hvide kat?"
+    yield "Hvad hedder den hvide kat?"
+
+
+@pytest.fixture(scope="session")
+def non_existing_id() -> typing.Generator[str, None, None]:
+    """Initialise a non-existing ID for testing."""
+    yield "non-existing-id"
 
 
 @pytest.fixture(scope="session")

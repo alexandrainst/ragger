@@ -177,19 +177,6 @@ class Embedder(ABC):
         """
         ...
 
-    @abstractmethod
-    def tokenize(self, text: str | list[str]) -> np.ndarray:
-        """Tokenize a text.
-
-        Args:
-            text:
-                The text or texts to tokenize.
-
-        Returns:
-            The tokens of the text.
-        """
-        ...
-
     @property
     @abstractmethod
     def max_context_length(self) -> int:

@@ -30,16 +30,25 @@ def test_initialisation(document_store):
     assert isinstance(document_store, DocumentStore)
 
 
-def test_getitem(document_store):
+def test_getitem(document_store, documents):
     """Test that documents can be fetched from the document store."""
-    assert document_store["1"].text == "Den hvide kat hedder Sjusk."
-    assert document_store["2"].text == "Den sorte kat hedder Sutsko."
-    assert document_store["3"].text == "Den røde kat hedder Pjuskebusk."
-    assert document_store["4"].text == "Den grønne kat hedder Sjask."
-    assert document_store["5"].text == "Den blå kat hedder Sky."
+    for document in documents:
+        assert document_store[document.id] == document
 
 
-def test_getitem_missing(document_store):
+def test_getitem_missing(document_store, non_existing_id):
     """Test that fetching a missing document raises a KeyError."""
     with pytest.raises(KeyError):
-        document_store["6"]
+        document_store[non_existing_id]
+
+
+def test_contains(documents, document_store, non_existing_id):
+    """Test that the document store can check if it contains a document."""
+    for document in documents:
+        assert document.id in document_store
+    assert non_existing_id not in document_store
+
+
+def test_len(document_store, documents):
+    """Test that the document store can return the number of documents."""
+    assert len(document_store) == len(documents)
