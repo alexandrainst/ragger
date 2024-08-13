@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-66%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-60%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
@@ -79,6 +79,7 @@ of the `Document` data class, which has an `id` and a `text` field. These can al
 imported from `ragger.document_store`.
 
 - `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
+- `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
 
 
 ### Embedders
