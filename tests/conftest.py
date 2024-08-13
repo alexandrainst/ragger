@@ -31,6 +31,12 @@ def documents() -> typing.Generator[list[Document], None, None]:
     ]
 
 
+@pytest.fixture(scope="class")
+def query() -> str:
+    """Initialise a query for testing."""
+    return "Hvad hedder den hvide kat?"
+
+
 @pytest.fixture(scope="session")
 def default_document_store(documents) -> typing.Generator[DocumentStore, None, None]:
     """A document store for testing."""
