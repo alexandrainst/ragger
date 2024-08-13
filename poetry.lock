@@ -2645,7 +2645,7 @@ test = ["enum34", "ipaddress", "mock", "pywin32", "wmi"]
 name = "psycopg2-binary"
 version = "2.9.9"
 description = "psycopg2 - Python-PostgreSQL Database Adapter"
-optional = false
+optional = true
 python-versions = ">=3.7"
 files = [
     {file = "psycopg2-binary-2.9.9.tar.gz", hash = "sha256:7f01846810177d829c7692f1f5ada8096762d9172af1b1a28d4ab5b77c923c1c"},
@@ -4719,12 +4719,13 @@ idna = ">=2.0"
 multidict = ">=4.0"
 
 [extras]
-all = ["gradio", "openai", "tiktoken", "vllm"]
+all = ["gradio", "openai", "psycopg2-binary", "tiktoken", "vllm"]
 demo = ["gradio"]
 openai = ["openai", "tiktoken"]
+postgres = ["psycopg2-binary"]
 vllm = ["vllm"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "7e66e6d0bb5b371539bf21b1f286c07873153fb28bdd105b8593a1e94b992c05"
+content-hash = "b374b41e003f22a4d4d3192ec46f1c28f30866010b14607c40ab1809ddae7379"
