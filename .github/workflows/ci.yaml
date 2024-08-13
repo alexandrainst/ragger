@@ -29,6 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install and start PostgreSQL server
+        run: |
+          sudo systemctl start postgresql.service
+
       - name: Install Poetry
         run: pipx install poetry==1.8.2
 
@@ -45,12 +49,6 @@ jobs:
         run: |
           poetry env use "${{ matrix.python-version }}"
           poetry install --extras all
-
-      - name: Install and start PostgreSQL server
-        run: |
-          sudo apt-get update
-          sudo apt-get install postgresql
-          sudo service postgresql start
 
       - name: Test with pytest
         run: poetry run pytest
