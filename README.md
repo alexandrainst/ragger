@@ -56,6 +56,9 @@ rag_system.add_documents([
 answer, supporting_documents = rag_system.answer("Hvad er hovedstaden i Danmark?")
 ```
 
+The `answer` is then the string answer, and the `supporting_documents` is a list of
+`Document` objects that support the answer.
+
 You can also start a demo server as follows:
 
 ```python
