@@ -6,7 +6,7 @@ from pathlib import Path
 
 import annotated_types
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 Index = str
 
@@ -17,6 +17,20 @@ class Document(BaseModel):
     id: Index
     text: str
 
+    def __eq__(self, other: object) -> bool:
+        """Check if two documents are equal.
+
+        Args:
+            other:
+                The object to compare to.
+
+        Returns:
+            Whether the two documents are equal.
+        """
+        if not isinstance(other, Document):
+            return False
+        return self.id == other.id and self.text == other.text
+
 
 class Embedding(BaseModel):
     """An embedding of a document."""
@@ -26,14 +40,25 @@ class Embedding(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    def __eq__(self, other: object) -> bool:
+        """Check if two embeddings are equal.
+
+        Args:
+            other:
+                The object to compare to.
+
+        Returns:
+            Whether the two embeddings are equal.
+        """
+        if not isinstance(other, Embedding):
+            return False
+        return self.id == other.id and np.allclose(self.embedding, other.embedding)
+
 
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: typing.Annotated[
-        list[typing.Annotated[Index, annotated_types.Len(min_length=1)]],
-        Field(max_length=5),
-    ]
+    sources: list[typing.Annotated[Index, annotated_types.Len(min_length=1)]]
     answer: str = ""
 
 
@@ -216,7 +241,9 @@ class EmbeddingStore(ABC):
         pass
 
     @abstractmethod
-    def add_embeddings(self, embeddings: typing.Iterable[Embedding]) -> None:
+    def add_embeddings(
+        self, embeddings: typing.Iterable[Embedding]
+    ) -> "EmbeddingStore":
         """Add embeddings to the store.
 
         Args:
@@ -239,6 +266,29 @@ class EmbeddingStore(ABC):
         ...
 
     @abstractmethod
+    def clear(self) -> None:
+        """Clear all embeddings from the store."""
+        ...
+
+    @abstractmethod
+    def remove(self) -> None:
+        """Remove the embedding store."""
+        ...
+
+    @abstractmethod
+    def __getitem__(self, document_id: Index) -> Embedding:
+        """Fetch an embedding by its document ID.
+
+        Args:
+            document_id:
+                The ID of the document to fetch the embedding for.
+
+        Returns:
+            The embedding with the given document ID.
+        """
+        ...
+
+    @abstractmethod
     def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
 
@@ -252,22 +302,21 @@ class EmbeddingStore(ABC):
         ...
 
     @abstractmethod
+    def __iter__(self) -> typing.Generator[Embedding, None, None]:
+        """Iterate over the embeddings in the store.
+
+        Yields:
+            The embeddings in the store.
+        """
+        ...
+
+    @abstractmethod
     def __len__(self) -> int:
         """Return the number of embeddings in the store.
 
         Returns:
             The number of embeddings in the store.
         """
-        ...
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Clear all embeddings from the store."""
-        ...
-
-    @abstractmethod
-    def remove(self) -> None:
-        """Remove the embedding store."""
         ...
 
     def __repr__(self) -> str:

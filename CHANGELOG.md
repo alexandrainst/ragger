@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added a `PostgresDocumentStore` that uses a PostgreSQL database to store documents.
 - Added a `TxtDocumentStore` that reads documents from a single text file, separated by
   newlines.
+- Added a `PostgresEmbeddingStore` that uses a PostgreSQL database to store embeddings,
+  using the `pgvector` extension.
 
 ### Changed
 - Added defaults to all arguments in each component's constructor, so that the

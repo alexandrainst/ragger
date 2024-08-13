@@ -27,21 +27,38 @@ def test_initialisation(demo):
 
 def test_initialisation_with_feedback(rag_system):
     """Test the initialisation of the demo."""
-    feedback_modes: list[typing.Literal["strict-feedback", "feedback"]] = [
-        "strict-feedback",
-        "feedback",
-    ]
-    sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'"
-    for feedback_mode in feedback_modes:
-        with NamedTemporaryFile(mode="w", suffix=".db") as file:
-            demo = Demo(
-                feedback_mode=feedback_mode,
-                rag_system=rag_system,
-                feedback_db_path=Path(file.name),
+    with NamedTemporaryFile(mode="w", suffix=".db") as file:
+        demo = Demo(
+            feedback_mode="feedback",
+            rag_system=rag_system,
+            feedback_db_path=Path(file.name),
+        )
+        with sqlite3.connect(database=demo.feedback_db_path) as connection:
+            assert (
+                connection.execute("""
+                SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'
+            """).fetchone()
+                is not None
             )
-            with sqlite3.connect(database=demo.feedback_db_path) as connection:
-                assert connection.execute(sql).fetchone()
-            file.close()
+        file.close()
+
+
+def test_initialisation_with_strict_feedback(rag_system):
+    """Test the initialisation of the demo."""
+    with NamedTemporaryFile(mode="w", suffix=".db") as file:
+        demo = Demo(
+            feedback_mode="strict-feedback",
+            rag_system=rag_system,
+            feedback_db_path=Path(file.name),
+        )
+        with sqlite3.connect(database=demo.feedback_db_path) as connection:
+            assert (
+                connection.execute("""
+                SELECT name FROM sqlite_master WHERE type='table' AND name='feedback'
+            """).fetchone()
+                is not None
+            )
+        file.close()
 
 
 def test_build(demo):
