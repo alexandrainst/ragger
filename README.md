@@ -132,7 +132,7 @@ class InMemoryDocumentStore(DocumentStore):
 		self.documents.extend(documents)
 
 	def __getitem__(self, index: Index) -> str:
-		return self.documents[idx]
+		return self.documents[index]
 
 	def __contains__(self, index: Index) -> bool:
 		return item in self.documents
@@ -149,4 +149,5 @@ document_store = InMemoryDocumentStore(documents=[
 	"Danmark er medlem af Den Europæiske Union."
 ])
 rag_system = RagSystem(document_store=document_store)
+answer, supporting_documents = rag_system.answer("Hvad er hovedstaden i Danmark?")
 ```
