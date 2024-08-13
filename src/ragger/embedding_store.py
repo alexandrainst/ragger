@@ -333,12 +333,17 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 pass
             cursor.execute(
                 f"""
-                CREATE TABLE IF NOT EXISTS {table_name} (
-                    {id_column} TEXT PRIMARY KEY,
-                    {embedding_column} VECTOR
+                CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    {self.id_column} TEXT PRIMARY KEY,
+                    {self.embedding_column} VECTOR
                 )
                 """
             )
+            cursor.execute(f"""
+                CREATE INDEX IF NOT EXISTS cosine_hnsw_embedding_idx
+                ON {self.table_name}
+                USING hnsw ({self.embedding_column} vector_cosine_ops)
+            """)
 
     @contextmanager
     def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
