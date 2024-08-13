@@ -61,6 +61,16 @@ class DocumentStore(ABC):
         pass
 
     @abstractmethod
+    def add_documents(self, documents: Iterable[Document]) -> None:
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
+        """
+        ...
+
+    @abstractmethod
     def __getitem__(self, index: Index) -> Document:
         """Fetch a document by its ID.
 
@@ -83,16 +93,6 @@ class DocumentStore(ABC):
 
         Returns:
             Whether the document exists in the store.
-        """
-        ...
-
-    @abstractmethod
-    def add_documents(self, documents: Iterable[Document]) -> None:
-        """Add documents to the store.
-
-        Args:
-            documents:
-                An iterable of documents to add to the store.
         """
         ...
 
