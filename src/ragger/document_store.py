@@ -150,6 +150,7 @@ class SqliteDocumentStore(DocumentStore):
                 )
                 """
             )
+            conn.commit()
 
     @contextmanager
     def _connect(self) -> typing.Generator[sqlite3.Connection, None, None]:
@@ -181,6 +182,7 @@ class SqliteDocumentStore(DocumentStore):
                 """,
                 [(document.id, document.text) for document in documents],
             )
+            conn.commit()
         return self
 
     def remove(self) -> None:
