@@ -29,6 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Log disk space
+        run: df -h
+
       - name: Setup PostgreSQL server
         run: |
           sudo apt-get update
@@ -44,9 +47,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
-
-      - name: Log disk space
-        run: df -h
 
       - name: Install Dependencies
         run: |
