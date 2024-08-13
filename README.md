@@ -151,6 +151,9 @@ class InMemoryDocumentStore(DocumentStore):
 	def add_documents(self, documents: typing.Iterable[Document]):
 		self.documents.extend(documents)
 
+	def remove(self):
+		self.documents = []
+
 	def __getitem__(self, index: Index) -> str:
 		return self.documents[int(index)]
 
