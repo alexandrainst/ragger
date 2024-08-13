@@ -44,7 +44,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
         self.index_to_row_id: dict[Index, int] = defaultdict()
         self._initialise_embedding_matrix()
         if self.path.exists():
-            self.load(path=self.path)
+            self._load(path=self.path)
 
     def _initialise_embedding_matrix(self) -> None:
         """Initialise the embedding matrix with zeros."""
@@ -134,9 +134,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Added embeddings to the embedding store.")
 
-        self.save(path=self.path)
+        self._save(path=self.path)
 
-    def save(self, path: Path | str) -> None:
+    def _save(self, path: Path | str) -> None:
         """Save the embedding store to disk.
 
         Args:
@@ -169,7 +169,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Saved embeddings.")
 
-    def load(self, path: Path | str) -> None:
+    def _load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
 
         Args:
