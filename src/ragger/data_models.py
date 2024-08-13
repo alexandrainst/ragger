@@ -61,7 +61,7 @@ class DocumentStore(ABC):
         pass
 
     @abstractmethod
-    def add_documents(self, documents: typing.Iterable[Document]) -> typing.Self:
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
         """Add documents to the store.
 
         Args:

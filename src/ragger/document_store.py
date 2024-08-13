@@ -35,7 +35,7 @@ class JsonlDocumentStore(DocumentStore):
             dct["id"]: Document.model_validate(dct) for dct in data_dicts
         }
 
-    def add_documents(self, documents: typing.Iterable[Document]) -> typing.Self:
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
         """Add documents to the store.
 
         Args:
@@ -138,7 +138,7 @@ class SqliteDocumentStore(DocumentStore):
         finally:
             conn.close()
 
-    def add_documents(self, documents: typing.Iterable[Document]) -> typing.Self:
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
         """Add documents to the store.
 
         Args:
