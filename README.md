@@ -6,7 +6,8 @@
     align="right"
   />
 </a>
-# ragger
+
+# Ragger
 
 A repository for general-purpose RAG applications.
 
