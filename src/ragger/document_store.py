@@ -266,7 +266,7 @@ class PostgresDocumentStore(DocumentStore):
         host: str = "localhost",
         port: int = 5432,
         user: str | None = "postgres",
-        password: str | None = "password",
+        password: str | None = "postgres",
         database_name: str = "document-store",
         table_name: str = "documents",
         id_column: str = "id",
@@ -284,7 +284,7 @@ class PostgresDocumentStore(DocumentStore):
                 "postgres".
             password (optional):
                 The password to connect to the PostgreSQL database. Defaults to
-                "password".
+                "postgres".
             database_name (optional):
                 The name of the database where the documents are stored. Defaults to
                 "document-store".
