@@ -17,9 +17,10 @@ from ragger.embedder import Embedder
         if isinstance(cls, type) and issubclass(cls, Embedder) and cls is not Embedder
     ],
 )
-def embedder(request) -> typing.Generator[Embedder, None, None]:
+def embedder(request, special_kwargs) -> typing.Generator[Embedder, None, None]:
     """Initialise an embedder for testing."""
-    embedder = request.param()
+    embedder_cls = request.param
+    embedder = request.param(**special_kwargs.get(embedder_cls.__name__, {}))
     yield embedder
 
 

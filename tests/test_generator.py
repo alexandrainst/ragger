@@ -16,10 +16,13 @@ from ragger.generator import Generator
         if isinstance(cls, type) and issubclass(cls, Generator) and cls is not Generator
     ],
 )
-def generator(request) -> typing.Generator[typing.Type[Generator], None, None]:
+def generator(
+    request, special_kwargs
+) -> typing.Generator[typing.Type[Generator], None, None]:
     """Initialise a generator class for testing."""
     try:
-        generator = request.param()
+        generator_cls = request.param
+        generator = generator_cls(**special_kwargs.get(generator_cls.__name__, {}))
         yield generator
     except (ImportError, RuntimeError):
         pytest.skip("The generator could not be imported.")

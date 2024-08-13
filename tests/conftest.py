@@ -20,6 +20,15 @@ from ragger.rag_system import RagSystem
 
 
 @pytest.fixture(scope="session")
+def special_kwargs() -> typing.Generator[dict[str, dict[str, str]], None, None]:
+    """Special keyword arguments for initialising RAG components."""
+    yield dict(
+        E5Embedder=dict(embedder_model_id="intfloat/multilingual-e5-small"),
+        VllmGenerator=dict(model_id="mhenrichsen/danskgpt-tiny-chat"),
+    )
+
+
+@pytest.fixture(scope="session")
 def documents() -> typing.Generator[list[Document], None, None]:
     """Some documents for testing."""
     yield [

@@ -28,10 +28,12 @@ def embedding_store_cls(
 
 @pytest.fixture(scope="module")
 def embedding_store(
-    embedding_store_cls,
+    embedding_store_cls, special_kwargs
 ) -> typing.Generator[EmbeddingStore, None, None]:
     """Initialise an embedding store for testing."""
-    embedding_store = embedding_store_cls()
+    embedding_store = embedding_store_cls(
+        **special_kwargs.get(embedding_store_cls.__name__, {})
+    )
     yield embedding_store
     embedding_store.remove()
 

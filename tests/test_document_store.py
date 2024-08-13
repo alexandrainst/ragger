@@ -17,9 +17,14 @@ from ragger.data_models import DocumentStore
         and cls is not DocumentStore
     ],
 )
-def document_store(documents, request) -> typing.Generator[DocumentStore, None, None]:
+def document_store(
+    documents, request, special_kwargs
+) -> typing.Generator[DocumentStore, None, None]:
     """Initialise a document store for testing."""
-    document_store = request.param()
+    document_store_cls = request.param
+    document_store = document_store_cls(
+        **special_kwargs.get(document_store_cls.__name__, {})
+    )
     document_store.add_documents(documents=documents)
     yield document_store
     document_store.remove()
