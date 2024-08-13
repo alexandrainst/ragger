@@ -100,14 +100,14 @@ setup-git:
 test:  ## Run tests
 	@poetry run pytest && poetry run readme-cov
 
-release-major:  ## Release the major version
+publish-major:  ## Publish the major version
 	@poetry run python -m src.scripts.versioning --major
-	@echo "Releaseed major version!"
+	@echo "Published major version!"
 
-release-minor:  ## Release the minor version
+publish-minor:  ## Publish the minor version
 	@poetry run python -m src.scripts.versioning --minor
-	@echo "Releaseed minor version!"
+	@echo "Published minor version!"
 
-release-patch:  ## Release the patch version
+publish-patch:  ## Publish the patch version
 	@poetry run python -m src.scripts.versioning --patch
-	@echo "Releaseed patch version!"
+	@echo "Published patch version!"
