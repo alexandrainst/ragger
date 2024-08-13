@@ -11,7 +11,6 @@ from time import sleep
 
 import torch
 from dotenv import load_dotenv
-from httpx import ReadTimeout, RemoteProtocolError
 from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoConfig, AutoTokenizer
@@ -23,6 +22,9 @@ from .constants import (
     ENGLISH_USER_PROMPT,
 )
 from .data_models import Document, GeneratedAnswer, Generator
+
+if importlib.util.find_spec("httpx") is not None:
+    from httpx import ReadTimeout, RemoteProtocolError
 
 if importlib.util.find_spec("openai") is not None:
     from openai import APITimeoutError, InternalServerError, OpenAI, Stream
@@ -37,6 +39,7 @@ if importlib.util.find_spec("tiktoken") is not None:
 
 if typing.TYPE_CHECKING:
     import tiktoken
+    from httpx import ReadTimeout, RemoteProtocolError
     from openai import APITimeoutError, InternalServerError, OpenAI, Stream
     from openai.types.chat import (
         ChatCompletionSystemMessageParam,
