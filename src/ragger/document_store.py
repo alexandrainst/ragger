@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .data_models import Document, DocumentStore, Index
 
-if importlib.util.find_spec("psycopg2") is None:
+if importlib.util.find_spec("psycopg2") is not None:
     import psycopg2
 
 if typing.TYPE_CHECKING:
