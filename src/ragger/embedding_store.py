@@ -272,6 +272,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
 
     def __init__(
         self,
+        embedding_dim: int | None = None,
         host: str = "localhost",
         port: int = 5432,
         user: str | None = "postgres",
@@ -284,6 +285,9 @@ class PostgresEmbeddingStore(EmbeddingStore):
         """Initialise the PostgreSQL embedding store.
 
         Args:
+            embedding_dim (optional):
+                The dimension of the embeddings. If None then the dimension will be
+                inferred when embeddings are added. Defaults to None.
             host (optional):
                 The hostname of the PostgreSQL server. Defaults to "localhost".
             port (optional):
@@ -312,6 +316,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
             )
 
+        self.embedding_dim = embedding_dim
         self.host = host
         self.port = port
         self.user = user
@@ -331,11 +336,18 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
             except psycopg2.errors.UniqueViolation:
                 pass
+
+    def _create_table(self) -> None:
+        """Create the table in the database."""
+        if self.embedding_dim is None:
+            return
+        with self._connect() as conn:
+            cursor = conn.cursor()
             cursor.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {self.table_name} (
                     {self.id_column} TEXT PRIMARY KEY,
-                    {self.embedding_column} VECTOR
+                    {self.embedding_column} VECTOR({self.embedding_dim})
                 )
                 """
             )
@@ -372,6 +384,17 @@ class PostgresEmbeddingStore(EmbeddingStore):
             embeddings:
                 An iterable of embeddings to add to the store.
         """
+        if not embeddings:
+            return self
+
+        id_embedding_pairs = [
+            (embedding.id, embedding.embedding) for embedding in embeddings
+        ]
+
+        if self.embedding_dim is None:
+            self.embedding_dim = id_embedding_pairs[0][1].shape[0]
+            self._create_table()
+
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.executemany(
@@ -379,7 +402,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 INSERT INTO {self.table_name} ({self.id_column}, {self.embedding_column})
                 VALUES (%s, %s)
                 """,
-                [(embedding.id, embedding.embedding) for embedding in embeddings],
+                id_embedding_pairs,
             )
         return self
 
