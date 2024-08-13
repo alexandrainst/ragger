@@ -11,7 +11,7 @@ from time import sleep
 
 import torch
 from dotenv import load_dotenv
-from httpx import ReadTimeout, RemoteProtocolError
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoConfig, AutoTokenizer
@@ -23,6 +23,9 @@ from .constants import (
     ENGLISH_USER_PROMPT,
 )
 from .data_models import Document, GeneratedAnswer, Generator
+
+if importlib.util.find_spec("httpx") is not None:
+    from httpx import ReadTimeout, RemoteProtocolError
 
 if importlib.util.find_spec("openai") is not None:
     from openai import APITimeoutError, InternalServerError, OpenAI, Stream
@@ -37,6 +40,7 @@ if importlib.util.find_spec("tiktoken") is not None:
 
 if typing.TYPE_CHECKING:
     import tiktoken
+    from httpx import ReadTimeout, RemoteProtocolError
     from openai import APITimeoutError, InternalServerError, OpenAI, Stream
     from openai.types.chat import (
         ChatCompletionSystemMessageParam,
@@ -189,7 +193,7 @@ class OpenaiGenerator(Generator):
                 f"Generating answer for the query {query!r} and "
                 f"{num_documents_to_include:,} documents..."
             )
-            messages = [
+            messages: list[ChatCompletionMessageParam] = [
                 ChatCompletionSystemMessageParam(
                     role="system", content=self.system_prompt
                 ),
@@ -292,7 +296,9 @@ class OpenaiGenerator(Generator):
 
             return streamer()
         else:
-            generated_output = model_output.choices[0].message.content.strip()
+            generated_output = model_output.choices[0].message.content
+            assert generated_output is not None
+            generated_output = generated_output.strip()
 
         for suffix in ["", "}", '"}']:
             try:
@@ -319,7 +325,7 @@ class VllmGenerator(OpenaiGenerator):
 
     def __init__(
         self,
-        model_id: str,
+        model_id: str = "AI-Sweden-Models/Llama-3-8B-instruct",
         host: str | None = None,
         port: int = 8000,
         timeout: int = 60,
@@ -337,8 +343,9 @@ class VllmGenerator(OpenaiGenerator):
         """Initialise the vLLM generator.
 
         Args:
-            model_id:
-                The model ID of the generative model to use.
+            model_id (optional):
+                The model ID of the generative model to use. Defaults to
+                "AI-Sweden-Models/Llama-3-8B-instruct".
             host (optional):
                 The host of the vLLM server, if it is already running. If None, a new
                 server will be started.

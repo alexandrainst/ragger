@@ -20,6 +20,15 @@ from ragger.rag_system import RagSystem
 
 
 @pytest.fixture(scope="session")
+def special_kwargs() -> typing.Generator[dict[str, dict[str, str]], None, None]:
+    """Special keyword arguments for initialising RAG components."""
+    yield dict(
+        E5Embedder=dict(embedder_model_id="intfloat/multilingual-e5-small"),
+        VllmGenerator=dict(model_id="mhenrichsen/danskgpt-tiny-chat"),
+    )
+
+
+@pytest.fixture(scope="session")
 def documents() -> typing.Generator[list[Document], None, None]:
     """Some documents for testing."""
     yield [
@@ -29,6 +38,18 @@ def documents() -> typing.Generator[list[Document], None, None]:
         Document(id="4", text="Den grønne kat hedder Sjask."),
         Document(id="5", text="Den blå kat hedder Sky."),
     ]
+
+
+@pytest.fixture(scope="session")
+def query() -> typing.Generator[str, None, None]:
+    """Initialise a query for testing."""
+    yield "Hvad hedder den hvide kat?"
+
+
+@pytest.fixture(scope="session")
+def non_existing_id() -> typing.Generator[str, None, None]:
+    """Initialise a non-existing ID for testing."""
+    yield "non-existing-id"
 
 
 @pytest.fixture(scope="session")

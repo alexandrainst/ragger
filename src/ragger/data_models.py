@@ -3,7 +3,6 @@
 import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Annotated, Iterable
 
 import annotated_types
 import numpy as np
@@ -31,8 +30,9 @@ class Embedding(BaseModel):
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: Annotated[
-        list[Annotated[Index, annotated_types.Len(min_length=1)]], Field(max_length=5)
+    sources: typing.Annotated[
+        list[typing.Annotated[Index, annotated_types.Len(min_length=1)]],
+        Field(max_length=5),
     ]
     answer: str = ""
 
@@ -40,7 +40,7 @@ class GeneratedAnswer(BaseModel):
 class DocumentStore(ABC):
     """An abstract document store, which fetches documents from a database."""
 
-    path: Path | None = None
+    path: Path
 
     def compile(
         self,
@@ -61,13 +61,18 @@ class DocumentStore(ABC):
         pass
 
     @abstractmethod
-    def add_documents(self, documents: Iterable[Document]) -> None:
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
         """Add documents to the store.
 
         Args:
             documents:
                 An iterable of documents to add to the store.
         """
+        ...
+
+    @abstractmethod
+    def remove(self) -> None:
+        """Remove the document store."""
         ...
 
     @abstractmethod
@@ -147,7 +152,7 @@ class Embedder(ABC):
         pass
 
     @abstractmethod
-    def embed_documents(self, documents: Iterable[Document]) -> list[Embedding]:
+    def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:
         """Embed a list of documents.
 
         Args:
@@ -172,19 +177,6 @@ class Embedder(ABC):
         """
         ...
 
-    @abstractmethod
-    def tokenize(self, text: str | list[str]) -> np.ndarray:
-        """Tokenize a text.
-
-        Args:
-            text:
-                The text or texts to tokenize.
-
-        Returns:
-            The tokens of the text.
-        """
-        ...
-
     @property
     @abstractmethod
     def max_context_length(self) -> int:
@@ -203,7 +195,7 @@ class Embedder(ABC):
 class EmbeddingStore(ABC):
     """An abstract embedding store, which fetches embeddings from a database."""
 
-    path: Path | None = None
+    path: Path
 
     def compile(
         self,
@@ -224,7 +216,7 @@ class EmbeddingStore(ABC):
         pass
 
     @abstractmethod
-    def add_embeddings(self, embeddings: Iterable[Embedding]) -> None:
+    def add_embeddings(self, embeddings: typing.Iterable[Embedding]) -> None:
         """Add embeddings to the store.
 
         Args:
@@ -273,6 +265,11 @@ class EmbeddingStore(ABC):
         """Clear all embeddings from the store."""
         ...
 
+    @abstractmethod
+    def remove(self) -> None:
+        """Remove the embedding store."""
+        ...
+
     def __repr__(self) -> str:
         """Return a string representation of the embedding store.
 
@@ -284,6 +281,8 @@ class EmbeddingStore(ABC):
 
 class Generator(ABC):
     """An abstract generator of answers from a query and relevant documents."""
+
+    stream: bool
 
     def compile(
         self,

@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-66%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-67%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
@@ -79,6 +79,7 @@ of the `Document` data class, which has an `id` and a `text` field. These can al
 imported from `ragger.document_store`.
 
 - `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
+- `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
 
 
 ### Embedders
@@ -124,7 +125,7 @@ import typing
 from ragger import RagSystem, DocumentStore, Document, Index
 
 class InMemoryDocumentStore(DocumentStore):
-	"""A silly document store that just keeps all documents in memory."""
+	"""A document store that just keeps all documents in memory."""
 
 	def __init__(self, documents: list[str]):
 		self.documents = [

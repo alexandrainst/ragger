@@ -26,21 +26,30 @@ class NumpyEmbeddingStore(EmbeddingStore):
     """An embedding store that fetches embeddings from a NumPy file."""
 
     def __init__(
-        self, embedding_dim: int, path: Path = Path("embedding-store.zip")
+        self, embedding_dim: int | None = None, path: Path = Path("embedding-store.zip")
     ) -> None:
         """Initialise the NumPy embedding store.
 
         Args:
-            embedding_dim:
-                The dimension of the embeddings.
-            path:
-                The path to the zipfile where the embeddings are stored.
+            embedding_dim (optional):
+                The dimension of the embeddings. If None then the dimension will be
+                inferred when embeddings are added. Defaults to None.
+            path (optional):
+                The path to the zipfile where the embeddings are stored. Defaults to
+                "embedding-store.zip".
         """
         self.path = path
         self.embedding_dim = embedding_dim
-        self.embeddings = np.zeros((0, self.embedding_dim))
+        self.embeddings: np.ndarray | None = None
         self.index_to_row_id: dict[Index, int] = defaultdict()
-        self.load_embeddings_if_exists()
+        self._initialise_embedding_matrix()
+        if self.path.exists():
+            self._load(path=self.path)
+
+    def _initialise_embedding_matrix(self) -> None:
+        """Initialise the embedding matrix with zeros."""
+        if self.embedding_dim is not None:
+            self.embeddings = np.zeros((0, self.embedding_dim))
 
     def compile(
         self,
@@ -65,11 +74,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
             documents=documents_not_in_embedding_store
         )
         self.add_embeddings(embeddings=embeddings)
-
-    def load_embeddings_if_exists(self) -> None:
-        """Load the embeddings from disk if they exist."""
-        if self.path and self.path.exists():
-            self.load(path=self.path)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -110,6 +114,12 @@ class NumpyEmbeddingStore(EmbeddingStore):
         if not embeddings:
             return
 
+        # In case we haven't inferred the embedding dimension yet, we do it now
+        if self.embedding_dim is None or self.embeddings is None:
+            self.embedding_dim = embeddings[0].embedding.shape[0]
+            self._initialise_embedding_matrix()
+        assert self.embeddings is not None
+
         logger.info(f"Adding {len(embeddings):,} embeddings to the embedding store...")
 
         embedding_matrix = np.stack(
@@ -124,10 +134,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Added embeddings to the embedding store.")
 
-        if self.path is not None:
-            self.save(path=self.path)
+        self._save(path=self.path)
 
-    def save(self, path: Path | str) -> None:
+    def _save(self, path: Path | str) -> None:
         """Save the embedding store to disk.
 
         Args:
@@ -140,6 +149,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
             ValueError:
                 If the path is not a zip file.
         """
+        if self.embeddings is None:
+            return
+
         logger.info(f"Saving embeddings to {path!r}...")
 
         path = Path(path)
@@ -157,7 +169,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
         logger.info("Saved embeddings.")
 
-    def load(self, path: Path | str) -> None:
+    def _load(self, path: Path | str) -> None:
         """This loads the embeddings store from disk.
 
         Args:
@@ -172,6 +184,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
             array_file = io.BytesIO(zf.read("embeddings.npy"))
             embeddings = np.load(file=array_file, allow_pickle=False)
         self.embeddings = embeddings
+        self.embedding_dim = embeddings.shape[1]
         self.index_to_row_id = index_to_row_id
         self.row_id_to_index
         logger.info("Loaded embeddings.")
@@ -195,6 +208,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 If the number of documents in the store is less than the number of
                 documents to retrieve.
         """
+        if self.embeddings is None:
+            return []
+
         # Ensure that the number of documents to retrieve is less than the number of
         # documents in the store
         num_docs = max(num_docs, self.embeddings.shape[0])
@@ -208,11 +224,15 @@ class NumpyEmbeddingStore(EmbeddingStore):
 
     def clear(self) -> None:
         """Clear all embeddings from the store."""
-        self.embeddings = np.zeros(shape=(0, self.embedding_dim))
+        if self.embedding_dim is not None:
+            self.embeddings = np.zeros(shape=(0, self.embedding_dim))
         self.index_to_row_id = defaultdict()
-        if self.path:
-            self.path.unlink(missing_ok=True)
+        self.path.unlink(missing_ok=True)
         logger.info("Cleared the embedding store.")
+
+    def remove(self) -> None:
+        """Remove the embedding store."""
+        self.path.unlink(missing_ok=True)
 
     def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
@@ -232,4 +252,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Returns:
             The number of embeddings in the store.
         """
+        if self.embeddings is None:
+            return 0
         return self.embeddings.shape[0]
