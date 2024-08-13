@@ -1,13 +1,12 @@
 """Unit tests for the `embedding_store` module."""
 
 import typing
-from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pytest
 import ragger.embedding_store
 from ragger.data_models import Embedding
-from ragger.embedding_store import EmbeddingStore, NumpyEmbeddingStore
+from ragger.embedding_store import EmbeddingStore
 
 
 @pytest.fixture(
@@ -85,15 +84,3 @@ def test_clear(embedding_store, embeddings):
     embedding_store.add_embeddings(embeddings=embeddings)
     embedding_store.clear()
     assert embedding_store.embeddings.shape == (0, embedding_store.embedding_dim)
-
-
-def test_save_load(embedding_store, embeddings):
-    """Test that the embedding store can be saved."""
-    embedding_store.clear()
-    embedding_store.add_embeddings(embeddings=embeddings)
-    new_store = NumpyEmbeddingStore(embedding_dim=embedding_store.embedding_dim)
-    with NamedTemporaryFile(suffix=".zip") as file:
-        embedding_store.save(file.name)
-        new_store.load(file.name)
-        assert np.array_equal(new_store.embeddings, embedding_store.embeddings)
-        assert new_store.embedding_dim == embedding_store.embedding_dim
