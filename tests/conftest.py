@@ -70,13 +70,9 @@ def default_embedder() -> typing.Generator[Embedder, None, None]:
 
 
 @pytest.fixture(scope="session")
-def default_embedding_store(
-    default_embedder,
-) -> typing.Generator[EmbeddingStore, None, None]:
+def default_embedding_store() -> typing.Generator[EmbeddingStore, None, None]:
     """An embedding store for testing."""
-    embedding_store = NumpyEmbeddingStore(
-        embedding_dim=default_embedder.embedding_dim, path=Path("test-embeddings.zip")
-    )
+    embedding_store = NumpyEmbeddingStore()
     yield embedding_store
     embedding_store.clear()
 
