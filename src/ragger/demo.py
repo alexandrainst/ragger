@@ -207,6 +207,7 @@ class Demo:
                 )
 
         self.retrieved_documents: list[Document] = list()
+        self.blocks: gr.Blocks | None = None
 
     def build_demo(self) -> "gr.Blocks":
         """Build the demo.
@@ -291,7 +292,7 @@ class Demo:
 
     def launch(self) -> None:
         """Launch the demo."""
-        self.demo = self.build_demo()
+        self.blocks = self.build_demo()
 
         # If we are storing the demo persistently we push it to the Hugging Face Hub,
         # unless we are already running this from the Hub
@@ -302,7 +303,7 @@ class Demo:
             self.push_to_hub()
             return
 
-        self.demo.queue().launch()
+        self.blocks.queue().launch()
 
     def push_to_hub(self) -> None:
         """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
@@ -423,8 +424,8 @@ class Demo:
 
     def close(self) -> None:
         """Close the demo."""
-        if self.demo:
-            self.demo.close()
+        if self.blocks:
+            self.blocks.close()
             logger.info("Closed the demo.")
 
     def add_text(

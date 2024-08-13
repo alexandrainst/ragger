@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Added a `SqliteDocumentStore` that uses a SQLite database to store documents.
+- Added a `PostgresDocumentStore` that uses a PostgreSQL database to store documents.
 
 ### Changed
 - Added defaults to all arguments in each component's constructor, so that the
