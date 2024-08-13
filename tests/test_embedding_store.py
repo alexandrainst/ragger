@@ -12,12 +12,14 @@ from ragger.embedding_store import EmbeddingStore
 @pytest.fixture(scope="module")
 def embeddings(default_embedder) -> typing.Generator[list[Embedding], None, None]:
     """Initialise a list of documents for testing."""
+    rng = np.random.default_rng(seed=4242)
     yield [
         Embedding(
-            id="an id", embedding=np.ones(shape=(default_embedder.embedding_dim,))
+            id="an id", embedding=rng.random(size=(default_embedder.embedding_dim,))
         ),
         Embedding(
-            id="another id", embedding=np.zeros(shape=(default_embedder.embedding_dim,))
+            id="another id",
+            embedding=rng.random(size=(default_embedder.embedding_dim,)),
         ),
     ]
 
