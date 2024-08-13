@@ -3,7 +3,7 @@
 import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Annotated, Iterable
+from typing import Annotated, Iterable, Self
 
 import annotated_types
 import numpy as np
@@ -40,7 +40,7 @@ class GeneratedAnswer(BaseModel):
 class DocumentStore(ABC):
     """An abstract document store, which fetches documents from a database."""
 
-    path: Path | None = None
+    path: Path
 
     def compile(
         self,
@@ -61,13 +61,18 @@ class DocumentStore(ABC):
         pass
 
     @abstractmethod
-    def add_documents(self, documents: Iterable[Document]) -> None:
+    def add_documents(self, documents: Iterable[Document]) -> Self:
         """Add documents to the store.
 
         Args:
             documents:
                 An iterable of documents to add to the store.
         """
+        ...
+
+    @abstractmethod
+    def remove(self) -> None:
+        """Remove the document store."""
         ...
 
     @abstractmethod
@@ -203,7 +208,7 @@ class Embedder(ABC):
 class EmbeddingStore(ABC):
     """An abstract embedding store, which fetches embeddings from a database."""
 
-    path: Path | None = None
+    path: Path
 
     def compile(
         self,
@@ -273,6 +278,11 @@ class EmbeddingStore(ABC):
         """Clear all embeddings from the store."""
         ...
 
+    @abstractmethod
+    def remove(self) -> None:
+        """Remove the embedding store."""
+        ...
+
     def __repr__(self) -> str:
         """Return a string representation of the embedding store.
 
@@ -284,6 +294,8 @@ class EmbeddingStore(ABC):
 
 class Generator(ABC):
     """An abstract generator of answers from a query and relevant documents."""
+
+    stream: bool
 
     def compile(
         self,

@@ -319,7 +319,7 @@ class VllmGenerator(OpenaiGenerator):
 
     def __init__(
         self,
-        model_id: str,
+        model_id: str = "AI-Sweden-Models/Llama-3-8B-instruct",
         host: str | None = None,
         port: int = 8000,
         timeout: int = 60,
@@ -337,8 +337,9 @@ class VllmGenerator(OpenaiGenerator):
         """Initialise the vLLM generator.
 
         Args:
-            model_id:
-                The model ID of the generative model to use.
+            model_id (optional):
+                The model ID of the generative model to use. Defaults to
+                "AI-Sweden-Models/Llama-3-8B-instruct".
             host (optional):
                 The host of the vLLM server, if it is already running. If None, a new
                 server will be started.
