@@ -9,6 +9,19 @@ from ragger.data_models import Embedding
 from ragger.embedding_store import EmbeddingStore
 
 
+@pytest.fixture(scope="module")
+def embeddings(default_embedder) -> typing.Generator[list[Embedding], None, None]:
+    """Initialise a list of documents for testing."""
+    yield [
+        Embedding(
+            id="an id", embedding=np.ones(shape=(default_embedder.embedding_dim,))
+        ),
+        Embedding(
+            id="another id", embedding=np.zeros(shape=(default_embedder.embedding_dim,))
+        ),
+    ]
+
+
 @pytest.fixture(
     scope="module",
     params=[
@@ -38,33 +51,9 @@ def embedding_store(
     embedding_store.remove()
 
 
-@pytest.fixture(scope="module")
-def embeddings() -> typing.Generator[list[Embedding], None, None]:
-    """Initialise a list of documents for testing."""
-    yield [
-        Embedding(id="an id", embedding=np.ones(shape=(8,))),
-        Embedding(id="another id", embedding=np.zeros(shape=(8,))),
-    ]
-
-
 def test_initialisation(embedding_store):
     """Test that the embedding store can be initialised."""
     assert isinstance(embedding_store, EmbeddingStore)
-
-
-def test_add_embeddings(embedding_store, embeddings):
-    """Test that embeddings can be added to the embedding store."""
-    embedding_store.clear()
-    embedding_store.add_embeddings(embeddings=embeddings)
-    assert len(embedding_store.embeddings) == 2
-    assert np.array_equal(
-        embedding_store.embeddings[embedding_store.index_to_row_id["an id"]],
-        embeddings[0].embedding,
-    )
-    assert np.array_equal(
-        embedding_store.embeddings[embedding_store.index_to_row_id["another id"]],
-        embeddings[1].embedding,
-    )
 
 
 def test_get_nearest_neighbours(embedding_store, embeddings):
@@ -85,4 +74,36 @@ def test_clear(embedding_store, embeddings):
     """Test that the embedding store can be cleared."""
     embedding_store.add_embeddings(embeddings=embeddings)
     embedding_store.clear()
-    assert embedding_store.embeddings.shape == (0, embedding_store.embedding_dim)
+    assert len(embedding_store) == 0
+
+
+def test_getitem(embedding_store, embeddings):
+    """Test that embeddings can be fetched from the embedding store."""
+    embedding_store.clear()
+    embedding_store.add_embeddings(embeddings=embeddings)
+    for embedding in embeddings:
+        assert embedding_store[embedding.id] == embedding
+
+
+def test_getitem_missing(embedding_store, embeddings, non_existing_id):
+    """Test that fetching a missing embedding raises a KeyError."""
+    embedding_store.clear()
+    embedding_store.add_embeddings(embeddings=embeddings)
+    with pytest.raises(KeyError):
+        embedding_store[non_existing_id]
+
+
+def test_contains(embeddings, embedding_store, non_existing_id):
+    """Test that the embedding store can check if it contains a embedding."""
+    embedding_store.clear()
+    embedding_store.add_embeddings(embeddings=embeddings)
+    for embedding in embeddings:
+        assert embedding.id in embedding_store
+    assert non_existing_id not in embedding_store
+
+
+def test_len(embedding_store, embeddings):
+    """Test that the embedding store can return the number of embeddings."""
+    embedding_store.clear()
+    embedding_store.add_embeddings(embeddings=embeddings)
+    assert len(embedding_store) == len(embeddings)

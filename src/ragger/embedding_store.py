@@ -244,6 +244,28 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """Remove the embedding store."""
         self.path.unlink(missing_ok=True)
 
+    def __getitem__(self, document_id: Index) -> Embedding:
+        """Fetch an embedding by its document ID.
+
+        Args:
+            document_id:
+                The ID of the document to fetch the embedding for.
+
+        Returns:
+            The embedding with the given document ID.
+
+        Raises:
+            KeyError:
+                If the document ID does not exist in the store, or if the store is empty.
+        """
+        if self.embeddings is None:
+            raise KeyError("The store is empty.")
+        if document_id not in self.index_to_row_id:
+            raise KeyError(f"The document ID {document_id!r} does not exist.")
+        row_id = self.index_to_row_id[document_id]
+        embedding = self.embeddings[row_id]
+        return Embedding(id=document_id, embedding=embedding)
+
     def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
 
@@ -255,6 +277,18 @@ class NumpyEmbeddingStore(EmbeddingStore):
             Whether the document exists in the store.
         """
         return document_id in self.index_to_row_id
+
+    def __iter__(self) -> typing.Generator[Embedding, None, None]:
+        """Iterate over the embeddings in the store.
+
+        Yields:
+            The embeddings in the store.
+        """
+        if self.embeddings is None:
+            return
+        for document_id, row_id in self.index_to_row_id.items():
+            embedding = self.embeddings[row_id]
+            yield Embedding(id=document_id, embedding=embedding)
 
     def __len__(self) -> int:
         """Return the number of embeddings in the store.
@@ -388,11 +422,11 @@ class PostgresEmbeddingStore(EmbeddingStore):
             return self
 
         id_embedding_pairs = [
-            (embedding.id, embedding.embedding) for embedding in embeddings
+            (embedding.id, embedding.embedding.tolist()) for embedding in embeddings
         ]
 
         if self.embedding_dim is None:
-            self.embedding_dim = id_embedding_pairs[0][1].shape[0]
+            self.embedding_dim = len(id_embedding_pairs[0][1])
             self._create_table()
 
         with self._connect() as conn:
@@ -401,21 +435,29 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 f"""
                 INSERT INTO {self.table_name} ({self.id_column}, {self.embedding_column})
                 VALUES (%s, %s)
+                ON CONFLICT ({self.id_column}) DO UPDATE
+                SET {self.embedding_column} = EXCLUDED.{self.embedding_column}
                 """,
                 id_embedding_pairs,
             )
         return self
 
-    def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
+    def get_nearest_neighbours(
+        self, embedding: np.ndarray, num_docs: int = 5
+    ) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
 
         Args:
             embedding:
                 The embedding to find nearest neighbours for.
+            num_docs (optional):
+                The number of documents to retrieve. Defaults to 5.
 
         Returns:
             A list of indices of the nearest neighbours.
         """
+        if self.embedding_dim is None:
+            return list()
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -423,11 +465,43 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 SELECT {self.id_column}
                 FROM {self.table_name}
                 ORDER BY {self.embedding_column} <=> %s
-                LIMIT 5
+                LIMIT {num_docs}
                 """,
-                (embedding,),
+                (embedding.tolist(),),
             )
             return [row[0] for row in cursor.fetchall()]
+
+    def __getitem__(self, document_id: Index) -> Embedding:
+        """Fetch an embedding by its document ID.
+
+        Args:
+            document_id:
+                The ID of the document to fetch the embedding for.
+
+        Returns:
+            The embedding with the given document ID.
+
+        Raises:
+            KeyError:
+                If the document ID does not exist in the store, or if the store is empty.
+        """
+        if self.embedding_dim is None:
+            raise KeyError("The store is empty.")
+
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT {self.embedding_column}
+                FROM {self.table_name}
+                WHERE {self.id_column} = %s
+                """,
+                (document_id,),
+            )
+            result = cursor.fetchone()
+            if result is None:
+                raise KeyError(f"The document ID {document_id!r} does not exist.")
+            return Embedding(id=document_id, embedding=np.array(result[0]))
 
     def __contains__(self, document_id: Index) -> bool:
         """Check if a document exists in the store.
@@ -439,6 +513,8 @@ class PostgresEmbeddingStore(EmbeddingStore):
         Returns:
             Whether the document exists in the store.
         """
+        if self.embedding_dim is None:
+            return False
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -451,29 +527,59 @@ class PostgresEmbeddingStore(EmbeddingStore):
             )
             return cursor.fetchone() is not None
 
+    def __iter__(self) -> typing.Generator[Embedding, None, None]:
+        """Iterate over the embeddings in the store.
+
+        Yields:
+            The embeddings in the store.
+        """
+        if self.embedding_dim is None:
+            return
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT {self.id_column}, {self.embedding_column}
+                FROM {self.table_name}
+                WHERE {self.embedding_column} IS NOT NULL
+                """
+            )
+            for row in cursor.fetchall():
+                yield Embedding(id=row[0], embedding=np.array(row[1]))
+
     def __len__(self) -> int:
         """Return the number of embeddings in the store.
 
         Returns:
             The number of embeddings in the store.
         """
+        if self.embedding_dim is None:
+            return 0
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+            cursor.execute(f"""
+                SELECT COUNT(*)
+                FROM {self.table_name}
+                WHERE {self.embedding_column} IS NOT NULL
+            """)
             result = cursor.fetchone()
             assert result is not None
             return result[0]
 
     def clear(self) -> None:
         """Clear all embeddings from the store."""
+        if self.embedding_dim is None:
+            return
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "UPDATE {self.table_name} SET {self.embedding_column} = NULL"
-            )
+            cursor.execute(f"""
+                UPDATE {self.table_name} SET {self.embedding_column} = NULL
+            """)
 
     def remove(self) -> None:
         """Remove the embedding store."""
+        if self.embedding_dim is None:
+            return
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(f"DROP TABLE {self.table_name}")
