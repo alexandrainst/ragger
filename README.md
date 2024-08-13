@@ -75,14 +75,14 @@ These are the databases carrying all the documents. Documents are represented as
 of the `Document` data class, which has an `id` and a `text` field. These can all be
 imported from `ragger.document_store`.
 
-- `JsonlDocumentStore`: A document store that reads from a JSONL file.
+- `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
 
 
 ### Embedders
 
 Embedders are used to embed documents. These can all be imported from `ragger.embedder`.
 
-- `E5Embedder`: An embedder that uses an E5 model.
+- `E5Embedder`: An embedder that uses an E5 model. (default)
 
 
 ### Embedding Stores
@@ -92,6 +92,7 @@ the `Embedding` data class, which has an `id` and an `embedding` field. These ca
 imported from `ragger.embedding_store`.
 
 - `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
+  (default)
 
 
 ### Generators
@@ -99,7 +100,7 @@ imported from `ragger.embedding_store`.
 Generators are used to generate answers from the retrieved documents and the question.
 These can all be imported from `ragger.generator`.
 
-- `OpenAIGenerator`: A generator that uses the OpenAI API.
+- `OpenAIGenerator`: A generator that uses the OpenAI API. (default)
 - `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging
   Face Hub.
 
