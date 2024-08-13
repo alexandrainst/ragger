@@ -35,10 +35,17 @@ Installation with `poetry`:
 poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras all
 ```
 
-You can replace the `all` extra with any combination of `vllm`, `openai` and `demo` to
-install only the components you need. For `pip`, this is done by comma-separating the
-extras (e.g., `ragger[vllm,demo]`), while for `poetry`, you add multiple `--extras`
-flags (e.g., `--extras vllm --extras demo`).
+You can replace the `all` extra with any combination of the following, to install only
+the components you need:
+
+- `postgres`
+- `vllm`
+- `openai`
+- `demo`
+
+For `pip`, this is done by comma-separating the extras (e.g., `ragger[vllm,demo]`),
+while for `poetry`, you add multiple `--extras` flags (e.g., `--extras vllm --extras
+demo`).
 
 
 ## Quick Start
