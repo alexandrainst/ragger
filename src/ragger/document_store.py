@@ -269,7 +269,7 @@ class PostgresDocumentStore(DocumentStore):
         port: int = 5432,
         user: str | None = "postgres",
         password: str | None = "postgres",
-        database_name: str = "document-store",
+        database_name: str = "postgres",
         table_name: str = "documents",
         id_column: str = "id",
         text_column: str = "text",
@@ -289,7 +289,7 @@ class PostgresDocumentStore(DocumentStore):
                 "postgres".
             database_name (optional):
                 The name of the database where the documents are stored. Defaults to
-                "document-store".
+                "postgres".
             table_name (optional):
                 The name of the table in the database where the documents are stored.
                 Defaults to "documents".
@@ -319,7 +319,10 @@ class PostgresDocumentStore(DocumentStore):
 
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+            try:
+                cursor.execute(f"CREATE DATABASE {database_name}")
+            except psycopg2.errors.DuplicateDatabase:
+                pass
             cursor.execute(
                 f"""
                 CREATE TABLE IF NOT EXISTS {table_name} (
