@@ -11,6 +11,7 @@ from time import sleep
 
 import torch
 from dotenv import load_dotenv
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError
 from pydantic_core import from_json
 from transformers import AutoConfig, AutoTokenizer
@@ -192,7 +193,7 @@ class OpenaiGenerator(Generator):
                 f"Generating answer for the query {query!r} and "
                 f"{num_documents_to_include:,} documents..."
             )
-            messages = [
+            messages: list[ChatCompletionMessageParam] = [
                 ChatCompletionSystemMessageParam(
                     role="system", content=self.system_prompt
                 ),
@@ -295,7 +296,9 @@ class OpenaiGenerator(Generator):
 
             return streamer()
         else:
-            generated_output = model_output.choices[0].message.content.strip()
+            generated_output = model_output.choices[0].message.content
+            assert generated_output is not None
+            generated_output = generated_output.strip()
 
         for suffix in ["", "}", '"}']:
             try:
