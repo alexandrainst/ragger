@@ -1,5 +1,6 @@
 """Store and fetch documents from a database."""
 
+import importlib.util
 import json
 import sqlite3
 import typing
@@ -7,6 +8,12 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .data_models import Document, DocumentStore, Index
+
+if importlib.util.find_spec("psycopg2") is None:
+    import psycopg2
+
+if typing.TYPE_CHECKING:
+    import psycopg2
 
 
 class JsonlDocumentStore(DocumentStore):
@@ -105,22 +112,41 @@ class JsonlDocumentStore(DocumentStore):
 class SqliteDocumentStore(DocumentStore):
     """A document store that fetches documents from a SQLite database."""
 
-    def __init__(self, path: Path = Path("document-store.sqlite")) -> None:
+    def __init__(
+        self,
+        path: Path = Path("document-store.sqlite"),
+        table_name: str = "documents",
+        id_column: str = "id",
+        text_column: str = "text",
+    ) -> None:
         """Initialise the document store.
 
         Args:
             path:
                 The path to the SQLite database where the documents are stored.
+            table_name (optional):
+                The name of the table in the database where the documents are stored.
+                Defaults to "documents".
+            id_column (optional):
+                The name of the column in the table that stores the document IDs.
+                Defaults to "id".
+            text_column (optional):
+                The name of the column in the table that stores the document text.
+                Defaults to "text".
         """
         self.path = path
+        self.table_name = table_name
+        self.id_column = id_column
+        self.text_column = text_column
+
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
         with self._connect() as conn:
             conn.execute(
-                """
-                CREATE TABLE IF NOT EXISTS documents (
-                    id TEXT PRIMARY KEY,
-                    text TEXT
+                f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    {id_column} TEXT PRIMARY KEY,
+                    {text_column} TEXT
                 )
                 """
             )
@@ -147,7 +173,12 @@ class SqliteDocumentStore(DocumentStore):
         """
         with self._connect() as conn:
             conn.executemany(
-                "INSERT OR REPLACE INTO documents (id, text) VALUES (?, ?)",
+                f"""
+                INSERT OR REPLACE INTO {self.table_name} (
+                    {self.id_column},
+                    {self.text_column}
+                ) VALUES (?, ?)
+                """,
                 [(document.id, document.text) for document in documents],
             )
             conn.commit()
@@ -172,7 +203,13 @@ class SqliteDocumentStore(DocumentStore):
                 If the document with the given ID is not found.
         """
         with self._connect() as conn:
-            cursor = conn.execute("SELECT text FROM documents WHERE id = ?", (index,))
+            cursor = conn.execute(
+                f"""
+                SELECT text FROM {self.table_name}
+                WHERE {self.id_column} = ?
+            """,
+                (index,),
+            )
             row = cursor.fetchone()
             if row is None:
                 raise KeyError(f"Document with ID {index!r} not found")
@@ -189,7 +226,13 @@ class SqliteDocumentStore(DocumentStore):
             Whether the document exists in the store.
         """
         with self._connect() as conn:
-            cursor = conn.execute("SELECT 1 FROM documents WHERE id = ?", (index,))
+            cursor = conn.execute(
+                f"""
+                SELECT 1 FROM {self.table_name}
+                WHERE {self.id_column} = ?
+            """,
+                (index,),
+            )
             return cursor.fetchone() is not None
 
     def __iter__(self) -> typing.Generator[Document, None, None]:
@@ -199,7 +242,9 @@ class SqliteDocumentStore(DocumentStore):
             The documents in the store.
         """
         with self._connect() as conn:
-            cursor = conn.execute("SELECT id, text FROM documents")
+            cursor = conn.execute(
+                f"SELECT {self.id_column}, {self.text_column} FROM {self.table_name}"
+            )
             for row in cursor:
                 yield Document(id=row[0], text=row[1])
 
@@ -210,5 +255,195 @@ class SqliteDocumentStore(DocumentStore):
             The number of documents in the store.
         """
         with self._connect() as conn:
-            cursor = conn.execute("SELECT COUNT(*) FROM documents")
+            cursor = conn.execute(f"SELECT COUNT(*) FROM {self.table_name}")
             return cursor.fetchone()[0]
+
+
+class PostgresDocumentStore(DocumentStore):
+    """A document store that fetches documents from a PostgreSQL database."""
+
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 5432,
+        user: str | None = "postgres",
+        password: str | None = "password",
+        database_name: str = "document-store",
+        table_name: str = "documents",
+        id_column: str = "id",
+        text_column: str = "text",
+    ) -> None:
+        """Initialise the document store.
+
+        Args:
+            host (optional):
+                The hostname of the PostgreSQL database. Defaults to "localhost".
+            port (optional):
+                The port of the PostgreSQL database. Defaults to 5432.
+            user (optional):
+                The username to connect to the PostgreSQL database. Defaults to
+                "postgres".
+            password (optional):
+                The password to connect to the PostgreSQL database. Defaults to
+                "password".
+            database_name (optional):
+                The name of the database where the documents are stored. Defaults to
+                "document-store".
+            table_name (optional):
+                The name of the table in the database where the documents are stored.
+                Defaults to "documents".
+            id_column (optional):
+                The name of the column in the table that stores the document IDs.
+                Defaults to "id".
+            text_column (optional):
+                The name of the column in the table that stores the document text.
+                Defaults to "text".
+        """
+        psycopg2_not_installed = importlib.util.find_spec("psycopg2") is None
+        if psycopg2_not_installed:
+            raise ImportError(
+                "The `postgres` extra is required to use the `PostgresDocumentStore`. "
+                "Please install it by running `pip install ragger[postgres]@"
+                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
+            )
+
+        self.host = host
+        self.port = port
+        self.user = user
+        self.password = password
+        self.database_name = database_name
+        self.table_name = table_name
+        self.id_column = id_column
+        self.text_column = text_column
+
+        with self._connect() as conn:
+            conn.cursor().execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    {id_column} TEXT PRIMARY KEY,
+                    {text_column} TEXT
+                )
+                """
+            )
+
+    @contextmanager
+    def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
+        """Connect to the PostgreSQL database.
+
+        Yields:
+            The connection to the database.
+        """
+        connection = psycopg2.connect(
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port,
+            dbname=self.database_name,
+        )
+        yield connection
+        connection.close()
+
+    def add_documents(self, documents: typing.Iterable[Document]) -> "DocumentStore":
+        """Add documents to the store.
+
+        Args:
+            documents:
+                An iterable of documents to add to the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.executemany(
+                f"""
+                INSERT INTO {self.table_name} (
+                    {self.id_column},
+                    {self.text_column}
+                ) VALUES (%s, %s)
+                ON CONFLICT ({self.id_column}) DO UPDATE SET
+                    {self.text_column} = EXCLUDED.{self.text_column}
+                """,
+                [(document.id, document.text) for document in documents],
+            )
+            conn.commit()
+        return self
+
+    def remove(self) -> None:
+        """Remove the document store."""
+        with self._connect() as conn:
+            conn.cursor().execute(f"DROP TABLE IF EXISTS {self.table_name}")
+
+    def __getitem__(self, index: Index) -> Document:
+        """Fetch a document by its ID.
+
+        Args:
+            index:
+                The ID of the document to fetch.
+
+        Returns:
+            The document with the given ID.
+
+        Raises:
+            KeyError:
+                If the document with the given ID is not found.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT {self.text_column} FROM {self.table_name}
+                WHERE {self.id_column} = %s
+            """,
+                (index,),
+            )
+            row = cursor.fetchone()
+            if row is None:
+                raise KeyError(f"Document with ID {index!r} not found")
+            return Document(id=index, text=row[0])
+
+    def __contains__(self, index: Index) -> bool:
+        """Check if a document with the given ID exists in the store.
+
+        Args:
+            index:
+                The ID of the document to check.
+
+        Returns:
+            Whether the document exists in the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                SELECT 1 FROM {self.table_name}
+                WHERE {self.id_column} = %s
+            """,
+                (index,),
+            )
+            return cursor.fetchone() is not None
+
+    def __iter__(self) -> typing.Generator[Document, None, None]:
+        """Iterate over the documents in the store.
+
+        Yields:
+            The documents in the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                f"SELECT {self.id_column}, {self.text_column} FROM {self.table_name}"
+            )
+            for row in cursor:
+                yield Document(id=row[0], text=row[1])
+
+    def __len__(self) -> int:
+        """Return the number of documents in the store.
+
+        Returns:
+            The number of documents in the store.
+        """
+        with self._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+            result = cursor.fetchone()
+            if result is None:
+                return 0
+            return result[0]

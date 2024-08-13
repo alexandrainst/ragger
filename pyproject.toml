@@ -19,6 +19,7 @@ gradio = { version = "^4.27.0", optional = true }
 tiktoken = { version = ">=0.7.0,<1.0.0", optional = true }
 openai = { version = "^1.23.2", optional = true }
 vllm = { markers = "sys_platform != 'darwin'", version = "^0.4.0", optional = true }
+psycopg2-binary = { version = "^2.9.9", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.1.1"
@@ -31,6 +32,9 @@ mypy = ">=1.9.0"
 nbstripout = ">=0.7.1"
 
 [tool.poetry.extras]
+postgres = [
+    "psycopg2-binary",
+]
 vllm = [
     "vllm",
 ]
@@ -42,6 +46,7 @@ demo = [
     "gradio"
 ]
 all = [
+    "psycopg2-binary",
     "vllm",
     "openai",
     "tiktoken",
