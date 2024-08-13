@@ -100,14 +100,14 @@ setup-git:
 test:  ## Run tests
 	@poetry run pytest && poetry run readme-cov
 
-bump-major:  ## Bump the major version
+release-major:  ## Release the major version
 	@poetry run python -m src.scripts.versioning --major
-	@echo "Bumped major version!"
+	@echo "Releaseed major version!"
 
-bump-minor:  ## Bump the minor version
+release-minor:  ## Release the minor version
 	@poetry run python -m src.scripts.versioning --minor
-	@echo "Bumped minor version!"
+	@echo "Releaseed minor version!"
 
-bump-patch:  ## Bump the patch version
+release-patch:  ## Release the patch version
 	@poetry run python -m src.scripts.versioning --patch
-	@echo "Bumped patch version!"
+	@echo "Releaseed patch version!"
