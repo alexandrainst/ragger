@@ -20,33 +20,39 @@ Developer(s):
 - Anders Jess Pedersen (anders.j.pedersen@alexandra.dk)
 
 
-## Quick Start
+## Installation
 
-Install the project as follows:
+Installation with `pip`:
 
 ```bash
 pip install ragger[all]@git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
-You can replace `[all]` with any comma-separated combination of `vllm`, `openai` and
-`demo` to install only the components you need. For example, to install only the
-`vllm` and `demo` components, you can run:
+Installation with `poetry`:
 
 ```bash
-pip install ragger[vllm,demo]@git+ssh://git@github.com/alexandrainst/ragger.git
+poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras all
 ```
 
-Then you can initialise a RAG system with default settings as follows:
+You can replace the `all` extra with any combination of `vllm`, `openai` and `demo` to
+install only the components you need. For `pip`, this is done by comma-separating the
+extras (e.g., `ragger[vllm,demo]`), while for `poetry`, you add multiple `--extras`
+flags (e.g., `--extras vllm --extras demo`).
+
+
+## Quick Start
+
+Initialise a RAG system with default settings as follows:
 
 ```python
 from ragger import RagSystem
 rag_system = RagSystem()
 rag_system.add_documents([
-	"Copenhagen is the capital of Denmark.",
-	"The population of Denmark is 5.8 million.",
-	"Denmark is a member of the European Union.",
+	"København er hovedstaden i Danmark.",
+	"Danmark har 5,8 millioner indbyggere.",
+	"Danmark er medlem af Den Europæiske Union."
 ])
-answer, supporting_documents = rag_system.answer("What is the capital of Denmark?")
+answer, supporting_documents = rag_system.answer("Hvad er hovedstaden i Danmark?")
 ```
 
 You can also start a demo server as follows:
@@ -55,4 +61,70 @@ You can also start a demo server as follows:
 from ragger import Demo
 demo = Demo(rag_system=rag_system)
 demo.launch()
+```
+
+
+## All Available Components
+
+Ragger supports the following components:
+
+### Document Stores
+- `JsonlDocumentStore`: A document store that reads from a JSONL file.
+
+### Embedders
+- `E5Embedder`: An embedder that uses an E5 model.
+
+### Embedding Stores
+- `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
+
+### Generators
+- `OpenAIGenerator`: A generator that uses the OpenAI API.
+- `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging Face Hub.
+
+
+## Custom Components
+
+You can also create custom components by subclassing the following classes:
+
+- `ragger.data_models.DocumentStore`
+- `ragger.data_models.Embedder`
+- `ragger.data_models.EmbeddingStore`
+- `ragger.data_models.Generator`
+
+These can then simply be added to a `RagSystem`. Here is an example:
+
+```python
+import typing
+from ragger import RagSystem
+from ragger.data_models import DocumentStore, Document, Index
+
+class InMemoryDocumentStore(DocumentStore):
+	"""A silly document store that just keeps all documents in memory."""
+
+	def __init__(self, documents: list[str]):
+		self.documents = [
+			Document(id=str(i), text=text) for i, text in enumerate(documents)
+		]
+
+	def add_documents(self, documents: typing.Iterable[Document]):
+		self.documents.extend(documents)
+
+	def __getitem__(self, index: Index) -> str:
+		return self.documents[idx]
+
+	def __contains__(self, index: Index) -> bool:
+		return item in self.documents
+
+	def __iter__(self) -> typing.Generator[Document, None, None]:
+		yield from self.documents
+
+	def __len__(self) -> int:
+		return len(self.documents)
+
+document_store = InMemoryDocumentStore(documents=[
+	"København er hovedstaden i Danmark.",
+	"Danmark har 5,8 millioner indbyggere.",
+	"Danmark er medlem af Den Europæiske Union."
+])
+rag_system = RagSystem(document_store=document_store)
 ```
