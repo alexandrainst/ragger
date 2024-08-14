@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - The `RagSystem.format_answer` now uses HTML `<br>` tags to separate newlines, to make
   it fully compatible to wrap in an HTML rendering context.
+- `RagSystem.add_documents` now returns itself.
 
 ### Fixed
 - Fixed a bug in `NumpyEmbeddingStore` when there were fewer than `num_docs` embeddings

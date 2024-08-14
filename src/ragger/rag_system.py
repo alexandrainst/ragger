@@ -167,7 +167,7 @@ class RagSystem:
             return (generated_answer.answer, source_documents)
 
     def answer_formatted(self, query: str) -> str | typing.Generator[str, None, None]:
-        """Answer a query in a formatted single string.
+        """Answer a query in a formatted single HTML string.
 
         The string includes both the answer and the supporting documents.
 
@@ -199,7 +199,9 @@ class RagSystem:
             no_documents_reply=self.no_documents_reply,
         )
 
-    def add_documents(self, documents: list[Document | str | dict[str, str]]) -> None:
+    def add_documents(
+        self, documents: list[Document | str | dict[str, str]]
+    ) -> "RagSystem":
         """Add documents to the store.
 
         Args:
@@ -232,6 +234,7 @@ class RagSystem:
         self.document_store.add_documents(documents=document_objects)
         embeddings = self.embedder.embed_documents(documents=document_objects)
         self.embedding_store.add_embeddings(embeddings=embeddings)
+        return self
 
     def __repr__(self) -> str:
         """Return a string representation of the RAG system."""
