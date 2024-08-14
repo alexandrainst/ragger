@@ -10,7 +10,7 @@ from .data_models import Document
 def format_answer(
     answer: str, documents: list[Document], no_documents_reply: str
 ) -> str:
-    """Format the answer with the relevant documents.
+    """Format the answer as HTML with the relevant documents.
 
     Args:
         answer:
@@ -27,9 +27,9 @@ def format_answer(
         case 0:
             answer = no_documents_reply
         case 1:
-            answer += "\n\nKilde:\n\n"
+            answer += "<br><br>Kilde:<br>"
         case _:
-            answer += "\n\nKilder:\n\n"
+            answer += "<br><br>Kilder:<br>"
 
     formatted_ids = [
         f"<a href='{document.id}'>{document.id}</a>"
@@ -38,7 +38,7 @@ def format_answer(
         for document in documents
     ]
 
-    answer += "\n\n".join(
+    answer += "<br>".join(
         f"<details><summary>{formatted_id}</summary>{document.text}</details>"
         for formatted_id, document in zip(formatted_ids, documents)
     )

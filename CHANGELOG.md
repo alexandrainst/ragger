@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Changed
+- The `RagSystem.format_answer` now uses HTML `<br>` tags to separate newlines, to make
+  it fully compatible to wrap in an HTML rendering context.
+
+
 ## [v1.1.0] - 2024-08-13
 ### Added
 - Added a `SqliteDocumentStore` that uses a SQLite database to store documents.
