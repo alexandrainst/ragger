@@ -219,11 +219,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 documents to retrieve.
         """
         if self.embeddings is None:
-            return []
+            return list()
 
         # Ensure that the number of documents to retrieve is less than the number of
         # documents in the store
-        num_docs = max(num_docs, self.embeddings.shape[0])
+        num_docs = min(num_docs, len(self))
 
         logger.info(f"Finding {num_docs:,} nearest neighbours...")
         scores = self.embeddings @ embedding
@@ -462,6 +462,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
         """
         if self.embedding_dim is None:
             return list()
+
         with self._connect() as conn:
             cursor = conn.cursor()
             cursor.execute(
