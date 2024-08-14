@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [v1.1.1] - 2024-08-14
 ### Fixed
 - Fixed a bug in `NumpyEmbeddingStore` when there were fewer than `num_docs` embeddings
   in the store, causing an error when trying to retrieve embeddings.
