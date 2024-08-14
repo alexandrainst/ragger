@@ -7,17 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [Unreleased]
-### Changed
-- The `RagSystem.format_answer` now uses HTML `<br>` tags to separate newlines, to make
-  it fully compatible to wrap in an HTML rendering context.
-- `RagSystem.add_documents` now returns itself.
-
 ### Fixed
 - Fixed a bug in `NumpyEmbeddingStore` when there were fewer than `num_docs` embeddings
   in the store, causing an error when trying to retrieve embeddings.
 - When calling `PostgresEmbeddingStore.clear()` or `PostgresEmbeddingStore.remove()`
   when the `embedding_dim` attribute wasn't set, it wouldn't clear/remove the store.
   This has been fixed.
+- The `RagSystem.format_answer` now uses HTML `<br>` tags to separate newlines, to make
+  it fully compatible to wrap in an HTML rendering context.
+- `RagSystem.add_documents` now returns itself.
 
 
 ## [v1.1.0] - 2024-08-13
