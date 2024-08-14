@@ -444,6 +444,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 """,
                 id_embedding_pairs,
             )
+
         return self
 
     def get_nearest_neighbours(
@@ -560,33 +561,38 @@ class PostgresEmbeddingStore(EmbeddingStore):
         Returns:
             The number of embeddings in the store.
         """
-        if self.embedding_dim is None:
-            return 0
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"""
-                SELECT COUNT(*)
-                FROM {self.table_name}
-                WHERE {self.embedding_column} IS NOT NULL
-            """)
-            result = cursor.fetchone()
-            assert result is not None
-            return result[0]
+            try:
+                cursor.execute(f"""
+                    SELECT COUNT(*)
+                    FROM {self.table_name}
+                    WHERE {self.embedding_column} IS NOT NULL
+                """)
+            except psycopg2.errors.UndefinedTable:
+                return 0
+            else:
+                result = cursor.fetchone()
+                if result is None:
+                    return 0
+                return result[0]
 
     def clear(self) -> None:
         """Clear all embeddings from the store."""
-        if self.embedding_dim is None:
-            return
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"""
-                UPDATE {self.table_name} SET {self.embedding_column} = NULL
-            """)
+            try:
+                cursor.execute(f"""
+                    UPDATE {self.table_name} SET {self.embedding_column} = NULL
+                """)
+            except psycopg2.errors.UndefinedTable:
+                pass
 
     def remove(self) -> None:
         """Remove the embedding store."""
-        if self.embedding_dim is None:
-            return
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"DROP TABLE {self.table_name}")
+            try:
+                cursor.execute(f"DROP TABLE {self.table_name}")
+            except psycopg2.errors.UndefinedTable:
+                pass

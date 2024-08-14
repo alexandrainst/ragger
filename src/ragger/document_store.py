@@ -448,11 +448,15 @@ class PostgresDocumentStore(DocumentStore):
         """
         with self._connect() as conn:
             cursor = conn.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
-            result = cursor.fetchone()
-            if result is None:
+            try:
+                cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+            except psycopg2.errors.UndefinedTable:
                 return 0
-            return result[0]
+            else:
+                result = cursor.fetchone()
+                if result is None:
+                    return 0
+                return result[0]
 
 
 class TxtDocumentStore(DocumentStore):
