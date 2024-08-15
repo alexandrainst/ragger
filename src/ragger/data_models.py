@@ -202,12 +202,6 @@ class Embedder(ABC):
         """
         ...
 
-    @property
-    @abstractmethod
-    def max_context_length(self) -> int:
-        """The maximum length of the context that the embedder can handle."""
-        ...
-
     def __repr__(self) -> str:
         """Return a string representation of the embedder.
 

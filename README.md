@@ -98,6 +98,7 @@ imported from `ragger.document_store`.
 Embedders are used to embed documents. These can all be imported from `ragger.embedder`.
 
 - `E5Embedder`: An embedder that uses an E5 model. (default)
+- `OpenAIEmbedder`: An embedder that uses the OpenAI Embeddings API.
 
 
 ### Embedding Stores
@@ -120,7 +121,7 @@ imported from `ragger.embedding_store`.
 Generators are used to generate answers from the retrieved documents and the question.
 These can all be imported from `ragger.generator`.
 
-- `OpenAIGenerator`: A generator that uses the OpenAI API. (default)
+- `OpenAIGenerator`: A generator that uses the OpenAI Chat API. (default)
 - `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging
   Face Hub.
 

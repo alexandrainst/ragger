@@ -1,9 +1,11 @@
 """Embed documents using a pre-trained model."""
 
+import importlib.util
 import logging
 import os
 import re
-from typing import Iterable
+import typing
+from functools import cache
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -11,6 +13,13 @@ from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, Embedder, Embedding
 from .utils import get_device
+
+if importlib.util.find_spec("openai") is not None:
+    from openai import OpenAI
+
+if typing.TYPE_CHECKING:
+    from openai import OpenAI
+
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -46,12 +55,7 @@ class E5Embedder(Embedder):
         self.model_config = AutoConfig.from_pretrained(self.embedder_model_id)
         self.embedding_dim = self.model_config.hidden_size
 
-    @property
-    def max_context_length(self) -> int:
-        """The maximum length of the context that the embedder can handle."""
-        return self.tokenizer.model_max_length
-
-    def embed_documents(self, documents: Iterable[Document]) -> list[Embedding]:
+    def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:
         """Embed a list of documents using an E5 model.
 
         Args:
@@ -155,3 +159,113 @@ class E5Embedder(Embedder):
         """
         query = "query: " + re.sub(r"^query: ", "", query)
         return query
+
+
+class OpenAIEmbedder(Embedder):
+    """An embedder that uses an OpenAI model to embed documents."""
+
+    def __init__(
+        self,
+        embedder_model_id: str = "text-embedding-3-small",
+        api_key: str | None = None,
+        host: str | None = None,
+        port: int = 8000,
+        timeout: int = 60,
+        max_retries: int = 3,
+    ) -> None:
+        """Initialise the OpenAI embedder.
+
+        Args:
+            embedder_model_id (optional):
+                The model ID of the embedder to use. Defaults to
+                "text-embedding-3-small".
+            api_key (optional):
+                The API key to use. Defaults to None.
+            host (optional):
+                The host to use. Defaults to None.
+            port (optional):
+                The port to use. Defaults to 8000.
+            timeout (optional):
+                The timeout to use. Defaults to 60.
+            max_retries (optional):
+                The maximum number of retries. Defaults to 3.
+        """
+        self.embedder_model_id = embedder_model_id
+        self.api_key = api_key
+        self.host = host
+        self.port = port
+        self.timeout = timeout
+        self.max_retries = max_retries
+
+        # Set the server URL, if a host is provided
+        self.server: str | None
+        if self.host is not None:
+            if not self.host.startswith("http"):
+                self.host = f"http://{host}"
+            self.server = f"{self.host}:{self.port}/v1"
+        else:
+            self.server = None
+
+        self.client = OpenAI(
+            base_url=self.server,
+            api_key=api_key,
+            timeout=self.timeout,
+            max_retries=self.max_retries,
+        )
+        self.embedding_dim = self._get_embedding_dim()
+
+    @cache
+    def _get_embedding_dim(self) -> int:
+        """Return the embedding dimension of the OpenAI model."""
+        embedding = self._embed(texts=["x"])
+        return embedding.shape[1]
+
+    def _embed(self, texts: list[str]) -> np.ndarray:
+        """Embed texts using an OpenAI model.
+
+        Args:
+            texts:
+                The texts to embed.
+
+        Returns:
+            The embeddings of the texts, of shape (n_texts, self.embedding_dim).
+        """
+        model_output = self.client.embeddings.create(
+            input=texts, model=self.embedder_model_id
+        )
+        return np.stack(
+            arrays=[np.asarray(embedding.embedding) for embedding in model_output.data],
+            axis=0,
+        )
+
+    def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:
+        """Embed a list of documents.
+
+        Args:
+            documents:
+                An iterable of documents to embed.
+
+        Returns:
+            An array of embeddings, where each row corresponds to a document.
+        """
+        if not documents:
+            return list()
+
+        raw_embeddings = self._embed(texts=[doc.text for doc in documents])
+
+        return [
+            Embedding(id=document.id, embedding=embedding)
+            for document, embedding in zip(documents, raw_embeddings)
+        ]
+
+    def embed_query(self, query: str) -> np.ndarray:
+        """Embed a query.
+
+        Args:
+            query:
+                A query.
+
+        Returns:
+            The embedding of the query.
+        """
+        return self._embed(texts=[query])[0]
