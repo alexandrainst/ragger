@@ -190,6 +190,14 @@ class OpenAIEmbedder(Embedder):
             max_retries (optional):
                 The maximum number of retries. Defaults to 3.
         """
+        openai_not_installed = importlib.util.find_spec("openai") is None
+        if openai_not_installed:
+            raise ImportError(
+                "The `openai` extra is required to use the `OpenaiEmbedder`. "
+                "Please install it by running `pip install ragger[openai]@"
+                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
+            )
+
         self.embedder_model_id = embedder_model_id
         self.api_key = api_key
         self.host = host
