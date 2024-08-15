@@ -2,6 +2,10 @@
 
 import re
 
+###################################
+### Generator related constants ###
+###################################
+
 DANISH_SYSTEM_PROMPT: str = re.sub(
     r" +",
     " ",
