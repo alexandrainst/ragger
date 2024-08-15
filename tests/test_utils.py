@@ -30,9 +30,9 @@ class TestFormatAnswer:
         argvalues=[
             (
                 "answer",
-                "answer\n\nKilde:\n\n<details><summary>{id}</summary>{text}</details>",
+                "answer<br><br>Kilde:<br><details><summary>{id}</summary>{text}</details>",
             ),
-            ("", "\n\nKilde:\n\n<details><summary>{id}</summary>{text}</details>"),
+            ("", "<br><br>Kilde:<br><details><summary>{id}</summary>{text}</details>"),
         ],
         ids=["with_answer", "without_answer"],
     )
@@ -48,14 +48,14 @@ class TestFormatAnswer:
         argvalues=[
             (
                 "answer",
-                "answer\n\nKilder:\n\n"
-                "<details><summary>{first_id}</summary>{first_text}</details>\n\n"
+                "answer<br><br>Kilder:<br>"
+                "<details><summary>{first_id}</summary>{first_text}</details><br>"
                 "<details><summary>{second_id}</summary>{second_text}</details>",
             ),
             (
                 "",
-                "\n\nKilder:\n\n"
-                "<details><summary>{first_id}</summary>{first_text}</details>\n\n"
+                "<br><br>Kilder:<br>"
+                "<details><summary>{first_id}</summary>{first_text}</details><br>"
                 "<details><summary>{second_id}</summary>{second_text}</details>",
             ),
         ],
@@ -78,12 +78,12 @@ class TestFormatAnswer:
         argvalues=[
             (
                 "https://example.com",
-                "answer\n\nKilde:\n\n"
+                "answer<br><br>Kilde:<br>"
                 "<details><summary><a href='{id}'>{id}</a></summary>{text}</details>",
             ),
             (
                 "https://www.example.com",
-                "answer\n\nKilde:\n\n"
+                "answer<br><br>Kilde:<br>"
                 "<details><summary><a href='{id}'>{id}</a></summary>{text}</details>",
             ),
         ],
