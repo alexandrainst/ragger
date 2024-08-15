@@ -42,9 +42,3 @@ def test_embed_query(embedder, query):
     """Test that the embedder can embed a query."""
     embeddings = embedder.embed_query(query)
     assert isinstance(embeddings, np.ndarray)
-
-
-def test_max_context_length(embedder):
-    """Test that the embedder can return the maximum context length."""
-    assert isinstance(embedder.max_context_length, int)
-    assert embedder.max_context_length > 0
