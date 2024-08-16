@@ -13,7 +13,7 @@ from .data_models import (
     Generator,
 )
 from .document_store import JsonlDocumentStore
-from .embedder import E5Embedder
+from .embedder import OpenAIEmbedder
 from .embedding_store import NumpyEmbeddingStore
 from .generator import OpenaiGenerator
 from .utils import format_answer
@@ -51,10 +51,11 @@ class RagSystem:
                 The reply to use when no documents are found. If None, a default
                 reply is used, based on the chosen language. Defaults to None.
         """
+        # Use defaults if no components are provided
         if document_store is None:
             document_store = JsonlDocumentStore()
         if embedder is None:
-            embedder = E5Embedder()
+            embedder = OpenAIEmbedder()
         if embedding_store is None:
             embedding_store = NumpyEmbeddingStore(embedding_dim=embedder.embedding_dim)
         if generator is None:
