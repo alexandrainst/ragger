@@ -71,7 +71,7 @@ install-poetry:
     fi
 
 install-dependencies:
-	@poetry env use python3.11 && poetry install --extras default
+	@poetry env use python3.11 && poetry install --extras all
 
 install-pre-commit:  ## Install pre-commit hooks
 	@poetry run pre-commit install
@@ -83,7 +83,12 @@ format:  ## Format the code
 	@poetry run ruff format .
 
 type-check:  ## Run type checking
-	@poetry run mypy . --install-types --non-interactive --ignore-missing-imports --show-error-codes --check-untyped-defs
+	@poetry run mypy . \
+		--install-types \
+		--non-interactive \
+		--ignore-missing-imports \
+		--show-error-codes \
+		--check-untyped-defs
 
 setup-environment-variables:
 	@poetry run python src/scripts/fix_dot_env_file.py

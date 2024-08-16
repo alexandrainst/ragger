@@ -8,9 +8,6 @@ import typing
 import warnings
 from pathlib import Path
 
-from huggingface_hub import CommitScheduler, HfApi
-from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
-
 from .constants import (
     DANISH_DEMO_TITLE,
     DANISH_DESCRIPTION,
@@ -30,13 +27,19 @@ from .constants import (
 from .data_models import Document, PersistentSharingConfig
 from .generator import OpenaiGenerator
 from .rag_system import RagSystem
-from .utils import format_answer, is_installed
+from .utils import format_answer, is_installed, raise_if_not_installed
 
 if is_installed(package_name="gradio"):
     import gradio as gr
 
+if is_installed(package_name="huggingface_hub"):
+    from huggingface_hub import CommitScheduler, HfApi
+    from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
+
 if typing.TYPE_CHECKING:
     import gradio as gr
+    from huggingface_hub import CommitScheduler, HfApi
+    from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
 Message = str | None
 Exchange = tuple[Message, Message]
@@ -106,6 +109,8 @@ class Demo:
                 The configuration for persistent sharing of the demo. If None then no
                 persistent sharing is used. Defaults to None.
         """
+        raise_if_not_installed(package_names=["gradio", "huggingface_hub"])
+
         title_mapping = dict(da=DANISH_DEMO_TITLE, en=ENGLISH_DEMO_TITLE)
         description_mapping = dict(da=DANISH_DESCRIPTION, en=ENGLISH_DESCRIPTION)
         feedback_instruction_mapping = dict(

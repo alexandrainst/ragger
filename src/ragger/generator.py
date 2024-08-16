@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError
 from pydantic_core import from_json
-from transformers import AutoConfig, AutoTokenizer
 
 from .constants import (
     DANISH_SYSTEM_PROMPT,
@@ -38,6 +37,9 @@ if is_installed(package_name="openai"):
 if is_installed(package_name="tiktoken"):
     import tiktoken
 
+if is_installed(package_name="transformers"):
+    from transformers import AutoConfig, AutoTokenizer
+
 if typing.TYPE_CHECKING:
     import tiktoken
     from httpx import ReadTimeout, RemoteProtocolError
@@ -47,6 +49,7 @@ if typing.TYPE_CHECKING:
         ChatCompletionUserMessageParam,
     )
     from openai.types.shared_params import ResponseFormatJSONObject
+    from transformers import AutoConfig, AutoTokenizer
 
 
 load_dotenv()
@@ -115,7 +118,7 @@ class OpenaiGenerator(Generator):
             additional_generation_kwargs (optional):
                 Additional keyword arguments to pass to the generation function.
         """
-        raise_if_not_installed(package_names=["openai", "tiktoken"])
+        raise_if_not_installed(package_names=["openai", "tiktoken", "httpx"])
 
         logging.getLogger("httpx").setLevel(logging.CRITICAL)
         self.model_id = model_id

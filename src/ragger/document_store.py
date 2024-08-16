@@ -9,7 +9,7 @@ from pathlib import Path
 from .data_models import Document, DocumentStore, Index
 from .utils import is_installed, raise_if_not_installed
 
-if is_installed(package_name="psycopg2"):
+if is_installed(package_name="psycopg2-binary"):
     import psycopg2
 
 if typing.TYPE_CHECKING:
@@ -300,7 +300,7 @@ class PostgresDocumentStore(DocumentStore):
                 The name of the column in the table that stores the document text.
                 Defaults to "text".
         """
-        raise_if_not_installed(package_names=["psycopg2"])
+        raise_if_not_installed(package_names=["psycopg2-binary"])
 
         self.host = host
         self.port = port
