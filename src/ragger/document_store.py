@@ -327,7 +327,9 @@ class PostgresDocumentStore(DocumentStore):
             )
 
     @contextmanager
-    def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
+    def _connect(
+        self,
+    ) -> "typing.Generator[psycopg2.extensions.connection, None, None]":
         """Connect to the PostgreSQL database.
 
         Yields:
