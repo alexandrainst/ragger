@@ -71,7 +71,7 @@ install-poetry:
     fi
 
 install-dependencies:
-	@poetry env use python3.11 && poetry install --extras all
+	@poetry env use python3.11 && poetry install --extras default
 
 install-pre-commit:  ## Install pre-commit hooks
 	@poetry run pre-commit install

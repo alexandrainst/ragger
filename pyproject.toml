@@ -14,13 +14,8 @@ python = ">=3.10,<4.0"
 numpy = "^1.26.4"
 python-dotenv = "^1.0.1"
 pydantic = "^2.8.2"
-sentence-transformers = { version = "^2.7.0", optional = true }
-torch = { source = "pytorch-cpu", version = "2.3.0", optional = true }
-gradio = { version = "^4.27.0", optional = true }
 tiktoken = { version = ">=0.7.0,<1.0.0", optional = true }
 openai = { version = "^1.23.2", optional = true }
-vllm = { markers = "sys_platform != 'darwin'", version = "^0.4.0", optional = true }
-psycopg2-binary = { version = "^2.9.9", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.1.1"
@@ -33,45 +28,13 @@ mypy = ">=1.9.0"
 nbstripout = ">=0.7.1"
 
 [tool.poetry.extras]
-postgres = [
-    "psycopg2-binary",
-]
-e5 = [
-    "sentence-transformers",
-]
-e5-cpu = [
-    "torch",
-    "sentence-transformers",
-]
-vllm = [
-    "vllm",
-]
-openai = [
-    "openai",
-    "tiktoken",
-]
-demo = [
-    "gradio"
-]
 default = [
     "openai",
     "tiktoken",
 ]
-all = [
-    "psycopg2-binary",
-    "vllm",
-    "openai",
-    "tiktoken",
-    "gradio",
-]
 
 [[tool.poetry.source]]
 name = "pypi"
-
-[[tool.poetry.source]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
 
 [tool.ruff]
 target-version = "py311"
