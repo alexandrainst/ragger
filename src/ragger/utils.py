@@ -1,12 +1,18 @@
 """Utility constants and functions used in the project."""
 
 import importlib.util
+import json
+import logging
 import re
+from pathlib import Path
 
 import torch
+import yaml
 
 from .data_models import Document
 from .exceptions import MissingPackage
+
+logger = logging.getLogger(__package__)
 
 
 def format_answer(
@@ -106,3 +112,35 @@ def raise_if_not_installed(package_names: list[str]) -> None:
     ]
     if missing_packages:
         raise MissingPackage(package_names=missing_packages)
+
+
+def load_config(config_file: Path | None) -> dict:
+    """Load a configuration file.
+
+    Args:
+        config_file:
+            Path to the configuration file.
+
+    Returns:
+        The configuration.
+    """
+    if config_file is None:
+        logger.warning("No configuration file provided. Using default configuration.")
+        return dict()
+
+    if config_file.read_text().strip() == "":
+        logger.warning(
+            "Empty configuration file provided. Using default configuration."
+        )
+        return dict()
+
+    with config_file.open("r") as f:
+        if config_file.suffix == ".json":
+            return json.load(f)
+        elif config_file.suffix == ".yaml":
+            return yaml.safe_load(f)
+        else:
+            raise ValueError(
+                f"Unsupported file extension: {config_file.suffix}. Please provide "
+                "a JSON or YAML file."
+            )

@@ -77,7 +77,7 @@ class RagSystem:
         self.compile()
 
     @classmethod
-    def from_config(cls, config: dict[str, dict[str, typing.Any] | str]) -> "RagSystem":
+    def from_config(cls, config: dict[str, typing.Any]) -> "RagSystem":
         """Create a RAG system from a configuration.
 
         Args:
@@ -87,56 +87,23 @@ class RagSystem:
         Returns:
             The created RAG system.
         """
-        # Component checks
+        kwargs: dict[str, typing.Any] = dict()
+
         components = ["document_store", "embedder", "embedding_store", "generator"]
         for component in components:
-            assert component in config, f"Missing {component!r} in the configuration."
-            assert isinstance(
-                config[component], dict
-            ), f"{component!r} must be a dictionary."
-            assert (
-                "name" in config[component]
-            ), f"Missing 'name' key in {component!r} in the configuration."
-            assert getattr(
-                __import__(name=component), component
-            ), f"Unknown component {component!r} in the configuration."
+            if component not in config:
+                continue
+            assert "name" in config[component], f"Missing 'name' key for {component}."
+            module = __import__(name=component)
+            component_class = getattr(module, config[component]["name"])
+            kwargs[component] = component_class(**config[component])
 
-        # Checks for non-component keys
-        keys = ["language", "no_documents_reply"]
-        for key in config:
-            assert (
-                key in components + keys
-            ), f"Unknown key {key!r} in the configuration."
-            assert not isinstance(
-                config[key], dict
-            ), f"{key!r} must not be a dictionary in the configuration."
-            assert not key == "language" or config[key] in [
-                "da",
-                "en",
-            ], f"Invalid language {config[key]!r} in the configuration."
+        if "language" in config:
+            kwargs["language"] = config["language"]
+        if "no_documents_reply" in config:
+            kwargs["no_documents_reply"] = config["no_documents_reply"]
 
-        # Create the components
-        document_store = __import__(name="document_store").document_store(
-            **config["document_store"]
-        )
-        embedder = __import__(name="embedder").embedder(**config["embedder"])
-        embedding_store = __import__(name="embedding_store").embedding_store(
-            **config["embedding_store"]
-        )
-        generator = __import__(name="generator").generator(**config["generator"])
-
-        # Create the other arguments
-        language = config.get("language", "da")
-        no_documents_reply = config.get("no_documents_reply")
-
-        return cls(
-            document_store=document_store,
-            embedder=embedder,
-            embedding_store=embedding_store,
-            generator=generator,
-            language=language,  # type: ignore[arg-type]
-            no_documents_reply=no_documents_reply,  # type: ignore[arg-type]
-        )
+        return cls(**kwargs)
 
     def compile(self, force: bool = False) -> "RagSystem":
         """Compile the RAG system.

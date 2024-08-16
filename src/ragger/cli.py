@@ -1,36 +1,33 @@
 """Command-line interface for the `ragger` package."""
 
-import json
+import logging
 from pathlib import Path
 
 import click
-import yaml
+
+from ragger.utils import load_config
 
 from .demo import Demo
 from .rag_system import RagSystem
 
+logger = logging.getLogger(__package__)
+
 
 @click.command()
-@click.argument("config_file", type=click.Path(exists=True, dir_okay=False))
-def run_demo(config_file: str) -> None:
+@click.option(
+    "--config_file",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to the configuration file, which should be a JSON or YAML file.",
+)
+def run_demo(config_file: Path | None) -> None:
     """Run a RAG demo.
 
     Args:
         config_file:
             Path to the configuration file.
     """
-    config_path = Path(config_file)
-    with config_path.open() as f:
-        if config_path.suffix == ".json":
-            config = json.load(f)
-        elif config_path.suffix == ".yaml":
-            config = yaml.safe_load(f)
-        else:
-            raise ValueError(
-                f"Unsupported file extension: {config_path.suffix}. Please provide a "
-                "JSON or YAML file."
-            )
-
+    config = load_config(config_file=config_file)
     rag_system = RagSystem.from_config(config=config)
     demo = Demo.from_config(rag_system=rag_system, config=config)
     demo.launch()
@@ -45,6 +42,5 @@ def compile(config_file: str) -> None:
         config_file:
             Path to the configuration file.
     """
-    with Path(config_file).open("r") as f:
-        config = yaml.safe_load(f)
+    config = load_config(config_file=Path(config_file))
     RagSystem.from_config(config=config)
