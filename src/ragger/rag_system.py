@@ -2,6 +2,7 @@
 
 import logging
 import typing
+from pathlib import Path
 
 from . import document_store as document_store_module
 from . import embedder as embedder_module
@@ -20,7 +21,7 @@ from .document_store import JsonlDocumentStore
 from .embedder import OpenAIEmbedder
 from .embedding_store import NumpyEmbeddingStore
 from .generator import OpenAIGenerator
-from .utils import format_answer
+from .utils import format_answer, load_config
 
 logger = logging.getLogger(__package__)
 
@@ -81,16 +82,18 @@ class RagSystem:
         self.compile()
 
     @classmethod
-    def from_config(cls, config: dict[str, typing.Any]) -> "RagSystem":
+    def from_config(cls, config_file: str | Path | None = None) -> "RagSystem":
         """Create a RAG system from a configuration.
 
         Args:
-            config:
-                The configuration to create the system from.
+            config_file:
+                The path to the configuration file, which should be a JSON or YAML file.
 
         Returns:
             The created RAG system.
         """
+        config = load_config(config_file=config_file)
+
         kwargs: dict[str, typing.Any] = dict()
 
         components = dict(

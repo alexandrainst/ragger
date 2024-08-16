@@ -5,8 +5,6 @@ from pathlib import Path
 
 import click
 
-from ragger.utils import load_config
-
 from .demo import Demo
 from .rag_system import RagSystem
 
@@ -28,9 +26,8 @@ def run_demo(config_file: Path | None) -> None:
         config_file:
             Path to the configuration file.
     """
-    config = load_config(config_file=config_file)
-    rag_system = RagSystem.from_config(config=config)
-    demo = Demo.from_config(rag_system=rag_system, config=config)
+    rag_system = RagSystem.from_config(config_file=config_file)
+    demo = Demo.from_config(rag_system=rag_system, config_file=config_file)
     demo.launch()
 
 
@@ -49,6 +46,5 @@ def compile(config_file: Path) -> None:
         config_file:
             Path to the configuration file.
     """
-    config = load_config(config_file=config_file)
-    RagSystem.from_config(config=config)
+    RagSystem.from_config(config_file=config_file)
     logger.info("RAG system compiled successfully.")

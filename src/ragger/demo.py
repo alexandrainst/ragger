@@ -27,7 +27,7 @@ from .constants import (
 from .data_models import Document, PersistentSharingConfig
 from .generator import OpenAIGenerator
 from .rag_system import RagSystem
-from .utils import format_answer, is_installed, raise_if_not_installed
+from .utils import format_answer, is_installed, load_config, raise_if_not_installed
 
 if is_installed(package_name="gradio"):
     import gradio as gr
@@ -215,19 +215,21 @@ class Demo:
 
     @classmethod
     def from_config(
-        cls, rag_system: RagSystem, config: dict[str, typing.Any]
+        cls, rag_system: RagSystem, config_file: str | Path | None
     ) -> "Demo":
         """Create a demo from a configuration.
 
         Args:
             rag_system:
                 The RAG system.
-            config:
-                The configuration.
+            config_file:
+                Path to the configuration file.
 
         Returns:
             The demo.
         """
+        config = load_config(config_file=config_file)
+
         kwargs: dict[str, typing.Any] = dict(rag_system=rag_system)
         if "feedback_db_path" in config:
             kwargs["feedback_db_path"] = Path(config["feedback_db_path"])
