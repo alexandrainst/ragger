@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [Unreleased]
+### Added
+- Added new `e5` and `e5-cpu` extras to install the `E5Embedder` with and without GPU
+  support, respectively.
+
+### Changed
+- Changed default embedder in `RagSystem` to `OpenAIEmbedder` from `E5Embedder`.
+
 ### Fixed
 - Raise `ImportError` when initialising `OpenAIEmbedder` without the `openai` package
   installed.
