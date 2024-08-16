@@ -66,6 +66,7 @@ exclude = [
     ".pytest_cache",
     ".ruff_cache",
     ".venv",
+    "tutorial.ipynb",
 ]
 
 [tool.ruff.format]
