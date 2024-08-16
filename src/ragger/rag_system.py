@@ -3,6 +3,10 @@
 import logging
 import typing
 
+from . import document_store as document_store_module
+from . import embedder as embedder_module
+from . import embedding_store as embedding_store_module
+from . import generator as generator_module
 from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
 from .data_models import (
     Document,
@@ -15,7 +19,7 @@ from .data_models import (
 from .document_store import JsonlDocumentStore
 from .embedder import OpenAIEmbedder
 from .embedding_store import NumpyEmbeddingStore
-from .generator import OpenaiGenerator
+from .generator import OpenAIGenerator
 from .utils import format_answer
 
 logger = logging.getLogger(__package__)
@@ -59,7 +63,7 @@ class RagSystem:
         if embedding_store is None:
             embedding_store = NumpyEmbeddingStore(embedding_dim=embedder.embedding_dim)
         if generator is None:
-            generator = OpenaiGenerator(language=language)
+            generator = OpenAIGenerator(language=language)
 
         self.document_store = document_store
         self.embedder = embedder
@@ -89,13 +93,18 @@ class RagSystem:
         """
         kwargs: dict[str, typing.Any] = dict()
 
-        components = ["document_store", "embedder", "embedding_store", "generator"]
-        for component in components:
+        components = dict(
+            document_store=document_store_module,
+            embedder=embedder_module,
+            embedding_store=embedding_store_module,
+            generator=generator_module,
+        )
+        for component, module in components.items():
             if component not in config:
                 continue
             assert "name" in config[component], f"Missing 'name' key for {component}."
-            module = __import__(name=component)
             component_class = getattr(module, config[component]["name"])
+            config[component].pop("name")
             kwargs[component] = component_class(**config[component])
 
         if "language" in config:

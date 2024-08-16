@@ -15,7 +15,7 @@ from ragger.data_models import (
 from ragger.document_store import JsonlDocumentStore
 from ragger.embedder import OpenAIEmbedder
 from ragger.embedding_store import NumpyEmbeddingStore
-from ragger.generator import OpenaiGenerator
+from ragger.generator import OpenAIGenerator
 from ragger.rag_system import RagSystem
 
 
@@ -80,7 +80,7 @@ def default_embedding_store() -> typing.Generator[EmbeddingStore, None, None]:
 @pytest.fixture(scope="session")
 def default_generator() -> typing.Generator[Generator, None, None]:
     """A generator for testing."""
-    yield OpenaiGenerator()
+    yield OpenAIGenerator()
 
 
 @pytest.fixture(scope="session")

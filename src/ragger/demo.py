@@ -25,7 +25,7 @@ from .constants import (
     ENGLISH_THANK_YOU_FEEDBACK,
 )
 from .data_models import Document, PersistentSharingConfig
-from .generator import OpenaiGenerator
+from .generator import OpenAIGenerator
 from .rag_system import RagSystem
 from .utils import format_answer, is_installed, raise_if_not_installed
 
@@ -389,7 +389,7 @@ class Demo:
             key=self.persistent_sharing_config.hf_token_variable_name,
             value=os.environ[self.persistent_sharing_config.hf_token_variable_name],
         )
-        if isinstance(self.rag_system.generator, OpenaiGenerator):
+        if isinstance(self.rag_system.generator, OpenAIGenerator):
             api.add_space_secret(
                 repo_id=self.persistent_sharing_config.space_repo_id,
                 key="OPENAI_API_KEY",

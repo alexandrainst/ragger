@@ -114,7 +114,7 @@ def raise_if_not_installed(package_names: list[str]) -> None:
         raise MissingPackage(package_names=missing_packages)
 
 
-def load_config(config_file: Path | None) -> dict:
+def load_config(config_file: str | Path | None) -> dict:
     """Load a configuration file.
 
     Args:
@@ -124,6 +124,8 @@ def load_config(config_file: Path | None) -> dict:
     Returns:
         The configuration.
     """
+    config_file = Path(config_file) if config_file is not None else None
+
     if config_file is None:
         logger.warning("No configuration file provided. Using default configuration.")
         return dict()

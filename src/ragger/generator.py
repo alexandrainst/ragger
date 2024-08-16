@@ -58,7 +58,7 @@ load_dotenv()
 logger = logging.getLogger(__package__)
 
 
-class OpenaiGenerator(Generator):
+class OpenAIGenerator(Generator):
     """A generator that uses an OpenAI model to generate answers."""
 
     def __init__(
@@ -120,7 +120,6 @@ class OpenaiGenerator(Generator):
         """
         raise_if_not_installed(package_names=["openai", "tiktoken", "httpx"])
 
-        logging.getLogger("httpx").setLevel(logging.CRITICAL)
         self.model_id = model_id
         self.api_key = api_key
         self.host = host
@@ -316,7 +315,7 @@ class OpenaiGenerator(Generator):
         return generated_obj
 
 
-class VllmGenerator(OpenaiGenerator):
+class VllmGenerator(OpenAIGenerator):
     """A generator that uses a vLLM model to generate answers."""
 
     def __init__(
