@@ -213,6 +213,48 @@ class Demo:
         self.retrieved_documents: list[Document] = list()
         self.blocks: gr.Blocks | None = None
 
+    @classmethod
+    def from_config(
+        cls, rag_system: RagSystem, config: dict[str, typing.Any]
+    ) -> "Demo":
+        """Create a demo from a configuration.
+
+        Args:
+            rag_system:
+                The RAG system.
+            config:
+                The configuration.
+
+        Returns:
+            The demo.
+        """
+        kwargs: dict[str, typing.Any] = dict(rag_system=rag_system)
+        if "feedback_db_path" in config:
+            kwargs["feedback_db_path"] = Path(config["feedback_db_path"])
+        if "feedback_mode" in config:
+            kwargs["feedback_mode"] = config["feedback_mode"]
+        if "gradio_theme" in config:
+            kwargs["gradio_theme"] = config["gradio_theme"]
+        if "title" in config:
+            kwargs["title"] = config["title"]
+        if "description" in config:
+            kwargs["description"] = config["description"]
+        if "feedback_instruction" in config:
+            kwargs["feedback_instruction"] = config["feedback_instruction"]
+        if "thank_you_feedback" in config:
+            kwargs["thank_you_feedback"] = config["thank_you_feedback"]
+        if "input_box_placeholder" in config:
+            kwargs["input_box_placeholder"] = config["input_box_placeholder"]
+        if "submit_button_value" in config:
+            kwargs["submit_button_value"] = config["submit_button_value"]
+        if "no_documents_reply" in config:
+            kwargs["no_documents_reply"] = config["no_documents_reply"]
+        if "persistent_sharing_config" in config:
+            kwargs["persistent_sharing_config"] = PersistentSharingConfig(
+                **config["persistent_sharing_config"]
+            )
+        return cls(**kwargs)
+
     def build_demo(self) -> "gr.Blocks":
         """Build the demo.
 
