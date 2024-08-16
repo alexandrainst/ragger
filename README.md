@@ -50,6 +50,8 @@ demo`).
 
 ## Quick Start
 
+_Checkout the `tutorial.ipynb` notebook for a more detailed guide_
+
 Initialise a RAG system with default settings as follows:
 
 ```python
