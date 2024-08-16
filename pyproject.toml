@@ -74,8 +74,8 @@ url = "https://download.pytorch.org/whl/cpu"
 priority = "explicit"
 
 [tool.poetry.scripts]
-ragger_demo = "ragger.cli:run_demo"
-ragger_compile = "ragger.cli:compile"
+ragger-demo = "ragger.cli:run_demo"
+ragger-compile = "ragger.cli:compile"
 
 [tool.ruff]
 target-version = "py311"
