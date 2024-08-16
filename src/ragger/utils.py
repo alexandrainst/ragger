@@ -1,10 +1,12 @@
 """Utility constants and functions used in the project."""
 
+import importlib.util
 import re
 
 import torch
 
 from .data_models import Document
+from .exceptions import MissingPackage
 
 
 def format_answer(
@@ -73,3 +75,34 @@ def get_device() -> str:
         return "mps"
     else:
         return "cpu"
+
+
+def is_installed(package_name: str) -> bool:
+    """Check if a package is installed.
+
+    Args:
+        package_name:
+            The name of the package to check for.
+
+    Returns:
+        Whether the package is installed.
+    """
+    return importlib.util.find_spec(name=package_name) is not None
+
+
+def raise_if_not_installed(package_names: list[str]) -> None:
+    """Raise an exception if any of the packages are not installed.
+
+    Args:
+        package_names:
+            The names of the packages to check for.
+
+    Raises:
+        MissingPackage:
+            If any of the packages are not installed.
+    """
+    missing_packages = [
+        package for package in package_names if not is_installed(package_name=package)
+    ]
+    if missing_packages:
+        raise MissingPackage(package_names=missing_packages)

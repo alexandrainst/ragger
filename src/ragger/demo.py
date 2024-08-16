@@ -1,6 +1,5 @@
 """A Gradio demo of the RAG system."""
 
-import importlib.util
 import json
 import logging
 import os
@@ -31,9 +30,9 @@ from .constants import (
 from .data_models import Document, PersistentSharingConfig
 from .generator import OpenaiGenerator
 from .rag_system import RagSystem
-from .utils import format_answer
+from .utils import format_answer, is_installed
 
-if importlib.util.find_spec("gradio") is not None:
+if is_installed(package_name="gradio"):
     import gradio as gr
 
 if typing.TYPE_CHECKING:
