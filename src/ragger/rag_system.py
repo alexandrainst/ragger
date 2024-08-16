@@ -76,6 +76,68 @@ class RagSystem:
 
         self.compile()
 
+    @classmethod
+    def from_config(cls, config: dict[str, dict[str, typing.Any] | str]) -> "RagSystem":
+        """Create a RAG system from a configuration.
+
+        Args:
+            config:
+                The configuration to create the system from.
+
+        Returns:
+            The created RAG system.
+        """
+        # Component checks
+        components = ["document_store", "embedder", "embedding_store", "generator"]
+        for component in components:
+            assert component in config, f"Missing {component!r} in the configuration."
+            assert isinstance(
+                config[component], dict
+            ), f"{component!r} must be a dictionary."
+            assert (
+                "name" in config[component]
+            ), f"Missing 'name' key in {component!r} in the configuration."
+            assert getattr(
+                __import__(name=component), component
+            ), f"Unknown component {component!r} in the configuration."
+
+        # Checks for non-component keys
+        keys = ["language", "no_documents_reply"]
+        for key in config:
+            assert (
+                key in components + keys
+            ), f"Unknown key {key!r} in the configuration."
+            assert not isinstance(
+                config[key], dict
+            ), f"{key!r} must not be a dictionary in the configuration."
+            assert not key == "language" or config[key] in [
+                "da",
+                "en",
+            ], f"Invalid language {config[key]!r} in the configuration."
+
+        # Create the components
+        document_store = __import__(name="document_store").document_store(
+            **config["document_store"]
+        )
+        embedder = __import__(name="embedder").embedder(**config["embedder"])
+        embedding_store = __import__(name="embedding_store").embedding_store(
+            **config["embedding_store"]
+        )
+        generator = __import__(name="generator").generator(**config["generator"])
+
+        # Create the other arguments
+        language = config.get("language", "da")
+        no_documents_reply = config.get("no_documents_reply")
+
+        return cls(
+            document_store=document_store,
+            embedder=embedder,
+            embedding_store=embedding_store,
+            generator=generator,
+            language=language,  # type: ignore[arg-type]
+            no_documents_reply=no_documents_reply,  # type: ignore[arg-type]
+        )
+
     def compile(self, force: bool = False) -> "RagSystem":
         """Compile the RAG system.
 
