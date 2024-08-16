@@ -35,20 +35,10 @@ Installation with `poetry`:
 poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras default
 ```
 
-You can replace the `default` extra with any combination of the following, to install
-only the components you need:
-
-- `postgres`
-- `e5`
-- `e5-cpu` (same as `e5`, but without GPU support)
-- `vllm`
-- `openai`
-- `demo`
-- `all`
-
-For `pip`, this is done by comma-separating the extras (e.g., `ragger[vllm,demo]`),
-while for `poetry`, you add multiple `--extras` flags (e.g., `--extras vllm --extras
-demo`).
+The `default` extra will make sure that you have all the necessary dependencies for
+the default components (see below). If you want to use other components, you usually
+need to install additional dependencies - these will be listed to you when you try to
+use these components.
 
 
 ## Quick Start
