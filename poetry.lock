@@ -5260,4 +5260,4 @@ vllm = ["vllm"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "ab8c7275ff2911f7584a9ee44621f514077a2165e263f9178a09d003c797b1dd"
+content-hash = "c3725be04d2ecc8dba8aacfb230282914ed3ed1a77b500f44364b8c5fa4938e9"
