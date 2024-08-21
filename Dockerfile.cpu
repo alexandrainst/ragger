@@ -11,18 +11,24 @@ RUN apt-get -y update && \
 
 # Install Ragger
 # NOTE: Change the `default` extra to the extras you need for your RAG project.
-RUN --mount=type=ssh python3 -m pip install "ragger[default,cpu] @ git+ssh://git@github.com/alexandrainst/ragger.git@staging"
+RUN --mount=type=ssh python3 -m pip install "ragger[default,demo,cpu] @ git+ssh://git@github.com/alexandrainst/ragger.git@staging"
 
 ARG config
+ENV config=$config
 
-# Raise an error if no config is provided
+# Inform the user if no config is provided
 RUN if [ -z "$config" ]; then \
-        echo "No config provided. Please build the image as, e.g., \"docker build --ssh default --build-arg config=path/to/json/or/yaml/file.\""; \
-        exit 1; \
+        echo "No config provided. This means that the RAG system will need to be compiled when running the container, including the download of any potential models. If this is not what you wanted, then please build the image with '--build-arg config=path/to/json/or/yaml/file' set."; \
     fi
+
+# Copy the config file into the container
+COPY $config $config
+COPY .env .env
 
 # Compile the Ragger library
 RUN ragger-compile --config-file $config
 
 # Run the Ragger demo
+EXPOSE 7860
+ENV GRADIO_SERVER_NAME="0.0.0.0"
 CMD ragger-demo --config-file $config
