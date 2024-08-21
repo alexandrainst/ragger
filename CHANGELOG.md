@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [v2.0.0] - 2024-08-21
 ### Added
 - Added new `e5` and `cpu` extras, where `e5` installs the `sentence-transformers`
   dependency required for the `E5Embedder`, and you can add `cpu` to install the
