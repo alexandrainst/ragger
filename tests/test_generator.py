@@ -5,7 +5,7 @@ import typing
 import pytest
 import ragger.generator
 from ragger.data_models import GeneratedAnswer
-from ragger.exceptions import MissingPackage
+from ragger.exceptions import MissingExtra, MissingPackage
 from ragger.generator import Generator
 
 
@@ -25,7 +25,7 @@ def generator(
         generator_cls = request.param
         generator = generator_cls(**special_kwargs.get(generator_cls.__name__, {}))
         yield generator
-    except MissingPackage:
+    except (MissingPackage, MissingExtra):
         pytest.skip("The generator could not be imported.")
 
 
