@@ -11,7 +11,7 @@ RUN apt-get -y update && \
 
 # Install Ragger
 # NOTE: Change the `default` extra to the extras you need for your RAG project.
-RUN --mount=type=ssh python3 -m pip install ragger[default,cpu]@git+ssh://git@github.com/alexandrainst/ragger.git
+RUN --mount=type=ssh python3 -m pip install "ragger[default,cpu] @ git+ssh://git@github.com/alexandrainst/ragger.git@staging"
 
 ARG config
 
