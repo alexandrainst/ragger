@@ -26,26 +26,19 @@ Developer(s):
 Installation with `pip`:
 
 ```bash
-pip install ragger[all]@git+ssh://git@github.com/alexandrainst/ragger.git
+pip install ragger[default]@git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
 Installation with `poetry`:
 
 ```bash
-poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras all
+poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras default
 ```
 
-You can replace the `all` extra with any combination of the following, to install only
-the components you need:
-
-- `postgres`
-- `vllm`
-- `openai`
-- `demo`
-
-For `pip`, this is done by comma-separating the extras (e.g., `ragger[vllm,demo]`),
-while for `poetry`, you add multiple `--extras` flags (e.g., `--extras vllm --extras
-demo`).
+The `default` extra will make sure that you have all the necessary dependencies for
+the default components (see below). If you want to use other components, you usually
+need to install additional dependencies - these will be listed to you when you try to
+use these components.
 
 
 ## Quick Start
@@ -99,8 +92,8 @@ imported from `ragger.document_store`.
 
 Embedders are used to embed documents. These can all be imported from `ragger.embedder`.
 
-- `E5Embedder`: An embedder that uses an E5 model. (default)
-- `OpenAIEmbedder`: An embedder that uses the OpenAI Embeddings API.
+- `OpenAIEmbedder`: An embedder that uses the OpenAI Embeddings API. (default)
+- `E5Embedder`: An embedder that uses an E5 model.
 
 
 ### Embedding Stores

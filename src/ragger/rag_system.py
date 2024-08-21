@@ -2,7 +2,12 @@
 
 import logging
 import typing
+from pathlib import Path
 
+from . import document_store as document_store_module
+from . import embedder as embedder_module
+from . import embedding_store as embedding_store_module
+from . import generator as generator_module
 from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
 from .data_models import (
     Document,
@@ -13,10 +18,10 @@ from .data_models import (
     Generator,
 )
 from .document_store import JsonlDocumentStore
-from .embedder import E5Embedder
+from .embedder import OpenAIEmbedder
 from .embedding_store import NumpyEmbeddingStore
-from .generator import OpenaiGenerator
-from .utils import format_answer
+from .generator import OpenAIGenerator
+from .utils import format_answer, load_config
 
 logger = logging.getLogger(__package__)
 
@@ -51,14 +56,15 @@ class RagSystem:
                 The reply to use when no documents are found. If None, a default
                 reply is used, based on the chosen language. Defaults to None.
         """
+        # Use defaults if no components are provided
         if document_store is None:
             document_store = JsonlDocumentStore()
         if embedder is None:
-            embedder = E5Embedder()
+            embedder = OpenAIEmbedder()
         if embedding_store is None:
             embedding_store = NumpyEmbeddingStore(embedding_dim=embedder.embedding_dim)
         if generator is None:
-            generator = OpenaiGenerator(language=language)
+            generator = OpenAIGenerator(language=language)
 
         self.document_store = document_store
         self.embedder = embedder
@@ -74,6 +80,42 @@ class RagSystem:
         )
 
         self.compile()
+
+    @classmethod
+    def from_config(cls, config_file: str | Path | None = None) -> "RagSystem":
+        """Create a RAG system from a configuration.
+
+        Args:
+            config_file:
+                The path to the configuration file, which should be a JSON or YAML file.
+
+        Returns:
+            The created RAG system.
+        """
+        config = load_config(config_file=config_file)
+
+        kwargs: dict[str, typing.Any] = dict()
+
+        components = dict(
+            document_store=document_store_module,
+            embedder=embedder_module,
+            embedding_store=embedding_store_module,
+            generator=generator_module,
+        )
+        for component, module in components.items():
+            if component not in config:
+                continue
+            assert "name" in config[component], f"Missing 'name' key for {component}."
+            component_class = getattr(module, config[component]["name"])
+            config[component].pop("name")
+            kwargs[component] = component_class(**config[component])
+
+        if "language" in config:
+            kwargs["language"] = config["language"]
+        if "no_documents_reply" in config:
+            kwargs["no_documents_reply"] = config["no_documents_reply"]
+
+        return cls(**kwargs)
 
     def compile(self, force: bool = False) -> "RagSystem":
         """Compile the RAG system.

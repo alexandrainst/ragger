@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [Unreleased]
+### Added
+- Added new `e5` and `cpu` extras, where `e5` installs the `sentence-transformers`
+  dependency required for the `E5Embedder`, and you can add `cpu` to install the
+  CPU-version of `torch` to save disk space (note that this is not available on MacOS,
+  however).
+- Added new `from_config` class methods to `RagSystem` and `Demo` to create instances
+  from a configuration file (YAML or JSON). See the readme for more information.
+- Added new `ragger-demo` and `ragger-compile` command line interfaces to run the demo
+  and compile the RAG system, respectively. Compilation is useful in cases where you
+  want to ensure that all components have everything downloaded and installed before
+  use. Both of these take a single `--config-file` argument to specify a configuration
+  file. See the readme for more information.
+
+### Changed
+- Changed default embedder in `RagSystem` to `OpenAIEmbedder` from `E5Embedder`.
+
 ### Fixed
 - Raise `ImportError` when initialising `OpenAIEmbedder` without the `openai` package
   installed.

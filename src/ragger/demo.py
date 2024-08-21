@@ -1,6 +1,5 @@
 """A Gradio demo of the RAG system."""
 
-import importlib.util
 import json
 import logging
 import os
@@ -8,9 +7,6 @@ import sqlite3
 import typing
 import warnings
 from pathlib import Path
-
-from huggingface_hub import CommitScheduler, HfApi
-from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
 from .constants import (
     DANISH_DEMO_TITLE,
@@ -29,15 +25,21 @@ from .constants import (
     ENGLISH_THANK_YOU_FEEDBACK,
 )
 from .data_models import Document, PersistentSharingConfig
-from .generator import OpenaiGenerator
+from .generator import OpenAIGenerator
 from .rag_system import RagSystem
-from .utils import format_answer
+from .utils import format_answer, is_installed, load_config, raise_if_not_installed
 
-if importlib.util.find_spec("gradio") is not None:
+if is_installed(package_name="gradio"):
     import gradio as gr
+
+if is_installed(package_name="huggingface_hub"):
+    from huggingface_hub import CommitScheduler, HfApi
+    from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
 if typing.TYPE_CHECKING:
     import gradio as gr
+    from huggingface_hub import CommitScheduler, HfApi
+    from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError
 
 Message = str | None
 Exchange = tuple[Message, Message]
@@ -107,6 +109,11 @@ class Demo:
                 The configuration for persistent sharing of the demo. If None then no
                 persistent sharing is used. Defaults to None.
         """
+        raise_if_not_installed(
+            package_names=["gradio", "huggingface_hub"],
+            extras_mapping=dict(gradio="demo", huggingface_hub="demo"),
+        )
+
         title_mapping = dict(da=DANISH_DEMO_TITLE, en=ENGLISH_DEMO_TITLE)
         description_mapping = dict(da=DANISH_DESCRIPTION, en=ENGLISH_DESCRIPTION)
         feedback_instruction_mapping = dict(
@@ -208,6 +215,50 @@ class Demo:
 
         self.retrieved_documents: list[Document] = list()
         self.blocks: gr.Blocks | None = None
+
+    @classmethod
+    def from_config(
+        cls, rag_system: RagSystem, config_file: str | Path | None
+    ) -> "Demo":
+        """Create a demo from a configuration.
+
+        Args:
+            rag_system:
+                The RAG system.
+            config_file:
+                Path to the configuration file.
+
+        Returns:
+            The demo.
+        """
+        config = load_config(config_file=config_file)
+
+        kwargs: dict[str, typing.Any] = dict(rag_system=rag_system)
+        if "feedback_db_path" in config:
+            kwargs["feedback_db_path"] = Path(config["feedback_db_path"])
+        if "feedback_mode" in config:
+            kwargs["feedback_mode"] = config["feedback_mode"]
+        if "gradio_theme" in config:
+            kwargs["gradio_theme"] = config["gradio_theme"]
+        if "title" in config:
+            kwargs["title"] = config["title"]
+        if "description" in config:
+            kwargs["description"] = config["description"]
+        if "feedback_instruction" in config:
+            kwargs["feedback_instruction"] = config["feedback_instruction"]
+        if "thank_you_feedback" in config:
+            kwargs["thank_you_feedback"] = config["thank_you_feedback"]
+        if "input_box_placeholder" in config:
+            kwargs["input_box_placeholder"] = config["input_box_placeholder"]
+        if "submit_button_value" in config:
+            kwargs["submit_button_value"] = config["submit_button_value"]
+        if "no_documents_reply" in config:
+            kwargs["no_documents_reply"] = config["no_documents_reply"]
+        if "persistent_sharing_config" in config:
+            kwargs["persistent_sharing_config"] = PersistentSharingConfig(
+                **config["persistent_sharing_config"]
+            )
+        return cls(**kwargs)
 
     def build_demo(self) -> "gr.Blocks":
         """Build the demo.
@@ -343,7 +394,7 @@ class Demo:
             key=self.persistent_sharing_config.hf_token_variable_name,
             value=os.environ[self.persistent_sharing_config.hf_token_variable_name],
         )
-        if isinstance(self.rag_system.generator, OpenaiGenerator):
+        if isinstance(self.rag_system.generator, OpenAIGenerator):
             api.add_space_secret(
                 repo_id=self.persistent_sharing_config.space_repo_id,
                 key="OPENAI_API_KEY",

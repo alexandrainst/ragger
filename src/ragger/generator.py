@@ -1,6 +1,5 @@
 """Generation of an answer from a query and a list of relevant documents."""
 
-import importlib.util
 import json
 import logging
 import os
@@ -14,7 +13,6 @@ from dotenv import load_dotenv
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError
 from pydantic_core import from_json
-from transformers import AutoConfig, AutoTokenizer
 
 from .constants import (
     DANISH_SYSTEM_PROMPT,
@@ -23,11 +21,12 @@ from .constants import (
     ENGLISH_USER_PROMPT,
 )
 from .data_models import Document, GeneratedAnswer, Generator
+from .utils import is_installed, raise_if_not_installed
 
-if importlib.util.find_spec("httpx") is not None:
+if is_installed(package_name="httpx"):
     from httpx import ReadTimeout, RemoteProtocolError
 
-if importlib.util.find_spec("openai") is not None:
+if is_installed(package_name="openai"):
     from openai import APITimeoutError, InternalServerError, OpenAI, Stream
     from openai.types.chat import (
         ChatCompletionSystemMessageParam,
@@ -35,8 +34,11 @@ if importlib.util.find_spec("openai") is not None:
     )
     from openai.types.shared_params import ResponseFormatJSONObject
 
-if importlib.util.find_spec("tiktoken") is not None:
+if is_installed(package_name="tiktoken"):
     import tiktoken
+
+if is_installed(package_name="transformers"):
+    from transformers import AutoConfig, AutoTokenizer
 
 if typing.TYPE_CHECKING:
     import tiktoken
@@ -47,6 +49,7 @@ if typing.TYPE_CHECKING:
         ChatCompletionUserMessageParam,
     )
     from openai.types.shared_params import ResponseFormatJSONObject
+    from transformers import AutoConfig, AutoTokenizer
 
 
 load_dotenv()
@@ -55,7 +58,7 @@ load_dotenv()
 logger = logging.getLogger(__package__)
 
 
-class OpenaiGenerator(Generator):
+class OpenAIGenerator(Generator):
     """A generator that uses an OpenAI model to generate answers."""
 
     def __init__(
@@ -115,16 +118,11 @@ class OpenaiGenerator(Generator):
             additional_generation_kwargs (optional):
                 Additional keyword arguments to pass to the generation function.
         """
-        openai_not_installed = importlib.util.find_spec("openai") is None
-        tiktoken_not_installed = importlib.util.find_spec("tiktoken") is None
-        if openai_not_installed or tiktoken_not_installed:
-            raise ImportError(
-                "The `openai` extra is required to use the `OpenaiGenerator`. "
-                "Please install it by running `pip install ragger[openai]@"
-                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
-            )
+        raise_if_not_installed(
+            package_names=["openai", "tiktoken", "httpx"],
+            extras_mapping=dict(openai="openai", tiktoken="openai", httpx="openai"),
+        )
 
-        logging.getLogger("httpx").setLevel(logging.CRITICAL)
         self.model_id = model_id
         self.api_key = api_key
         self.host = host
@@ -320,7 +318,7 @@ class OpenaiGenerator(Generator):
         return generated_obj
 
 
-class VllmGenerator(OpenaiGenerator):
+class VllmGenerator(OpenAIGenerator):
     """A generator that uses a vLLM model to generate answers."""
 
     def __init__(
@@ -381,13 +379,7 @@ class VllmGenerator(OpenaiGenerator):
                 The timeout for the vLLM server to start, in seconds. Only relevant if
                 `host` has been set. Defaults to 60.
         """
-        vllm_not_installed = importlib.util.find_spec("vllm") is None
-        if vllm_not_installed:
-            raise ImportError(
-                "The `vllm` extra is required to use the `VllmGenerator`. "
-                "Please install it by running `pip install ragger[vllm]@"
-                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
-            )
+        raise_if_not_installed(package_names=["vllm"], extras_mapping=dict(vllm="vllm"))
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 

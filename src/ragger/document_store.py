@@ -1,6 +1,5 @@
 """Store and fetch documents from a database."""
 
-import importlib.util
 import json
 import sqlite3
 import typing
@@ -8,8 +7,9 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from .data_models import Document, DocumentStore, Index
+from .utils import is_installed, raise_if_not_installed
 
-if importlib.util.find_spec("psycopg2") is not None:
+if is_installed(package_name="psycopg2"):
     import psycopg2
 
 if typing.TYPE_CHECKING:
@@ -300,13 +300,11 @@ class PostgresDocumentStore(DocumentStore):
                 The name of the column in the table that stores the document text.
                 Defaults to "text".
         """
-        psycopg2_not_installed = importlib.util.find_spec("psycopg2") is None
-        if psycopg2_not_installed:
-            raise ImportError(
-                "The `postgres` extra is required to use the `PostgresDocumentStore`. "
-                "Please install it by running `pip install ragger[postgres]@"
-                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
-            )
+        raise_if_not_installed(
+            package_names=["psycopg2"],
+            extras_mapping=dict(psycopg2="postgres"),
+            installation_alias_mapping=dict(psycopg2="psycopg2-binary"),
+        )
 
         self.host = host
         self.port = port
@@ -333,7 +331,9 @@ class PostgresDocumentStore(DocumentStore):
             )
 
     @contextmanager
-    def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
+    def _connect(
+        self,
+    ) -> "typing.Generator[psycopg2.extensions.connection, None, None]":
         """Connect to the PostgreSQL database.
 
         Yields:

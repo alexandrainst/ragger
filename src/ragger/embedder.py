@@ -1,6 +1,5 @@
 """Embed documents using a pre-trained model."""
 
-import importlib.util
 import logging
 import os
 import re
@@ -8,17 +7,23 @@ import typing
 from functools import cache
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
-from transformers import AutoConfig, AutoTokenizer
 
 from .data_models import Document, Embedder, Embedding
-from .utils import get_device
+from .utils import get_device, is_installed, raise_if_not_installed
 
-if importlib.util.find_spec("openai") is not None:
+if is_installed(package_name="openai"):
     from openai import OpenAI
+
+if is_installed(package_name="sentence_transformers"):
+    from sentence_transformers import SentenceTransformer
+
+if is_installed(package_name="transformers"):
+    from transformers import AutoConfig, AutoTokenizer
 
 if typing.TYPE_CHECKING:
     from openai import OpenAI
+    from sentence_transformers import SentenceTransformer
+    from transformers import AutoConfig, AutoTokenizer
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -45,6 +50,11 @@ class E5Embedder(Embedder):
                 The device to use. If "auto", the device is chosen automatically based
                 on hardware availability. Defaults to "auto".
         """
+        raise_if_not_installed(
+            package_names=["sentence_transformers"],
+            extras_mapping=dict(sentence_transformers="e5"),
+        )
+
         self.embedder_model_id = embedder_model_id
         self.device = get_device() if device == "auto" else device
 
@@ -190,13 +200,9 @@ class OpenAIEmbedder(Embedder):
             max_retries (optional):
                 The maximum number of retries. Defaults to 3.
         """
-        openai_not_installed = importlib.util.find_spec("openai") is None
-        if openai_not_installed:
-            raise ImportError(
-                "The `openai` extra is required to use the `OpenaiEmbedder`. "
-                "Please install it by running `pip install ragger[openai]@"
-                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
-            )
+        raise_if_not_installed(
+            package_names=["openai"], extras_mapping=dict(openai="openai")
+        )
 
         self.embedder_model_id = embedder_model_id
         self.api_key = api_key

@@ -1,6 +1,5 @@
 """Store and fetch embeddings from a database."""
 
-import importlib.util
 import io
 import json
 import logging
@@ -21,8 +20,9 @@ from .data_models import (
     Generator,
     Index,
 )
+from .utils import is_installed, raise_if_not_installed
 
-if importlib.util.find_spec("psycopg2") is not None:
+if is_installed(package_name="psycopg2"):
     import psycopg2
 
 if typing.TYPE_CHECKING:
@@ -342,13 +342,11 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 The name of the column containing the embeddings. Defaults to
                 "embedding".
         """
-        psycopg2_not_installed = importlib.util.find_spec("psycopg2") is None
-        if psycopg2_not_installed:
-            raise ImportError(
-                "The `postgres` extra is required to use the `PostgresDocumentStore`. "
-                "Please install it by running `pip install ragger[postgres]@"
-                "git+ssh://git@github.com/alexandrainst/ragger.git` and try again."
-            )
+        raise_if_not_installed(
+            package_names=["psycopg2"],
+            extras_mapping=dict(psycopg2="postgres"),
+            installation_alias_mapping=dict(psycopg2="psycopg2-binary"),
+        )
 
         self.embedding_dim = embedding_dim
         self.host = host
@@ -392,7 +390,9 @@ class PostgresEmbeddingStore(EmbeddingStore):
             """)
 
     @contextmanager
-    def _connect(self) -> typing.Generator[psycopg2.extensions.connection, None, None]:
+    def _connect(
+        self,
+    ) -> "typing.Generator[psycopg2.extensions.connection, None, None]":
         """Connect to the PostgreSQL database.
 
         Yields:

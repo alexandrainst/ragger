@@ -13,9 +13,9 @@ from ragger.data_models import (
     Generator,
 )
 from ragger.document_store import JsonlDocumentStore
-from ragger.embedder import E5Embedder
+from ragger.embedder import OpenAIEmbedder
 from ragger.embedding_store import NumpyEmbeddingStore
-from ragger.generator import OpenaiGenerator
+from ragger.generator import OpenAIGenerator
 from ragger.rag_system import RagSystem
 
 
@@ -66,7 +66,7 @@ def default_document_store(documents) -> typing.Generator[DocumentStore, None, N
 @pytest.fixture(scope="session")
 def default_embedder() -> typing.Generator[Embedder, None, None]:
     """An embedder for testing."""
-    yield E5Embedder(embedder_model_id="intfloat/multilingual-e5-small")
+    yield OpenAIEmbedder()
 
 
 @pytest.fixture(scope="session")
@@ -80,7 +80,7 @@ def default_embedding_store() -> typing.Generator[EmbeddingStore, None, None]:
 @pytest.fixture(scope="session")
 def default_generator() -> typing.Generator[Generator, None, None]:
     """A generator for testing."""
-    yield OpenaiGenerator()
+    yield OpenAIGenerator()
 
 
 @pytest.fixture(scope="session")
