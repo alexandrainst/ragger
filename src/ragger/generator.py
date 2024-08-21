@@ -118,7 +118,10 @@ class OpenAIGenerator(Generator):
             additional_generation_kwargs (optional):
                 Additional keyword arguments to pass to the generation function.
         """
-        raise_if_not_installed(package_names=["openai", "tiktoken", "httpx"])
+        raise_if_not_installed(
+            package_names=["openai", "tiktoken", "httpx"],
+            extras_mapping=dict(openai="openai", tiktoken="openai", httpx="openai"),
+        )
 
         self.model_id = model_id
         self.api_key = api_key
@@ -376,7 +379,7 @@ class VllmGenerator(OpenAIGenerator):
                 The timeout for the vLLM server to start, in seconds. Only relevant if
                 `host` has been set. Defaults to 60.
         """
-        raise_if_not_installed(package_names=["vllm"])
+        raise_if_not_installed(package_names=["vllm"], extras_mapping=dict(vllm="vllm"))
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 

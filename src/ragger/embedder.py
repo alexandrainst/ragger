@@ -50,7 +50,10 @@ class E5Embedder(Embedder):
                 The device to use. If "auto", the device is chosen automatically based
                 on hardware availability. Defaults to "auto".
         """
-        raise_if_not_installed(package_names=["sentence_transformers"])
+        raise_if_not_installed(
+            package_names=["sentence_transformers"],
+            extras_mapping=dict(sentence_transformers="e5"),
+        )
 
         self.embedder_model_id = embedder_model_id
         self.device = get_device() if device == "auto" else device
@@ -197,7 +200,9 @@ class OpenAIEmbedder(Embedder):
             max_retries (optional):
                 The maximum number of retries. Defaults to 3.
         """
-        raise_if_not_installed(package_names=["openai"])
+        raise_if_not_installed(
+            package_names=["openai"], extras_mapping=dict(openai="openai")
+        )
 
         self.embedder_model_id = embedder_model_id
         self.api_key = api_key

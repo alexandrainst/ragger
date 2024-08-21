@@ -109,7 +109,10 @@ class Demo:
                 The configuration for persistent sharing of the demo. If None then no
                 persistent sharing is used. Defaults to None.
         """
-        raise_if_not_installed(package_names=["gradio", "huggingface_hub"])
+        raise_if_not_installed(
+            package_names=["gradio", "huggingface_hub"],
+            extras_mapping=dict(gradio="demo", huggingface_hub="demo"),
+        )
 
         title_mapping = dict(da=DANISH_DEMO_TITLE, en=ENGLISH_DEMO_TITLE)
         description_mapping = dict(da=DANISH_DESCRIPTION, en=ENGLISH_DESCRIPTION)

@@ -300,7 +300,11 @@ class PostgresDocumentStore(DocumentStore):
                 The name of the column in the table that stores the document text.
                 Defaults to "text".
         """
-        raise_if_not_installed(package_names=["psycopg2-binary"])
+        raise_if_not_installed(
+            package_names=["psycopg2-binary"],
+            extras_mapping=dict(psycopg2="postgres"),
+            installation_alias_mapping=dict(psycopg2="psycopg2-binary"),
+        )
 
         self.host = host
         self.port = port
