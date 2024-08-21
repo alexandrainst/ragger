@@ -18,7 +18,7 @@ click = "^8.1.7"
 pyyaml = "^6.0.2"
 tiktoken = { version = ">=0.7.0,<1.0.0", optional = true }
 openai = { version = "^1.23.2", optional = true }
-#vllm = { version = "^0.5.4", optional = true, markers = "sys_platform != 'darwin' and extra != 'cpu'" }
+vllm = { version = "^0.5.4", optional = true, markers = "sys_platform != 'darwin' and extra != 'cpu'" }
 torch = [
     { version = "^2.3.0", optional = true, source = "pypi", markers = "sys_platform == 'darwin' or extra != 'cpu'" },
     { version = "^2.3.0", optional = true, source = "torch_cpu", markers = "sys_platform != 'darwin' and extra == 'cpu'" },
