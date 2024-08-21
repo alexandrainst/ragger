@@ -37,8 +37,14 @@ poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras default
 
 The `default` extra will make sure that you have all the necessary dependencies for
 the default components (see below). If you want to use other components, you usually
-need to install additional dependencies - these will be listed to you when you try to
-use these components.
+need to change the extras from `default` to a combination of the following:
+
+- `postgres` to use anything PostgreSQL-related.
+- `openai` to use anything OpenAI-related.
+- `vllm` to use the vLLM generator.
+- `e5` to use the E5 embedder.
+- `demo` to use the demo server.
+- `cpu` to force a CPU-installation of torch, to save some disk space.
 
 
 ## Quick Start
@@ -108,6 +114,9 @@ generator:
 The config can also just be empty, to use the defaults. This is typically not
 recommended, however, as you would probably need to at least specify the configuration
 of your stores.
+
+Note that if you change the configuration then you might need extra dependencies when
+building your image.
 
 Note that some components need additional environment variables to be set, such as
 `OPENAI_API_KEY` for the `OpenAIEmbedder` and `OpenAIGenerator`. These can be set by
