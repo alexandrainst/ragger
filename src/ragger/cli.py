@@ -13,7 +13,7 @@ logger = logging.getLogger(__package__)
 
 @click.command()
 @click.option(
-    "--config_file",
+    "--config-file",
     "-c",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
@@ -33,7 +33,7 @@ def run_demo(config_file: Path | None) -> None:
 
 @click.command()
 @click.option(
-    "--config_file",
+    "--config-file",
     "-c",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
