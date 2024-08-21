@@ -87,22 +87,22 @@ is a YAML example):
 
 ```yaml
 document_store:
-	name: JsonlDocumentStore
-	<key>: <value>  # For any additional arguments to `JSONLDocumentStore`
+  name: JsonlDocumentStore
+  <key>: <value>  # For any additional arguments to `JSONLDocumentStore`
 
 embedder:
-	name: OpenAIEmbedder
-	<key>: <value>  # For any additional arguments to `OpenAIEmbedder`
+  name: OpenAIEmbedder
+  <key>: <value>  # For any additional arguments to `OpenAIEmbedder`
 
 embedding_store:
-	name: NumpyEmbeddingStore
-	<key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
+  name: NumpyEmbeddingStore
+  <key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
 
 generator:
-	name: OpenAIGenerator
-	<key>: <value>  # For any additional arguments to `OpenAIGenerator`
+  name: OpenAIGenerator
+  <key>: <value>  # For any additional arguments to `OpenAIGenerator`
 
-<key>: <value>  # For any additional arguments to `RagSystem`
+<key>: <value>  # For any additional arguments to `RagSystem` or `Demo`
 ```
 
 The config can also just be empty, to use the defaults. This is typically not
