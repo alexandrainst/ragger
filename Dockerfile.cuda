@@ -5,17 +5,19 @@ RUN apt-get -y update && \
     apt-get -y upgrade && \
     apt-get install -y gcc python3.11 python3-pip python3-dev openssh-client && \
     python3 -m pip install --upgrade pip wheel && \
+    mkdir -p -m 0600 ~/.ssh && \
+    ssh-keyscan github.com >> ~/.ssh/known_hosts && \
     apt-get clean
 
 # Install Ragger
-# NOTE: Change the `all` extra to the extras you need for your RAG project.
-RUN python3 -m pip install ragger[all]@git+ssh://git@github.com/alexandrainst/ragger.git
+# NOTE: Change the `default` extra to the extras you need for your RAG project.
+RUN --mount=type=ssh python3 -m pip install ragger[default]@git+ssh://git@github.com/alexandrainst/ragger.git
 
-ARG config=""
+ARG config
 
 # Raise an error if no config is provided
 RUN if [ -z "$config" ]; then \
-        echo "No config provided. Please build the image as, e.g., \"docker build --build-arg config='ragger-config.yaml'.\""; \
+        echo "No config provided. Please build the image as, e.g., \"docker build --ssh default --build-arg config=path/to/json/or/yaml/file.\""; \
         exit 1; \
     fi
 

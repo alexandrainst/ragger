@@ -70,6 +70,62 @@ demo.launch()
 ```
 
 
+## Run With Docker
+
+Ensure that your SSH keys are in your SSH agent, by running `ssh-add -L`. If not, you
+can add them by running `ssh-add`.
+
+You can run a CPU-based Docker container with the following commands:
+
+```bash
+docker build --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cpu .
+docker run ragger
+```
+
+Here `<config-name>` is the name of a YAML or JSON file, with the following format (here
+is a YAML example):
+
+```yaml
+document_store:
+	name: JsonlDocumentStore
+	<key>: <value>  # For any additional arguments to `JSONLDocumentStore`
+
+embedder:
+	name: OpenAIEmbedder
+	<key>: <value>  # For any additional arguments to `OpenAIEmbedder`
+
+embedding_store:
+	name: NumpyEmbeddingStore
+	<key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
+
+generator:
+	name: OpenAIGenerator
+	<key>: <value>  # For any additional arguments to `OpenAIGenerator`
+
+<key>: <value>  # For any additional arguments to `RagSystem`
+```
+
+The config can also just be empty, to use the defaults. This is typically not
+recommended, however, as you would probably need to at least specify the configuration
+of your stores.
+
+If you have any data on disk, you can simply mount it into the Docker container by
+adding the `-v` flag to the `docker run` command.
+
+To run a GPU-based Docker container, first ensure that the NVIDIA Container Toolkit is
+[installed](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#installation)
+and
+[configured](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#configuring-docker).
+Ensure that the the CUDA version stated at the top of the Dockerfile matches the CUDA
+version installed (which you can check using `nvidia-smi`). After that, we build the
+image as follows:
+
+```bash
+docker build --pull --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cuda .
+docker run --gpus 1 ragger
+```
+
+
 ## All Available Components
 
 Ragger supports the following components:
