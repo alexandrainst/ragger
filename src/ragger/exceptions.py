@@ -13,8 +13,8 @@ class MissingPackage(Exception):
         """
         self.package_names = package_names
         super().__init__(
-            f"Missing package(s): {', '.join(package_names)}. Please install them using "
-            "e.g., `pip install <package_name>`."
+            f"Missing package(s): {', '.join(package_names)}. Please install them "
+            f"using , e.g., `pip install {' '.join(package_names)}`."
         )
 
 
@@ -30,6 +30,6 @@ class MissingExtra(Exception):
         """
         self.extras = extras
         super().__init__(
-            f"Missing extra(s): {', '.join(extras)}. Please install them using "
-            "e.g., `pip install ragger[<extra_name>]`."
+            f"Missing extra(s): {', '.join(extras)}. Please install them "
+            f"using , e.g., `pip install ragger[{','.join(extras)}]`."
         )
