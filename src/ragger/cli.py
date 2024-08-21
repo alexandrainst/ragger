@@ -26,6 +26,7 @@ def run_demo(config_file: Path | None) -> None:
         config_file:
             Path to the configuration file.
     """
+    logger.info(f"Running the RAG demo with config file {config_file}.")
     rag_system = RagSystem.from_config(config_file=config_file)
     demo = Demo.from_config(rag_system=rag_system, config_file=config_file)
     demo.launch()
@@ -46,5 +47,6 @@ def compile(config_file: Path) -> None:
         config_file:
             Path to the configuration file.
     """
+    logger.info(f"Compiling the RAG system with config file {config_file}.")
     RagSystem.from_config(config_file=config_file)
     logger.info("RAG system compiled successfully.")
