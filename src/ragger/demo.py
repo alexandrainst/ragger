@@ -68,6 +68,8 @@ class Demo:
         submit_button_value: str | None = None,
         no_documents_reply: str | None = None,
         persistent_sharing_config: PersistentSharingConfig | None = None,
+        host: str = "localhost",
+        port: int = 7860,
     ) -> None:
         """Initialise the demo.
 
@@ -108,6 +110,10 @@ class Demo:
             persistent_sharing_config (optional):
                 The configuration for persistent sharing of the demo. If None then no
                 persistent sharing is used. Defaults to None.
+            host (optional):
+                The host to use. Defaults to "localhost".
+            port (optional):
+                The port to use. Defaults to 7860.
         """
         raise_if_not_installed(
             package_names=["gradio", "huggingface_hub"],
@@ -154,6 +160,8 @@ class Demo:
             no_documents_reply or no_documents_reply_mapping[rag_system.language]
         )
         self.persistent_sharing_config = persistent_sharing_config
+        self.host = host
+        self.port = port
 
         # Ensure the database file exists
         self.feedback_db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -344,6 +352,7 @@ class Demo:
     def launch(self) -> None:
         """Launch the demo."""
         self.blocks = self.build_demo()
+        assert self.blocks is not None
 
         # If we are storing the demo persistently we push it to the Hugging Face Hub,
         # unless we are already running this from the Hub
@@ -354,7 +363,8 @@ class Demo:
             self.push_to_hub()
             return
 
-        self.blocks.queue().launch()
+        logger.info(f"Launching the demo at {self.host}:{self.port}...")
+        self.blocks.queue().launch(server_name=self.host, server_port=self.port)
 
     def push_to_hub(self) -> None:
         """Pushes the demo to a Hugging Face Space on the Hugging Face Hub."""
