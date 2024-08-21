@@ -9,7 +9,7 @@ from pathlib import Path
 from .data_models import Document, DocumentStore, Index
 from .utils import is_installed, raise_if_not_installed
 
-if is_installed(package_name="psycopg2-binary"):
+if is_installed(package_name="psycopg2"):
     import psycopg2
 
 if typing.TYPE_CHECKING:
