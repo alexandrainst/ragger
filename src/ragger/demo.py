@@ -268,6 +268,10 @@ class Demo:
             kwargs["persistent_sharing_config"] = PersistentSharingConfig(
                 **config["persistent_sharing_config"]
             )
+        if "host" in config:
+            kwargs["host"] = config["host"]
+        if "port" in config:
+            kwargs["port"] = config["port"]
         return cls(**kwargs)
 
     def build_demo(self) -> "gr.Blocks":
