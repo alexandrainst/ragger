@@ -1,0 +1,28 @@
+FROM python:3.11-slim-bookworm
+
+WORKDIR /project
+
+# Install dependencies
+RUN apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get install -y gcc python3-dev git-all openssh-client && \
+    python3 -m pip install --upgrade pip wheel && \
+    apt-get clean
+
+# Install Ragger
+# NOTE: Change the `all` extra to the extras you need for your RAG project.
+RUN python3 -m pip install ragger[all,cpu]@git+ssh://git@github.com/alexandrainst/ragger.git
+
+ARG config
+
+# Raise an error if no config is provided
+RUN if [ -z "$config" ]; then \
+        echo "No config provided. Please build the image as, e.g., \"docker build --build-arg config='ragger-config.yaml'.\""; \
+        exit 1; \
+    fi
+
+# Compile the Ragger library
+RUN ragger-compile --config-file $config
+
+# Run the Ragger demo
+CMD ragger-demo --config-file $config
