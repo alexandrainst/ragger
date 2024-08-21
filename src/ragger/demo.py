@@ -68,8 +68,8 @@ class Demo:
         submit_button_value: str | None = None,
         no_documents_reply: str | None = None,
         persistent_sharing_config: PersistentSharingConfig | None = None,
-        host: str = "localhost",
-        port: int = 7860,
+        host: str | None = None,
+        port: int | None = None,
     ) -> None:
         """Initialise the demo.
 
@@ -111,9 +111,12 @@ class Demo:
                 The configuration for persistent sharing of the demo. If None then no
                 persistent sharing is used. Defaults to None.
             host (optional):
-                The host to use. Defaults to "localhost".
+                The host to use. Defaults to None, which uses the value of the
+                GRADIO_SERVER_NAME environment variable, or "localhost" if that is not
+                set.
             port (optional):
-                The port to use. Defaults to 7860.
+                The port to use. Defaults to None, which uses the first available port
+                starting from 7860.
         """
         raise_if_not_installed(
             package_names=["gradio", "huggingface_hub"],
