@@ -109,6 +109,11 @@ The config can also just be empty, to use the defaults. This is typically not
 recommended, however, as you would probably need to at least specify the configuration
 of your stores.
 
+Note that some components need additional environment variables to be set, such as
+`OPENAI_API_KEY` for the `OpenAIEmbedder` and `OpenAIGenerator`. These can be set by
+including a `.env` file in the working directory when building the Docker image, and it
+will be copied into the image and used during compilation and running of the demo.
+
 If you have any data on disk, you can simply mount it into the Docker container by
 adding the `-v` flag to the `docker run` command.
 

@@ -16,12 +16,13 @@ RUN --mount=type=ssh python3 -m pip install "ragger[default,demo,cpu] @ git+ssh:
 ARG config
 ENV config=$config
 
-# Inform the user if no config is provided
+# Raise an error if no config is provided
 RUN if [ -z "$config" ]; then \
-        echo "No config provided. This means that the RAG system will need to be compiled when running the container, including the download of any potential models. If this is not what you wanted, then please build the image with '--build-arg config=path/to/json/or/yaml/file' set."; \
+        echo "No config provided. Please build the image with '--build-arg config=path/to/json/or/yaml/file' set."; \
+        exit 1; \
     fi
 
-# Copy the config file into the container
+# Copy the config file and .env file into the container
 COPY $config $config
 COPY .env .env
 
