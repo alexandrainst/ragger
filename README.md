@@ -79,7 +79,7 @@ You can run a CPU-based Docker container with the following commands:
 
 ```bash
 docker build --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cpu .
-docker run ragger
+docker run --rm -p 7860:7860 ragger
 ```
 
 Here `<config-name>` is the name of a YAML or JSON file, with the following format (here
@@ -122,7 +122,7 @@ image as follows:
 
 ```bash
 docker build --pull --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cuda .
-docker run --gpus 1 ragger
+docker run --gpus 1 --rm -p 7860:7860 ragger
 ```
 
 
