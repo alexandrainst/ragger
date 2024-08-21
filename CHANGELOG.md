@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   want to ensure that all components have everything downloaded and installed before
   use. Both of these take a single `--config-file` argument to specify a configuration
   file. See the readme for more information.
+- Add `host` and `port` to `Demo`, which is used when the demo is launched.
 
 ### Changed
 - Changed default embedder in `RagSystem` to `OpenAIEmbedder` from `E5Embedder`.
