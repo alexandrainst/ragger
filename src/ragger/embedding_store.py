@@ -22,7 +22,7 @@ from .data_models import (
 )
 from .utils import is_installed, raise_if_not_installed
 
-if is_installed(package_name="psycopg2-binary"):
+if is_installed(package_name="psycopg2"):
     import psycopg2
 
 if typing.TYPE_CHECKING:
@@ -342,7 +342,10 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 The name of the column containing the embeddings. Defaults to
                 "embedding".
         """
-        raise_if_not_installed(package_names=["psycopg2-binary"])
+        raise_if_not_installed(
+            package_names=["psycopg2"],
+            installation_alias_mapping=dict(psycopg2="psycopg2-binary"),
+        )
 
         self.embedding_dim = embedding_dim
         self.host = host

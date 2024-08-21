@@ -96,21 +96,34 @@ def is_installed(package_name: str) -> bool:
     return importlib.util.find_spec(name=package_name) is not None
 
 
-def raise_if_not_installed(package_names: list[str]) -> None:
+def raise_if_not_installed(
+    package_names: list[str], installation_alias_mapping: dict[str, str] | None = None
+) -> None:
     """Raise an exception if any of the packages are not installed.
 
     Args:
         package_names:
             The names of the packages to check for.
+        installation_alias_mapping:
+            A mapping from package names to installation aliases, if a package is not
+            installed with `pip install PACKAGE_NAME`. Can be None if no aliases are
+            needed.
 
     Raises:
         MissingPackage:
             If any of the packages are not installed.
     """
+    if installation_alias_mapping is None:
+        installation_alias_mapping = dict()
+
     missing_packages = [
         package for package in package_names if not is_installed(package_name=package)
     ]
     if missing_packages:
+        missing_packages = [
+            installation_alias_mapping.get(package, package)
+            for package in missing_packages
+        ]
         raise MissingPackage(package_names=missing_packages)
 
 
