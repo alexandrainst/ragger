@@ -76,12 +76,12 @@ demo.launch()
 ```
 
 
-## Run With Docker
+## Run RAG Demo With Docker
 
 Ensure that your SSH keys are in your SSH agent, by running `ssh-add -L`. If not, you
 can add them by running `ssh-add`.
 
-You can run a CPU-based Docker container with the following commands:
+You can run a CPU-based Docker container with a RAG demo with the following commands:
 
 ```bash
 docker build --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cpu .
