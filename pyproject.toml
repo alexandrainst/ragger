@@ -25,7 +25,7 @@ torch = [
 ]
 psycopg2-binary = { version = "^2.9.9", optional = true }
 sentence_transformers = { version = "^2.7.0", optional = true }
-gradio = { version = "^4.27.0", optional = true }
+gradio = { version = "^4.44.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.1.1"
