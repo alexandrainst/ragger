@@ -3,6 +3,7 @@
 import typing
 
 import pytest
+
 from ragger.data_models import Document
 
 

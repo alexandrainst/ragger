@@ -3,6 +3,7 @@
 import typing
 
 import pytest
+
 import ragger.generator
 from ragger.data_models import GeneratedAnswer
 from ragger.exceptions import MissingExtra, MissingPackage

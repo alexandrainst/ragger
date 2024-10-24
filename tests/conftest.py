@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
+
 from ragger.data_models import (
     Document,
     DocumentStore,

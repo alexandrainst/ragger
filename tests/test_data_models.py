@@ -3,8 +3,9 @@
 from abc import ABC
 from pathlib import Path
 
-import ragger.data_models
 from pydantic import BaseModel, ConfigDict, Field
+
+import ragger.data_models
 
 
 def test_all_classes_are_either_pydantic_models_or_abcs():

@@ -4,6 +4,7 @@ import typing
 
 import numpy as np
 import pytest
+
 import ragger.embedding_store
 from ragger.data_models import Embedding
 from ragger.embedding_store import EmbeddingStore
