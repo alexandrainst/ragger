@@ -13,27 +13,27 @@ license = "Proprietary"
 python = ">=3.10,<4.0"
 numpy = ">=1.26.4"
 python-dotenv = ">=1.0.1"
-pydantic = ">=2.8.2"
+pydantic = ">=2.9.2"
 click = ">=8.1.7"
 pyyaml = ">=6.0.2"
-tiktoken = { version = ">=0.7.0", optional = true }
-openai = { version = ">=1.23.2", optional = true }
-vllm = { version = ">=0.5.4", optional = true, markers = "sys_platform != 'darwin' and extra != 'cpu'" }
+tiktoken = { version = ">=0.8.0", optional = true }
+openai = { version = ">=1.52.2", optional = true }
+vllm = { version = ">=0.5.5", optional = true, markers = "sys_platform != 'darwin' and extra != 'cpu'" }
 torch = [
-    { version = ">=2.3.0", optional = true, source = "pypi", markers = "sys_platform == 'darwin' or extra != 'cpu'" },
-    { version = ">=2.3.0", optional = true, source = "torch_cpu", markers = "sys_platform != 'darwin' and extra == 'cpu'" },
+    { version = ">=2.4.0", optional = true, source = "pypi", markers = "sys_platform == 'darwin' or extra != 'cpu'" },
+    { version = ">=2.4.0", optional = true, source = "torch_cpu", markers = "sys_platform != 'darwin' and extra == 'cpu'" },
 ]
-psycopg2-binary = { version = ">=2.9.9", optional = true }
-sentence_transformers = { version = ">=2.7.0", optional = true }
-gradio = { version = ">=4.27.0", optional = true }
+psycopg2-binary = { version = ">=2.9.10", optional = true }
+sentence_transformers = { version = ">=3.2.1", optional = true }
+gradio = { version = ">=5.4.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
-pytest = ">=8.1.1"
-pytest-cov = ">=4.1.0"
-pre-commit = ">=3.6.2"
-readme-coverage-badger = ">=0.1.2"
-ruff = ">=0.3.2"
-mypy = ">=1.9.0"
+pytest = ">=8.3.3"
+pytest-cov = ">=5.0.0"
+pre-commit = ">=4.0.1"
+readme-coverage-badger = ">=0.1.1"
+ruff = ">=0.7.1"
+mypy = ">=1.13.0"
 nbstripout = ">=0.7.1"
 
 [tool.poetry.extras]
