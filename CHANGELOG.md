@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 
 ## [Unreleased]
+### Added
+- Now uses structured generation with OpenAI models, which improves the quality of the
+  generated text a tiny bit.
+
 ### Changed
 - Updated the minimum bounds on the following dependencies:
 	- `pydantic` from `2.8.2` to `2.9.2`
