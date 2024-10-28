@@ -59,11 +59,3 @@ def test_error_if_not_json(generator, query, documents) -> None:
     expected = GeneratedAnswer(answer="Not JSON-decodable.", sources=[])
     assert answer == expected
     generator.max_output_tokens = old_max_output_tokens
-
-
-def test_error_if_not_valid_types(generator, query, documents) -> None:
-    """Test that the generator raises an error if the JSON isn't valid."""
-    bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
-    answer = generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
-    expected = GeneratedAnswer(answer="JSON not valid.", sources=[])
-    assert answer == expected

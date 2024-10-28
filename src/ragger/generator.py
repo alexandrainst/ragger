@@ -10,7 +10,6 @@ from time import sleep
 
 import torch
 from dotenv import load_dotenv
-from openai.types.chat import ChatCompletionMessageParam
 from pydantic import ValidationError
 from pydantic_core import from_json
 
@@ -27,12 +26,24 @@ if is_installed(package_name="httpx"):
     from httpx import ReadTimeout, RemoteProtocolError
 
 if is_installed(package_name="openai"):
-    from openai import APITimeoutError, InternalServerError, OpenAI, Stream
+    from openai import (
+        APITimeoutError,
+        InternalServerError,
+        LengthFinishReasonError,
+        OpenAI,
+    )
+    from openai.lib.streaming.chat import (
+        ChatCompletionStreamManager,
+        ChunkEvent,
+        ContentDeltaEvent,
+        ContentDoneEvent,
+    )
     from openai.types.chat import (
+        ChatCompletionMessageParam,
         ChatCompletionSystemMessageParam,
         ChatCompletionUserMessageParam,
+        ParsedChatCompletion,
     )
-    from openai.types.shared_params import ResponseFormatJSONObject
 
 if is_installed(package_name="tiktoken"):
     import tiktoken
@@ -43,12 +54,24 @@ if is_installed(package_name="transformers"):
 if typing.TYPE_CHECKING:
     import tiktoken
     from httpx import ReadTimeout, RemoteProtocolError
-    from openai import APITimeoutError, InternalServerError, OpenAI, Stream
+    from openai import (
+        APITimeoutError,
+        InternalServerError,
+        LengthFinishReasonError,
+        OpenAI,
+    )
+    from openai.lib.streaming.chat import (
+        ChatCompletionStreamManager,
+        ChunkEvent,
+        ContentDeltaEvent,
+        ContentDoneEvent,
+    )
     from openai.types.chat import (
+        ChatCompletionMessageParam,
         ChatCompletionSystemMessageParam,
         ChatCompletionUserMessageParam,
+        ParsedChatCompletion,
     )
-    from openai.types.shared_params import ResponseFormatJSONObject
     from transformers import AutoConfig, AutoTokenizer
 
 
@@ -213,24 +236,46 @@ class OpenAIGenerator(Generator):
                 continue
 
             try:
-                model_output = self.client.chat.completions.create(
-                    messages=messages,
-                    model=self.model_id,
-                    max_tokens=self.max_output_tokens,
-                    temperature=self.temperature,
-                    stream=self.stream,
-                    stop=["</answer>"],
-                    response_format=ResponseFormatJSONObject(type="json_object"),
-                    extra_body=self.additional_generation_kwargs,
+                model_output: (
+                    ChatCompletionStreamManager[GeneratedAnswer] | ParsedChatCompletion
                 )
+                if self.stream:
+                    model_output = self.client.beta.chat.completions.stream(
+                        messages=messages,
+                        model=self.model_id,
+                        max_completion_tokens=self.max_output_tokens,
+                        temperature=self.temperature,
+                        stop=["</answer>"],
+                        response_format=GeneratedAnswer,
+                        extra_body=self.additional_generation_kwargs,
+                    )
+                else:
+                    model_output = self.client.beta.chat.completions.parse(
+                        messages=messages,
+                        model=self.model_id,
+                        max_completion_tokens=self.max_output_tokens,
+                        temperature=self.temperature,
+                        stop=["</answer>"],
+                        response_format=GeneratedAnswer,
+                        extra_body=self.additional_generation_kwargs,
+                    )
             except (InternalServerError, APITimeoutError):
                 continue
 
+            # When model output is too long
+            except LengthFinishReasonError:
+                logger.error(
+                    f"Model output too long (>{self.max_output_tokens} tokens) "
+                    f"for query: {query}"
+                )
+                return GeneratedAnswer(sources=[], answer="Not JSON-decodable.")
+
             # If we are streaming we try to get a sample from the stream to check if
             # the prompt is too long, as we cannot check for this in advance
-            if isinstance(model_output, Stream):
+            if isinstance(model_output, ChatCompletionStreamManager):
                 try:
-                    next(iter(model_output))
+                    with model_output as stream:
+                        next(stream)
                 except (RemoteProtocolError, ReadTimeout):
                     continue
 
@@ -238,59 +283,76 @@ class OpenAIGenerator(Generator):
         else:
             return GeneratedAnswer(sources=[], answer="Prompt too long.")
 
-        if isinstance(model_output, Stream):
+        if isinstance(model_output, ChatCompletionStreamManager):
 
             def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
                 generated_output = ""
-                generated_obj = GeneratedAnswer(sources=[])
-                for chunk in model_output:
-                    chunk_str = chunk.choices[0].delta.content
-                    if chunk_str is None:
-                        continue
-                    generated_output += chunk_str
-                    try:
-                        generated_dict = from_json(
-                            data=generated_output, allow_partial=True
-                        )
-
-                        # If the sources in the generated JSON dict is empty, but the
-                        # final closing square bracket hasn't been generated yet, this
-                        # means that the `from_json` function has closed this off
-                        # itself, which is not allowed here, as this would trigger the
-                        # "cannot answer" answer. To prevent this, we check for this
-                        # and skip the next chunk if this is the case.
-                        first_source_not_generated_yet = (
-                            "sources" in generated_dict
-                            and not generated_dict["sources"]
-                            and '"sources": []' not in generated_output
-                        )
-                        if first_source_not_generated_yet:
+                generated_obj = GeneratedAnswer(answer="", sources=[])
+                with model_output as stream:
+                    for chunk_event in stream:
+                        if isinstance(chunk_event, ContentDeltaEvent):
+                            chunk_str = chunk_event.delta
+                            generated_output += chunk_str
+                        elif isinstance(chunk_event, ChunkEvent):
+                            chunk_str_or_none = chunk_event.chunk.choices[
+                                0
+                            ].delta.content
+                            if chunk_str_or_none is None:
+                                continue
+                            generated_output += chunk_str_or_none
+                        elif isinstance(chunk_event, ContentDoneEvent):
+                            generated_output = chunk_event.content
+                        else:
+                            logger.error(
+                                "Unknown event type received during generation: "
+                                f"{chunk_event}. Skipping."
+                            )
                             continue
-
-                        # If the answer is being written, the JSON dict will look like
-                        #   '{"sources": [...], "answer": "Some text'
-                        # As the answer doesn't have a closing quote, the `from_json`
-                        # function will not include the `answer` key in the resulting
-                        # dict. To ensure that the partial answer *is* included in the
-                        # dict, we check if the model is currently writing the answer
-                        # and if so, we add a closing quote to the generated output
-                        # before attempting to parse it.
-                        answer_partially_generated = (
-                            "answer" not in generated_dict
-                            and '"answer"' in generated_output
-                        )
-                        if answer_partially_generated:
+                        try:
                             generated_dict = from_json(
-                                data=generated_output + '"', allow_partial=True
+                                data=generated_output, allow_partial=True
                             )
 
-                    except ValueError:
-                        continue
-                    try:
-                        generated_obj = GeneratedAnswer.model_validate(generated_dict)
-                        yield generated_obj
-                    except ValidationError:
-                        continue
+                            # If the sources in the generated JSON dict is empty, but the
+                            # final closing square bracket hasn't been generated yet, this
+                            # means that the `from_json` function has closed this off
+                            # itself, which is not allowed here, as this would trigger the
+                            # "cannot answer" answer. To prevent this, we check for this
+                            # and skip the next chunk if this is the case.
+                            first_source_not_generated_yet = (
+                                "sources" in generated_dict
+                                and not generated_dict["sources"]
+                                and '"sources": []' not in generated_output
+                            )
+                            if first_source_not_generated_yet:
+                                continue
+
+                            # If the answer is being written, the JSON dict will look like
+                            #   '{"sources": [...], "answer": "Some text'
+                            # As the answer doesn't have a closing quote, the `from_json`
+                            # function will not include the `answer` key in the resulting
+                            # dict. To ensure that the partial answer *is* included in the
+                            # dict, we check if the model is currently writing the answer
+                            # and if so, we add a closing quote to the generated output
+                            # before attempting to parse it.
+                            answer_partially_generated = (
+                                "answer" not in generated_dict
+                                and '"answer"' in generated_output
+                            )
+                            if answer_partially_generated:
+                                generated_dict = from_json(
+                                    data=generated_output + '"', allow_partial=True
+                                )
+
+                        except ValueError:
+                            continue
+                        try:
+                            generated_obj = GeneratedAnswer.model_validate(
+                                generated_dict
+                            )
+                            yield generated_obj
+                        except ValidationError:
+                            continue
 
             return streamer()
         else:
@@ -308,12 +370,7 @@ class OpenAIGenerator(Generator):
             logger.error(f"Could not decode JSON from model output: {generated_output}")
             return GeneratedAnswer(sources=[], answer="Not JSON-decodable.")
 
-        try:
-            generated_obj = GeneratedAnswer.model_validate(generated_dict)
-        except ValidationError:
-            logger.error(f"Could not validate model output: {generated_dict}")
-            return GeneratedAnswer(sources=[], answer="JSON not valid.")
-
+        generated_obj = GeneratedAnswer.model_validate(generated_dict)
         logger.info(f"Generated answer: {generated_obj.answer!r}")
         return generated_obj
 
