@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Changed
+- Updated the minimum bounds on the following dependencies:
+	- `pydantic` from `2.8.2` to `2.9.2`
+	- `tiktoken` from `0.7.0` to `0.8.0`
+	- `openai` from `1.23.2` to `1.52.2`
+	- `vllm` from `0.5.4` to `0.5.5`
+	- `torch` from `2.3.0` to `2.4.0`
+	- `psycopg2-binary` from `2.9.9` to `2.9.10`
+	- `sentence-transformers` from `2.7.0` to `3.2.1`
+	- `gradio` from `4.27.0` to `5.4.0`
+- Removed all upper bounds from dependencies, to future-proof the package.
+
+
 ## [v2.0.0] - 2024-08-21
 ### Added
 - Added new `e5` and `cpu` extras, where `e5` installs the `sentence-transformers`
