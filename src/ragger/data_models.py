@@ -4,7 +4,6 @@ import typing
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-import annotated_types
 import numpy as np
 from pydantic import BaseModel, ConfigDict
 
@@ -58,8 +57,8 @@ class Embedding(BaseModel):
 class GeneratedAnswer(BaseModel):
     """A generated answer to a question."""
 
-    sources: list[typing.Annotated[Index, annotated_types.Len(min_length=1)]]
-    answer: str = ""
+    sources: list[Index]
+    answer: str
 
 
 class DocumentStore(ABC):
