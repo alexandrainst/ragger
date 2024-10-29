@@ -52,7 +52,7 @@ class E5Embedder(Embedder):
         """
         raise_if_not_installed(
             package_names=["sentence_transformers"],
-            extras_mapping=dict(sentence_transformers="e5"),
+            extras_mapping=dict(sentence_transformers="onprem"),
         )
 
         self.embedder_model_id = embedder_model_id

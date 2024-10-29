@@ -51,9 +51,31 @@ if is_installed(package_name="tiktoken"):
 if is_installed(package_name="transformers"):
     from transformers import AutoConfig, AutoTokenizer
 
+if is_installed(package_name="llama_cpp"):
+    from llama_cpp import (
+        ChatCompletionRequestMessage,
+        ChatCompletionRequestSystemMessage,
+        ChatCompletionRequestUserMessage,
+        Llama,
+    )
+
+if is_installed(package_name="outlines"):
+    from outlines.models.transformers import TransformerTokenizer
+    from outlines.processors.structured import JSONLogitsProcessor
+
+if is_installed(package_name="huggingface_hub"):
+    from huggingface_hub import HfApi
+
 if typing.TYPE_CHECKING:
     import tiktoken
     from httpx import ReadTimeout, RemoteProtocolError
+    from huggingface_hub import HfApi
+    from llama_cpp import (
+        ChatCompletionRequestMessage,
+        ChatCompletionRequestSystemMessage,
+        ChatCompletionRequestUserMessage,
+        Llama,
+    )
     from openai import (
         APITimeoutError,
         InternalServerError,
@@ -72,7 +94,11 @@ if typing.TYPE_CHECKING:
         ChatCompletionUserMessageParam,
         ParsedChatCompletion,
     )
+    from outlines.models.transformers import TransformerTokenizer
+    from outlines.processors.structured import JSONLogitsProcessor
     from transformers import AutoConfig, AutoTokenizer
+
+    from .data_models import DocumentStore, Embedder, EmbeddingStore
 
 
 load_dotenv()
@@ -438,7 +464,7 @@ class VllmGenerator(OpenAIGenerator):
                 The timeout for the vLLM server to start, in seconds. Only relevant if
                 `host` has been set. Defaults to 60.
         """
-        raise_if_not_installed(package_names=["vllm"], extras_mapping=dict(vllm="vllm"))
+        raise_if_not_installed(package_names=["vllm", "transformers"])
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
@@ -597,3 +623,283 @@ class VllmGenerator(OpenAIGenerator):
         if hasattr(self, "server_process") and self.server_process is not None:
             self.server_process.kill()
         del self
+
+
+class GGUFGenerator(Generator):
+    """A generator to generate answers from a model in GGUF format."""
+
+    def __init__(
+        self,
+        model_id: str = "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF",
+        quant_type: str | None = None,
+        max_input_tokens: int = 130_000,
+        max_output_tokens: int = 256,
+        temperature: float = 0.0,
+        stream: bool = False,
+        language: typing.Literal["da", "en"] = "da",
+        system_prompt: str | None = None,
+        prompt: str | None = None,
+        **additional_generation_kwargs,
+    ) -> None:
+        """Initialise the GGUF generator.
+
+        Args:
+            model_id (optional):
+                The model ID of the generative model to use. Defaults to
+                "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF:Q8_0".
+            quant_type (optional):
+                The quantization type to use. If None, we will use any of the GGUF
+                files available. Defaults to None.
+            max_input_tokens (optional):
+                The maximum number of tokens allowed in the input. Defaults to
+                130,000.
+            max_output_tokens (optional):
+                The maximum number of tokens allowed in the output. Defaults to
+                256.
+            temperature (optional):
+                The temperature of the model. Defaults to 0.0.
+            stream (optional):
+                Whether to stream the output. Defaults to False.
+            language (optional):
+                The language of the model. Can be "da" (Danish) or "en" (English).
+                Defaults to "da".
+            system_prompt (optional):
+                The system prompt to use. If None, the default system prompt
+                corresponding to the chosen language will be used.
+            prompt (optional):
+                The prompt to use. If None, the default prompt corresponding to
+                the chosen language will be used.
+            additional_generation_kwargs (optional):
+                Additional keyword arguments to pass to the generation function.
+        """
+        raise_if_not_installed(
+            package_names=["outlines", "llama_cpp", "transformers"],
+            installation_alias_mapping=dict(llama_cpp="llama_cpp_python"),
+            extras_mapping=dict(
+                outlines="onprem", llama_cpp="onprem", transformers="onprem"
+            ),
+        )
+        self.model_id = model_id
+        self.quant_type = quant_type
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+        self.temperature = temperature
+        self.stream = stream
+        self.language = language
+        self.additional_generation_kwargs = additional_generation_kwargs
+
+        # Set the system and user prompts based on the language
+        system_prompt_mapping = dict(da=DANISH_SYSTEM_PROMPT, en=ENGLISH_SYSTEM_PROMPT)
+        user_prompt_mapping = dict(da=DANISH_USER_PROMPT, en=ENGLISH_USER_PROMPT)
+        self.system_prompt = system_prompt or system_prompt_mapping[self.language]
+        self.prompt = prompt or user_prompt_mapping[self.language]
+
+        # Load logits processor
+        self.base_model_id = self._get_base_model_id()
+        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_id)
+        self.logits_processor = JSONLogitsProcessor(
+            schema=GeneratedAnswer, tokenizer=TransformerTokenizer(self.tokenizer)
+        )
+
+        # Load model
+        try:
+            glob_pattern = "".join(
+                f"[{char.upper()}{char.lower()}]" if char.isalpha() else char
+                for char in self.quant_type or ""
+            )
+            logger.info(f"Loading model with quantization type {self.quant_type!r}...")
+            self.model = Llama.from_pretrained(
+                repo_id=self.model_id, filename=f"*{glob_pattern}.gguf"
+            )
+        except ValueError as e:
+            if "Multiple files found" not in str(e):
+                raise e
+            for num_bits in range(8, 0, -1):
+                try:
+                    logger.info(f"Loading model with quantization type Q{num_bits}*...")
+                    self.model = Llama.from_pretrained(
+                        repo_id=self.model_id, filename=f"*[Qq]{num_bits}*.gguf"
+                    )
+                    break
+                except ValueError:
+                    logger.error(
+                        f"Could not find model with quantization type Q{num_bits}. "
+                        "Trying with a lower quantization type..."
+                    )
+                    continue
+
+    def _get_base_model_id(self) -> str:
+        """Get the base model ID.
+
+        Returns:
+            The base model ID.
+
+        Raises:
+            ValueError:
+                If the model ID is not in the correct "author/model_name" format.
+        """
+        if self.model_id.count("/") != 1:
+            raise ValueError(
+                f"Model ID {self.model_id!r} is not in the correct format. "
+                "It should be in the format 'author/model_name'."
+            )
+        author, model_name = self.model_id.split("/")
+
+        api = HfApi()
+        models = [
+            model
+            for model in api.list_models(author=author, model_name=model_name)
+            if model.id == self.model_id
+        ]
+
+        # Check that the model exists. If it does not then raise an error
+        if len(models) == 0:
+            logger.error(
+                f"Could not find model with ID {self.model_id} on the Hugging Face "
+                "Hub. Using the model ID as the base model ID."
+            )
+            return self.model_id
+
+        base_model_tag_candidates = [
+            tag
+            for tag in models[0].tags or list()
+            if tag.startswith("base_model:") and tag.count(":") == 1
+        ]
+        if not base_model_tag_candidates:
+            logger.error(
+                f"Could not find a base model tag for model with ID {self.model_id}. "
+                "Using the model ID as the base model ID."
+            )
+            return self.model_id
+
+        return base_model_tag_candidates[0].split(":")[1]
+
+    def compile(
+        self,
+        document_store: "DocumentStore",
+        embedder: "Embedder",
+        embedding_store: "EmbeddingStore",
+    ) -> None:
+        """Compile the embedder.
+
+        Args:
+            document_store:
+                The document store to use.
+            embedder:
+                The embedder to use.
+            embedding_store:
+                The embedding store to use.
+        """
+        raise NotImplementedError
+
+    def generate(
+        self, query: str, documents: list[Document]
+    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
+        """Generate an answer from a query and relevant documents.
+
+        Args:
+            query:
+                The query to answer.
+            documents:
+                The relevant documents.
+
+        Returns:
+            The generated answer.
+        """
+        messages: list[ChatCompletionRequestMessage] = [
+            ChatCompletionRequestSystemMessage(
+                role="system", content=self.system_prompt
+            ),
+            ChatCompletionRequestUserMessage(
+                role="user",
+                content=self.prompt.format(
+                    documents=json.dumps(
+                        [document.model_dump() for document in documents]
+                    ),
+                    query=query,
+                ),
+            ),
+        ]
+        model_output = self.model.create_chat_completion(
+            messages=messages,
+            temperature=self.temperature,
+            stream=self.stream,
+            logits_processor=self.logits_processor,
+        )
+        if isinstance(model_output, dict):
+            generated_output = model_output["choices"][0]["message"]["content"]
+            if generated_output is None:
+                return GeneratedAnswer(sources=[], answer="No answer generated.")
+            generated_output = generated_output.strip()
+
+            try:
+                generated_dict = json.loads(generated_output)
+            except json.JSONDecodeError:
+                logger.error(
+                    f"Could not decode JSON from model output: {generated_output}"
+                )
+                return GeneratedAnswer(sources=[], answer="Not JSON-decodable.")
+
+            generated_obj = GeneratedAnswer.model_validate(generated_dict)
+            logger.info(f"Generated answer: {generated_obj.answer!r}")
+            return generated_obj
+
+        else:
+
+            def streamer() -> typing.Generator[GeneratedAnswer, None, None]:
+                generated_output = ""
+                generated_obj = GeneratedAnswer(answer="", sources=[])
+                for chunk in model_output:
+                    delta = chunk["choices"][0]["delta"]
+                    if "content" not in delta:
+                        continue
+                    delta_content = delta["content"]
+                    if delta_content is None:
+                        continue
+                    generated_output += delta_content
+
+                    try:
+                        generated_dict = from_json(
+                            data=generated_output, allow_partial=True
+                        )
+
+                        # If the sources in the generated JSON dict is empty, but the
+                        # final closing square bracket hasn't been generated yet, this
+                        # means that the `from_json` function has closed this off
+                        # itself, which is not allowed here, as this would trigger the
+                        # "cannot answer" answer. To prevent this, we check for this and
+                        # skip the next chunk if this is the case.
+                        first_source_not_generated_yet = (
+                            "sources" in generated_dict
+                            and not generated_dict["sources"]
+                            and '"sources": []' not in generated_output
+                        )
+                        if first_source_not_generated_yet:
+                            continue
+
+                        # If the answer is being written, the JSON dict will look like
+                        # '{"sources": [...], "answer": "Some text' As the answer
+                        # doesn't have a closing quote, the `from_json` function will
+                        # not include the `answer` key in the resulting dict. To ensure
+                        # that the partial answer *is* included in the dict, we check if
+                        # the model is currently writing the answer and if so, we add a
+                        # closing quote to the generated output before attempting to
+                        # parse it.
+                        answer_partially_generated = (
+                            "answer" not in generated_dict
+                            and '"answer"' in generated_output
+                        )
+                        if answer_partially_generated:
+                            generated_dict = from_json(
+                                data=generated_output + '"', allow_partial=True
+                            )
+                    except ValueError:
+                        continue
+
+                    try:
+                        generated_obj = GeneratedAnswer.model_validate(generated_dict)
+                        yield generated_obj
+                    except ValidationError:
+                        continue
+
+            return streamer()
