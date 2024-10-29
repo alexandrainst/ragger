@@ -313,12 +313,13 @@ class OpenAIGenerator(Generator):
                                 data=generated_output, allow_partial=True
                             )
 
-                            # If the sources in the generated JSON dict is empty, but the
-                            # final closing square bracket hasn't been generated yet, this
-                            # means that the `from_json` function has closed this off
-                            # itself, which is not allowed here, as this would trigger the
-                            # "cannot answer" answer. To prevent this, we check for this
-                            # and skip the next chunk if this is the case.
+                            # If the sources in the generated JSON dict is empty, but
+                            # the final closing square bracket hasn't been generated
+                            # yet, this means that the `from_json` function has closed
+                            # this off itself, which is not allowed here, as this would
+                            # trigger the "cannot answer" answer. To prevent this, we
+                            # check for this and skip the next chunk if this is the
+                            # case.
                             first_source_not_generated_yet = (
                                 "sources" in generated_dict
                                 and not generated_dict["sources"]
@@ -327,14 +328,15 @@ class OpenAIGenerator(Generator):
                             if first_source_not_generated_yet:
                                 continue
 
-                            # If the answer is being written, the JSON dict will look like
+                            # If the answer is being written, the JSON dict will look
+                            # like
                             #   '{"sources": [...], "answer": "Some text'
-                            # As the answer doesn't have a closing quote, the `from_json`
-                            # function will not include the `answer` key in the resulting
-                            # dict. To ensure that the partial answer *is* included in the
-                            # dict, we check if the model is currently writing the answer
-                            # and if so, we add a closing quote to the generated output
-                            # before attempting to parse it.
+                            # As the answer doesn't have a closing quote, the
+                            # `from_json` function will not include the `answer` key in
+                            # the resulting dict. To ensure that the partial answer *is*
+                            # included in the dict, we check if the model is currently
+                            # writing the answer and if so, we add a closing quote to
+                            # the generated output before attempting to parse it.
                             answer_partially_generated = (
                                 "answer" not in generated_dict
                                 and '"answer"' in generated_output
