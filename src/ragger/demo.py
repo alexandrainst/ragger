@@ -443,7 +443,7 @@ class Demo:
         files_to_upload: list[Path] = [
             Path("Dockerfile"),
             Path("pyproject.toml"),
-            Path("poetry.lock"),
+            Path("uv.lock"),
         ]
 
         if (document_store_path := self.rag_system.document_store.path) is not None:
