@@ -187,8 +187,10 @@ Generators are used to generate answers from the retrieved documents and the que
 These can all be imported from `ragger.generator`.
 
 - `OpenAIGenerator`: A generator that uses the OpenAI Chat API. (default)
+- `GGUFGenerator`: A generator that uses Llama.cpp to wrap any model from the Hugging
+  Face Hub in GGUF format. Optimised for CPU generation.
 - `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging
-  Face Hub.
+  Face Hub. Note that this requires a GPU to run.
 
 
 ## Custom Components
