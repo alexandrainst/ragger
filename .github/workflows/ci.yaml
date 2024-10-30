@@ -54,7 +54,7 @@ jobs:
       - name: Install Dependencies
         run: |
           uv venv
-          uv sync --extra all --index-strategy unsafe-best-match
+          uv sync --extra all --extra cpu
 
       - name: Test with pytest
         run: uv run pytest
