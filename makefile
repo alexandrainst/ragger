@@ -17,6 +17,9 @@ include .env
 export GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
 export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1
 
+# Set the shell to bash, enabling the use of `source` statements
+SHELL := /bin/bash
+
 help:
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -28,7 +31,6 @@ install: ## Install dependencies
 	@$(MAKE) --quiet setup-git
 	@echo "Installed the 'ragger' project. If you want to use pre-commit hooks, run 'make install-pre-commit'."
 
-.ONESHELL:
 install-uv:
 	@if [ "$(shell which uv)" = "" ]; then \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
