@@ -29,8 +29,6 @@ outlines = {version = "^0.1.1", optional = true}
 llama_cpp_python = {version = "^0.3.1", optional = true}
 transformers = {version = "^4.46.1", optional = true}
 protobuf = {version = "^5.28.3", optional = true}
-typing-inspect = "^0.9.0"
-typing-extensions = "^4.12.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=8.3.3"
