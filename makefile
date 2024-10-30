@@ -25,11 +25,19 @@ help:
 
 install: ## Install dependencies
 	@echo "Installing the 'ragger' project..."
+	@$(MAKE) --quiet install-rust
 	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
 	@$(MAKE) --quiet setup-environment-variables
 	@$(MAKE) --quiet setup-git
 	@echo "Installed the 'ragger' project. If you want to use pre-commit hooks, run 'make install-pre-commit'."
+
+install-rust:
+	@if [ "$(shell which rustup)" = "" ]; then \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh; \
+		source $HOME/.cargo/env; \
+		echo "Installed Rust."; \
+	fi
 
 install-uv:
 	@if [ "$(shell which uv)" = "" ]; then \
