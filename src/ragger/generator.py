@@ -51,7 +51,7 @@ if is_installed(package_name="tiktoken"):
     import tiktoken
 
 if is_installed(package_name="transformers"):
-    from transformers import AutoConfig, AutoTokenizer
+    from transformers import AutoConfig, AutoTokenizer, PreTrainedTokenizer
 
 if is_installed(package_name="llama_cpp"):
     from llama_cpp import (
