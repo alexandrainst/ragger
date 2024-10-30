@@ -40,11 +40,11 @@ the default components (see below). If you want to use other components, you usu
 need to change the extras from `default` to a combination of the following:
 
 - `postgres` to use anything PostgreSQL-related.
-- `openai` to use anything OpenAI-related.
+- `onprem` to use anything that requires an on-premises installation.
 - `vllm` to use the vLLM generator.
-- `e5` to use the E5 embedder.
 - `demo` to use the demo server.
-- `cpu` to force a CPU-installation of torch, to save some disk space.
+- `cpu` to force a CPU-installation of torch, to save some disk space, used in
+  combination with the other extras.
 
 
 ## Quick Start
