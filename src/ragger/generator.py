@@ -59,6 +59,8 @@ if is_installed(package_name="llama_cpp"):
         ChatCompletionRequestSystemMessage,
         ChatCompletionRequestUserMessage,
         Llama,
+        LogitsProcessor,
+        LogitsProcessorList,
     )
 
 if is_installed(package_name="outlines"):
