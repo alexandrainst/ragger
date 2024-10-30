@@ -31,9 +31,9 @@ postgres = [
 onprem = [
     "sentence_transformers>=3.2.1",
     "outlines>=0.1.1",
-    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
+    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
     "vllm>=0.1.0; sys_platform != 'darwin' and extra != 'cpu'",
 ]
 cpu = [
@@ -48,9 +48,9 @@ all = [
     "psycopg2-binary>=2.9.10",
     "sentence_transformers>=3.2.1",
     "outlines>=0.1.1",
-    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
+    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
     "vllm>=0.1.0; sys_platform != 'darwin' and extra != 'cpu'",
     "gradio>=5.4.0",
 ]
