@@ -8,8 +8,10 @@ import typing
 from functools import cached_property
 from time import sleep
 
+import numpy as np
 import torch
 from dotenv import load_dotenv
+from numpy.typing import NDArray
 from pydantic import ValidationError
 from pydantic_core import from_json
 
@@ -75,6 +77,8 @@ if typing.TYPE_CHECKING:
         ChatCompletionRequestSystemMessage,
         ChatCompletionRequestUserMessage,
         Llama,
+        LogitsProcessor,
+        LogitsProcessorList,
     )
     from openai import (
         APITimeoutError,
@@ -96,7 +100,7 @@ if typing.TYPE_CHECKING:
     )
     from outlines.models.transformers import TransformerTokenizer
     from outlines.processors.structured import JSONLogitsProcessor
-    from transformers import AutoConfig, AutoTokenizer
+    from transformers import AutoConfig, AutoTokenizer, PreTrainedTokenizer
 
     from .data_models import DocumentStore, Embedder, EmbeddingStore
 
@@ -694,85 +698,29 @@ class GGUFGenerator(Generator):
         self.system_prompt = system_prompt or system_prompt_mapping[self.language]
         self.prompt = prompt or user_prompt_mapping[self.language]
 
-        # Load logits processor
-        self.base_model_id = self._get_base_model_id()
-        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_id)
-        self.logits_processor = JSONLogitsProcessor(
-            schema=GeneratedAnswer, tokenizer=TransformerTokenizer(self.tokenizer)
-        )
+        self.base_model_id: str | None = None
+        self.tokenizer: PreTrainedTokenizer | None = None
+        self.logits_processor: LogitsProcessor | None = None
+        self.model: Llama | None = None
 
-        # Load model
-        try:
-            glob_pattern = "".join(
-                f"[{char.upper()}{char.lower()}]" if char.isalpha() else char
-                for char in self.quant_type or ""
-            )
-            logger.info(f"Loading model with quantization type {self.quant_type!r}...")
-            self.model = Llama.from_pretrained(
-                repo_id=self.model_id, filename=f"*{glob_pattern}.gguf"
-            )
-        except ValueError as e:
-            if "Multiple files found" not in str(e):
-                raise e
-            for num_bits in range(8, 0, -1):
-                try:
-                    logger.info(f"Loading model with quantization type Q{num_bits}*...")
-                    self.model = Llama.from_pretrained(
-                        repo_id=self.model_id, filename=f"*[Qq]{num_bits}*.gguf"
-                    )
-                    break
-                except ValueError:
-                    logger.error(
-                        f"Could not find model with quantization type Q{num_bits}. "
-                        "Trying with a lower quantization type..."
-                    )
-                    continue
+    def prompt_too_long(self, prompt: str) -> bool:
+        """Check if a prompt is too long for the generator.
 
-    def _get_base_model_id(self) -> str:
-        """Get the base model ID.
+        Args:
+            prompt:
+                The prompt to check.
 
         Returns:
-            The base model ID.
+            Whether the prompt is too long for the generator.
 
         Raises:
-            ValueError:
-                If the model ID is not in the correct "author/model_name" format.
+            RuntimeError:
+                If the generator has not been compiled.
         """
-        if self.model_id.count("/") != 1:
-            raise ValueError(
-                f"Model ID {self.model_id!r} is not in the correct format. "
-                "It should be in the format 'author/model_name'."
-            )
-        author, model_name = self.model_id.split("/")
-
-        api = HfApi()
-        models = [
-            model
-            for model in api.list_models(author=author, model_name=model_name)
-            if model.id == self.model_id
-        ]
-
-        # Check that the model exists. If it does not then raise an error
-        if len(models) == 0:
-            logger.error(
-                f"Could not find model with ID {self.model_id} on the Hugging Face "
-                "Hub. Using the model ID as the base model ID."
-            )
-            return self.model_id
-
-        base_model_tag_candidates = [
-            tag
-            for tag in models[0].tags or list()
-            if tag.startswith("base_model:") and tag.count(":") == 1
-        ]
-        if not base_model_tag_candidates:
-            logger.error(
-                f"Could not find a base model tag for model with ID {self.model_id}. "
-                "Using the model ID as the base model ID."
-            )
-            return self.model_id
-
-        return base_model_tag_candidates[0].split(":")[1]
+        if self.tokenizer is None:
+            raise RuntimeError("The generator has not been compiled.")
+        num_tokens = len(self.tokenizer.encode(prompt))
+        return num_tokens > self.max_input_tokens
 
     def compile(
         self,
@@ -790,7 +738,13 @@ class GGUFGenerator(Generator):
             embedding_store:
                 The embedding store to use.
         """
-        raise NotImplementedError
+        self.base_model_id = self._get_base_model_id(model_id=self.model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_id)
+        assert self.tokenizer is not None
+        self.logits_processor = self._get_logits_processor(tokenizer=self.tokenizer)
+        self.model = self._load_model(
+            model_id=self.model_id, quant_type=self.quant_type
+        )
 
     def generate(
         self, query: str, documents: list[Document]
@@ -806,25 +760,40 @@ class GGUFGenerator(Generator):
         Returns:
             The generated answer.
         """
-        messages: list[ChatCompletionRequestMessage] = [
-            ChatCompletionRequestSystemMessage(
-                role="system", content=self.system_prompt
-            ),
-            ChatCompletionRequestUserMessage(
-                role="user",
-                content=self.prompt.format(
-                    documents=json.dumps(
-                        [document.model_dump() for document in documents]
-                    ),
-                    query=query,
+        if self.model is None or self.logits_processor is None:
+            raise RuntimeError("The generator has not been compiled.")
+
+        for num_documents_to_include in range(len(documents), -1, -1):
+            logger.info(
+                f"Generating answer for the query {query!r} and "
+                f"{num_documents_to_include:,} documents..."
+            )
+
+            messages: list[ChatCompletionRequestMessage] = [
+                ChatCompletionRequestSystemMessage(
+                    role="system", content=self.system_prompt
                 ),
-            ),
-        ]
+                ChatCompletionRequestUserMessage(
+                    role="user",
+                    content=self.prompt.format(
+                        documents=json.dumps(
+                            [document.model_dump() for document in documents]
+                        ),
+                        query=query,
+                    ),
+                ),
+            ]
+
+            if not self.prompt_too_long(prompt=json.dumps(messages)):
+                break
+        else:
+            return GeneratedAnswer(sources=[], answer="Prompt too long.")
+
         model_output = self.model.create_chat_completion(
             messages=messages,
             temperature=self.temperature,
             stream=self.stream,
-            logits_processor=self.logits_processor,
+            logits_processor=LogitsProcessorList([self.logits_processor]),
         )
         if isinstance(model_output, dict):
             generated_output = model_output["choices"][0]["message"]["content"]
@@ -853,7 +822,7 @@ class GGUFGenerator(Generator):
                     delta = chunk["choices"][0]["delta"]
                     if "content" not in delta:
                         continue
-                    delta_content = delta["content"]
+                    delta_content = delta["content"]  # type: ignore[typeddict-item]
                     if delta_content is None:
                         continue
                     generated_output += delta_content
@@ -903,3 +872,121 @@ class GGUFGenerator(Generator):
                         continue
 
             return streamer()
+
+    @staticmethod
+    def _get_base_model_id(model_id: str) -> str:
+        """Get the base model ID.
+
+        Returns:
+            The base model ID.
+
+        Raises:
+            ValueError:
+                If the model ID is not in the correct "author/model_name" format.
+        """
+        if model_id.count("/") != 1:
+            raise ValueError(
+                f"Model ID {model_id!r} is not in the correct format. "
+                "It should be in the format 'author/model_name'."
+            )
+        author, model_name = model_id.split("/")
+
+        api = HfApi()
+        models = [
+            model
+            for model in api.list_models(author=author, model_name=model_name)
+            if model.id == model_id
+        ]
+
+        # Check that the model exists. If it does not then raise an error
+        if len(models) == 0:
+            logger.error(
+                f"Could not find model with ID {model_id} on the Hugging Face "
+                "Hub. Using the model ID as the base model ID."
+            )
+            return model_id
+
+        base_model_tag_candidates = [
+            tag
+            for tag in models[0].tags or list()
+            if tag.startswith("base_model:") and tag.count(":") == 1
+        ]
+        if not base_model_tag_candidates:
+            logger.error(
+                f"Could not find a base model tag for model with ID {model_id}. "
+                "Using the model ID as the base model ID."
+            )
+            return model_id
+
+        return base_model_tag_candidates[0].split(":")[1]
+
+    @staticmethod
+    def _get_logits_processor(tokenizer: PreTrainedTokenizer) -> LogitsProcessor:
+        """Get the logits processor.
+
+        Args:
+            tokenizer:
+                The tokenizer to use.
+
+        Returns:
+            The logits processor.
+        """
+        logits_processor = JSONLogitsProcessor(
+            schema=GeneratedAnswer, tokenizer=TransformerTokenizer(tokenizer)
+        )
+
+        def logits_processor_fn(
+            input_ids: NDArray[np.intc], logits: NDArray[np.single]
+        ) -> NDArray[np.single]:
+            raw_output = logits_processor(input_ids=input_ids, logits=logits)
+            assert isinstance(
+                raw_output, np.ndarray
+            ), f"Logits processor returned an invalid type: {type(raw_output)}"
+            return raw_output
+
+        return logits_processor_fn
+
+    @staticmethod
+    def _load_model(model_id: str, quant_type: str | None) -> Llama:
+        """Load the model.
+
+        Args:
+            model_id:
+                The model ID to use.
+            quant_type:
+                The quantization type to use.
+
+        Returns:
+            The model.
+
+        Raises:
+            ValueError:
+                If no model with the given quantization type could be found.
+        """
+        try:
+            glob_pattern = "".join(
+                f"[{char.upper()}{char.lower()}]" if char.isalpha() else char
+                for char in quant_type or ""
+            )
+            logger.info(f"Loading model with quantization type {quant_type!r}...")
+            return Llama.from_pretrained(
+                repo_id=model_id, filename=f"*{glob_pattern}.gguf"
+            )
+        except ValueError as e:
+            if "Multiple files found" not in str(e):
+                raise e
+            for num_bits in range(8, 0, -1):
+                try:
+                    logger.info(f"Loading model with quantization type Q{num_bits}*...")
+                    return Llama.from_pretrained(
+                        repo_id=model_id, filename=f"*[Qq]{num_bits}*.gguf"
+                    )
+                except ValueError:
+                    logger.error(
+                        f"Could not find model with quantization type Q{num_bits}. "
+                        "Trying with a lower quantization type..."
+                    )
+                    continue
+            raise ValueError(
+                f"Could not find any quantized model for model ID {model_id}."
+            )
