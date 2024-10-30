@@ -42,26 +42,21 @@ jobs:
           sudo service postgresql start
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
 
-      - name: Install Poetry
-        run: pipx install poetry==1.8.2
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
+          cache: "uv"
 
       - name: Install Dependencies
         run: |
-          poetry env use "${{ matrix.python-version }}"
-          poetry install --extras all --extras cpu
-
-      - name: Fix PyTorch bug
-        run: |
-          poetry remove torch
-          poetry add torch==2.1.1
+          uv venv
+          uv sync --extra all --index-strategy unsafe-best-match
 
       - name: Test with pytest
-        run: poetry run pytest
+        run: uv run pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
