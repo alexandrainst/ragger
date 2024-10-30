@@ -28,6 +28,7 @@ install: ## Install dependencies
 	@$(MAKE) --quiet setup-git
 	@echo "Installed the 'ragger' project. If you want to use pre-commit hooks, run 'make install-pre-commit'."
 
+.ONESHELL:
 install-uv:
 	@if [ "$(shell which uv)" = "" ]; then \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
