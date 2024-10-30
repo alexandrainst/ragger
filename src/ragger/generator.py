@@ -652,7 +652,7 @@ class GGUFGenerator(Generator):
         Args:
             model_id (optional):
                 The model ID of the generative model to use. Defaults to
-                "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF:Q8_0".
+                "lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF".
             quant_type (optional):
                 The quantization type to use. If None, we will use any of the GGUF
                 files available. Defaults to None.
