@@ -794,6 +794,7 @@ class GGUFGenerator(Generator):
         model_output = self.model.create_chat_completion(
             messages=messages,
             temperature=self.temperature,
+            max_tokens=self.max_output_tokens,
             stream=self.stream,
             logits_processor=LogitsProcessorList([self.logits_processor]),
         )
