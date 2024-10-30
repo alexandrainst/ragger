@@ -924,7 +924,7 @@ class GGUFGenerator(Generator):
         return base_model_tag_candidates[0].split(":")[1]
 
     @staticmethod
-    def _get_logits_processor(tokenizer: PreTrainedTokenizer) -> LogitsProcessor:
+    def _get_logits_processor(tokenizer: "PreTrainedTokenizer") -> "LogitsProcessor":
         """Get the logits processor.
 
         Args:
@@ -950,7 +950,7 @@ class GGUFGenerator(Generator):
         return logits_processor_fn
 
     @staticmethod
-    def _load_model(model_id: str, quant_type: str | None) -> Llama:
+    def _load_model(model_id: str, quant_type: str | None) -> "Llama":
         """Load the model.
 
         Args:
