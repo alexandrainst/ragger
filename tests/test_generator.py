@@ -1,5 +1,6 @@
 """Unit tests for the `generator` module."""
 
+import inspect
 import typing
 
 import pytest
@@ -15,7 +16,9 @@ from ragger.generator import Generator
     params=[
         cls
         for cls in vars(ragger.generator).values()
-        if isinstance(cls, type) and issubclass(cls, Generator) and cls is not Generator
+        if inspect.isclass(object=cls)
+        and issubclass(cls, Generator)
+        and cls is not Generator
     ],
 )
 def generator(
