@@ -34,7 +34,7 @@ onprem = [
     "llama_cpp_python>=0.3.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "torch>=2.5.0",
+    "torch",
 ]
 cpu = [
 ]
