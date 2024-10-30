@@ -53,9 +53,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Dependencies
-        run: |
-          uv venv
-          uv sync --extra all --extra cpu
+        run: uv sync --extra all --extra cpu
 
       - name: Test with pytest
         run: uv run pytest
