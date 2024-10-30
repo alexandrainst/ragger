@@ -18,10 +18,17 @@ from ragger.embedder import Embedder
         if isinstance(cls, type) and issubclass(cls, Embedder) and cls is not Embedder
     ],
 )
-def embedder(request, special_kwargs) -> typing.Generator[Embedder, None, None]:
+def embedder(
+    request, special_kwargs, rag_system
+) -> typing.Generator[Embedder, None, None]:
     """Initialise an embedder for testing."""
     embedder_cls = request.param
-    embedder = request.param(**special_kwargs.get(embedder_cls.__name__, {}))
+    embedder: Embedder = request.param(**special_kwargs.get(embedder_cls.__name__, {}))
+    embedder.compile(
+        document_store=rag_system.document_store,
+        embedding_store=rag_system.embedding_store,
+        generator=rag_system.generator,
+    )
     yield embedder
 
 
