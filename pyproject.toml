@@ -36,6 +36,8 @@ onprem = [
     "protobuf>=5.28.3",
     "torch>=2.5.0",
 ]
+cpu = [
+]
 demo = [
     "gradio>=5.4.0",
 ]
@@ -65,18 +67,13 @@ dev-dependencies = [
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch_cpu", marker = "sys_platform == 'darwin'" },
-    { index = "pypi", marker = "sys_platform != 'darwin'" },
+    { index = "pytorch-cpu", marker = "sys_platform != 'darwin' and extra == 'cpu'" },
 ]
 
 [[tool.uv.index]]
-name = "pypi"
-url = "https://pypi.org/simple"
-default = true
-
-[[tool.uv.index]]
-name = "pytorch_cpu"
+name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [project.scripts]
 ragger-demo = "ragger.cli:run_demo"

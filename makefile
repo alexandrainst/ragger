@@ -36,7 +36,7 @@ install-uv:
 	@uv self update
 
 install-dependencies:
-	@uv venv && uv sync --extra all --index-strategy unsafe-best-match
+	@uv venv && uv sync --extra all
 
 install-pre-commit:  ## Install pre-commit hooks
 	@uv run pre-commit install
