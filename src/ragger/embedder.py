@@ -76,11 +76,11 @@ class E5Embedder(Embedder):
             A list of embeddings, where each row corresponds to a document.
 
         Raises:
-            ValueError:
+            RuntimeError:
                 If the embedder has not been compiled.
         """
         if self.embedder is None:
-            raise ValueError("The embedder has not been compiled.")
+            raise RuntimeError("The embedder has not been compiled.")
 
         if not documents:
             return list()
@@ -118,11 +118,11 @@ class E5Embedder(Embedder):
             The embedding of the query.
 
         Raises:
-            ValueError:
+            RuntimeError:
                 If the embedder has not been compiled.
         """
         if self.embedder is None:
-            raise ValueError("The embedder has not been compiled.")
+            raise RuntimeError("The embedder has not been compiled.")
 
         logger.info(f"Embedding the query {query!r} with the E5 model...")
         prepared_query = self._prepare_query_for_embedding(query=query)
