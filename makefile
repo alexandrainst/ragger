@@ -31,6 +31,7 @@ install: ## Install dependencies
 install-uv:
 	@if [ "$(shell which uv)" = "" ]; then \
 		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+		source $HOME/.cargo/env; \
         echo "Installed uv."; \
     fi
 	@uv self update
