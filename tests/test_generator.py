@@ -19,12 +19,19 @@ from ragger.generator import Generator
     ],
 )
 def generator(
-    request, special_kwargs
-) -> typing.Generator[typing.Type[Generator], None, None]:
+    request, special_kwargs, rag_system
+) -> typing.Generator[Generator, None, None]:
     """Initialise a generator class for testing."""
     try:
         generator_cls = request.param
-        generator = generator_cls(**special_kwargs.get(generator_cls.__name__, {}))
+        generator: Generator = generator_cls(
+            **special_kwargs.get(generator_cls.__name__, {})
+        )
+        generator.compile(
+            document_store=rag_system.document_store,
+            embedder=rag_system.embedder,
+            embedding_store=rag_system.embedding_store,
+        )
         yield generator
     except (MissingPackage, MissingExtra):
         pytest.skip("The generator could not be imported.")

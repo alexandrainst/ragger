@@ -26,6 +26,7 @@ def special_kwargs() -> typing.Generator[dict[str, dict[str, str]], None, None]:
     yield dict(
         E5Embedder=dict(embedder_model_id="intfloat/multilingual-e5-small"),
         VllmGenerator=dict(model_id="mhenrichsen/danskgpt-tiny-chat"),
+        GGUFGenerator=dict(model_id="hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF"),
     )
 
 

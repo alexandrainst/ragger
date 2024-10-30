@@ -345,19 +345,6 @@ class Generator(ABC):
         pass
 
     @abstractmethod
-    def prompt_too_long(self, prompt: str) -> bool:
-        """Check if a prompt is too long for the generator.
-
-        Args:
-            prompt:
-                The prompt to check.
-
-        Returns:
-            Whether the prompt is too long for the generator.
-        """
-        ...
-
-    @abstractmethod
     def generate(
         self, query: str, documents: list[Document]
     ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:

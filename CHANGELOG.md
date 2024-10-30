@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Now supports GGUF models for generators. This can be added with the new
+  `GGUFGenerator` class, which works for any GGUF model on the Hugging Face Hub.
 - Now uses structured generation with OpenAI models, which improves the quality of the
   generated text a tiny bit.
 

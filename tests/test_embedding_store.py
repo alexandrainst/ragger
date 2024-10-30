@@ -44,11 +44,16 @@ def embedding_store_cls(
 
 @pytest.fixture(scope="module")
 def embedding_store(
-    embedding_store_cls, special_kwargs
+    embedding_store_cls, special_kwargs, rag_system
 ) -> typing.Generator[EmbeddingStore, None, None]:
     """Initialise an embedding store for testing."""
-    embedding_store = embedding_store_cls(
+    embedding_store: EmbeddingStore = embedding_store_cls(
         **special_kwargs.get(embedding_store_cls.__name__, {})
+    )
+    embedding_store.compile(
+        document_store=rag_system.document_store,
+        embedder=rag_system.embedder,
+        generator=rag_system.generator,
     )
     yield embedding_store
     embedding_store.remove()
