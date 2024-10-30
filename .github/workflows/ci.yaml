@@ -56,9 +56,6 @@ jobs:
           poetry env use "${{ matrix.python-version }}"
           poetry install --extras all --extras cpu
 
-      - name: Fix PyTorch bug
-        run: poetry remove vllm sentence_transformers && poetry add torch==2.0.0 transformers==4.36.0 sentence_transformers
-
       - name: Test with pytest
         run: poetry run pytest
         env:
