@@ -2157,16 +2157,14 @@ source = { editable = "." }
 dependencies = [
     { name = "click" },
     { name = "numpy" },
+    { name = "openai" },
     { name = "pydantic" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "tiktoken" },
 ]
 
 [package.optional-dependencies]
-default = [
-    { name = "openai" },
-    { name = "tiktoken" },
-]
 demo = [
     { name = "gradio" },
 ]
@@ -2206,7 +2204,7 @@ requires-dist = [
     { name = "gradio", marker = "extra == 'demo'", specifier = ">=5.4.0" },
     { name = "llama-cpp-python", marker = "extra == 'onprem-cpu'", specifier = ">=0.3.1" },
     { name = "numpy", specifier = ">=1.25.0" },
-    { name = "openai", marker = "extra == 'default'", specifier = ">=1.50.0" },
+    { name = "openai", specifier = ">=1.50.0" },
     { name = "outlines", marker = "extra == 'onprem-cpu'", specifier = ">=0.1.1" },
     { name = "outlines", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.1" },
     { name = "protobuf", marker = "extra == 'onprem-cpu'", specifier = ">=5.28.3" },
@@ -2217,8 +2215,10 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.2" },
     { name = "sentence-transformers", marker = "extra == 'onprem-cpu'", specifier = ">=3.2.1" },
     { name = "sentence-transformers", marker = "extra == 'onprem-gpu'", specifier = ">=3.2.1" },
-    { name = "tiktoken", marker = "extra == 'default'", specifier = ">=0.8.0" },
+    { name = "tiktoken", specifier = ">=0.8.0" },
     { name = "torch", marker = "extra == 'onprem-cpu'", specifier = ">=2.5.0", index = "https://download.pytorch.org/whl/cpu" },
+    { name = "torch", marker = "extra != 'onprem-cpu' and extra == 'onprem-gpu'", specifier = ">=2.5.0" },
+    { name = "torch", marker = "extra == 'onprem-cpu' and extra == 'onprem-gpu'", specifier = ">=2.5.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "transformers", marker = "extra == 'onprem-cpu'", specifier = ">=4.46.1" },
     { name = "transformers", marker = "extra == 'onprem-gpu'", specifier = ">=4.46.1" },
     { name = "vllm", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.0" },
