@@ -6,9 +6,8 @@ import typing
 import pytest
 
 import ragger.generator
-from ragger.data_models import GeneratedAnswer
+from ragger.data_models import GeneratedAnswer, Generator
 from ragger.exceptions import MissingExtra, MissingPackage
-from ragger.generator import Generator
 
 
 @pytest.fixture(
