@@ -23,6 +23,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cpu_pytorch = [
+    "torch==2.5+cpu",
+]
 onprem_cpu = [
     "sentence_transformers>=3.2.1",
     "outlines>=0.1.1",
@@ -43,6 +46,22 @@ postgres = [
 demo = [
     "gradio>=5.4.0",
 ]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "extra == 'cpu_pytorch'" },
+    { index = "pypi", marker = "extra != 'cpu_pytorch'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+explicit = true
 
 [tool.uv]
 dev-dependencies = [
