@@ -9,7 +9,6 @@ from functools import cached_property
 from time import sleep
 
 import numpy as np
-import torch
 from dotenv import load_dotenv
 from numpy.typing import NDArray
 from pydantic import ValidationError
@@ -23,6 +22,9 @@ from .constants import (
 )
 from .data_models import Document, GeneratedAnswer, Generator
 from .utils import is_installed, raise_if_not_installed
+
+if is_installed(package_name="torch"):
+    import torch
 
 if is_installed(package_name="httpx"):
     from httpx import ReadTimeout, RemoteProtocolError
