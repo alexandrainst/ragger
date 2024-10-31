@@ -60,8 +60,12 @@ class E5Embedder(Embedder):
         self.embedder = SentenceTransformer(
             model_name_or_path=self.embedder_model_id, device=self.device
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(self.embedder_model_id)
-        self.model_config = AutoConfig.from_pretrained(self.embedder_model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.embedder_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
+        self.model_config = AutoConfig.from_pretrained(
+            self.embedder_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         self.embedding_dim = self.model_config.hidden_size
 
     def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:

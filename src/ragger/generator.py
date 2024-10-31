@@ -475,8 +475,12 @@ class VllmGenerator(OpenAIGenerator):
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-        self.hf_config = AutoConfig.from_pretrained(model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
+        self.hf_config = AutoConfig.from_pretrained(
+            model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         self.gpu_memory_utilization = gpu_memory_utilization
         self.server_start_timeout = server_start_timeout
 
@@ -740,7 +744,9 @@ class GGUFGenerator(Generator):
                 The embedding store to use.
         """
         self.base_model_id = self._get_base_model_id(model_id=self.model_id)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.base_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         assert self.tokenizer is not None
         self.logits_processor = self._get_logits_processor(tokenizer=self.tokenizer)
         self.model = self._load_model(
