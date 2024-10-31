@@ -60,8 +60,10 @@ def set_new_version(major: int, minor: int, patch: int):
     pyproject_path.write_text(pyproject)
 
     # Add to version control
+    subprocess.run(["uv", "lock"])
     subprocess.run(["git", "add", "CHANGELOG.md"])
     subprocess.run(["git", "add", "pyproject.toml"])
+    subprocess.run(["git", "add", "uv.lock"])
     subprocess.run(["git", "commit", "-m", f"feat: v{version}"])
     subprocess.run(["git", "tag", f"v{version}"])
     subprocess.run(["git", "push"])
