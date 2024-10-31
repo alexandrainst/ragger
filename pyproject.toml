@@ -1,80 +1,62 @@
-[tool.poetry]
+[project]
 name = "ragger"
+version = "3.0.0"
 description = "A repository for general-purpose RAG applications."
-version = "2.0.0"
-authors = [
-    "Dan Saattrup Nielsen <dan.nielsen@alexandra.dk>",
-    "Anders Jess Pedersen <anders.j.pedersen@alexandra.dk>",
-]
 readme = "README.md"
-license = "Proprietary"
-
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-numpy = "^1.26.4"
-python-dotenv = "^1.0.1"
-pydantic = "^2.8.2"
-click = "^8.1.7"
-pyyaml = "^6.0.2"
-tiktoken = { version = ">=0.7.0,<1.0.0", optional = true }
-openai = { version = "^1.23.2", optional = true }
-vllm = { version = "^0.5.4", optional = true, markers = "sys_platform != 'darwin' and extra != 'cpu'" }
-torch = [
-    { version = "^2.3.0", optional = true, source = "pypi", markers = "sys_platform == 'darwin' or extra != 'cpu'" },
-    { version = "^2.3.0", optional = true, source = "torch_cpu", markers = "sys_platform != 'darwin' and extra == 'cpu'" },
+license = {text = "Proprietary"}
+authors = [
+    {name = "Dan Saattrup Nielsen", email = "dan.nielsen@alexandra.dk"},
+    {name = "Anders Jess Pedersen", email = "anders.j.pedersen@alexandra.dk"},
 ]
-psycopg2-binary = { version = "^2.9.9", optional = true }
-sentence_transformers = { version = "^2.7.0", optional = true }
-gradio = { version = "^4.27.0", optional = true }
+maintainers = [
+    {name = "Dan Saattrup Nielsen", email = "dan.nielsen@alexandra.dk"},
+]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "click>=8.1.7",
+    "numpy>=1.25.0",
+    "pydantic>=2.9.2",
+    "python-dotenv>=1.0.1",
+    "pyyaml>=6.0.2",
+    "tiktoken>=0.8.0",
+    "openai>=1.50.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.1.1"
-pytest-cov = ">=4.1.0"
-pre-commit = ">=3.6.2"
-readme-coverage-badger = ">=0.1.2"
-ruff = ">=0.3.2"
-mypy = ">=1.9.0"
-nbstripout = ">=0.7.1"
-
-[tool.poetry.extras]
-default = [
-    "openai",
-    "tiktoken",
+[project.optional-dependencies]
+onprem_cpu = [
+    "sentence_transformers>=3.2.1",
+    "outlines>=0.1.1",
+    "transformers>=4.46.1",
+    "protobuf>=5.28.3",
+    "llama_cpp_python>=0.3.1",
+]
+onprem_gpu = [
+    "sentence_transformers>=3.2.1",
+    "outlines>=0.1.1",
+    "transformers>=4.46.1",
+    "protobuf>=5.28.3",
+    "vllm>=0.1.0",
 ]
 postgres = [
-    "psycopg2-binary",
-]
-vllm = [
-    "vllm",
-]
-e5 = [
-    "sentence-transformers",
-]
-cpu = [
-    "torch",
+    "psycopg2-binary>=2.9.10",
 ]
 demo = [
-    "gradio",
-]
-all = [
-    "openai",
-    "tiktoken",
-    "torch",
-    "vllm",
-    "psycopg2-binary",
-    "sentence-transformers",
-    "gradio",
+    "gradio>=5.4.0",
 ]
 
-[[tool.poetry.source]]
-name = "pypi"
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+    "pytest-cov>=5.0.0",
+    "pre-commit>=4.0.1",
+    "readme-coverage-badger>=0.1.1",
+    "ruff>=0.7.1",
+    "mypy>=1.13.0",
+    "nbstripout>=0.7.1",
+    "pip>=24.3.1",
+]
 
-[[tool.poetry.source]]
-name = "torch_cpu"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "explicit"
-
-[tool.poetry.scripts]
+[project.scripts]
 ragger-demo = "ragger.cli:run_demo"
 ragger-compile = "ragger.cli:compile"
 
@@ -138,7 +120,5 @@ testpaths = [
 ]
 
 [build-system]
-requires = [
-    "poetry-core>=1.0.0"
-]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -189,7 +189,7 @@ class RagSystem:
         if isinstance(generated_answer, typing.Generator):
 
             def streamer() -> typing.Generator[tuple[str, list[Document]], None, None]:
-                answer = GeneratedAnswer(sources=[])
+                answer = GeneratedAnswer(answer="", sources=[])
                 for answer in generated_answer:
                     assert isinstance(answer, GeneratedAnswer)
                     source_documents = [

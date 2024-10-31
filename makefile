@@ -10,12 +10,6 @@ ifeq (,$(wildcard .env))
   $(shell touch .env)
 endif
 
-# Create poetry env file if it does not already exist
-ifeq (,$(wildcard ${HOME}/.poetry/env))
-  $(shell mkdir ${HOME}/.poetry)
-  $(shell touch ${HOME}/.poetry/env)
-endif
-
 # Includes environment variables from the .env file
 include .env
 
@@ -23,78 +17,63 @@ include .env
 export GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
 export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1
 
-# Ensure that `pipx` and `poetry` will be able to run, since `pip` and `brew` put these
-# in the following folders on Unix systems
-export PATH := ${HOME}/.local/bin:/opt/homebrew/bin:$(PATH)
-
-# Prevent DBusErrorResponse during `poetry install`
-#(see https://stackoverflow.com/a/75098703 for more information)
-export PYTHON_KEYRING_BACKEND := keyring.backends.null.Keyring
+# Set the shell to bash, enabling the use of `source` statements
+SHELL := /bin/bash
 
 help:
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 install: ## Install dependencies
 	@echo "Installing the 'ragger' project..."
-	@$(MAKE) --quiet install-brew
-	@$(MAKE) --quiet install-pipx
-	@$(MAKE) --quiet install-poetry
+	@$(MAKE) --quiet install-rust
+	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
 	@$(MAKE) --quiet setup-environment-variables
 	@$(MAKE) --quiet setup-git
 	@echo "Installed the 'ragger' project. If you want to use pre-commit hooks, run 'make install-pre-commit'."
 
-install-brew:
-	@if [ $$(uname) = "Darwin" ] && [ "$(shell which brew)" = "" ]; then \
-		/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; \
-		echo "Installed Homebrew."; \
+install-rust:
+	@if [ "$(shell which rustup)" = "" ]; then \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+		source $HOME/.cargo/env; \
+		echo "Installed Rust."; \
 	fi
 
-install-pipx:
-	@if [ "$(shell which pipx)" = "" ]; then \
-		uname=$$(uname); \
-			case $${uname} in \
-				(*Darwin*) installCmd='brew install pipx'; ;; \
-				(*CYGWIN*) installCmd='py -3 -m pip install --upgrade --user pipx'; ;; \
-				(*) installCmd='python3 -m pip install --upgrade --user pipx'; ;; \
-			esac; \
-			$${installCmd}; \
-		pipx ensurepath --force; \
-		echo "Installed pipx."; \
-	fi
-
-install-poetry:
-	@if [ ! "$(shell poetry --version)" = "Poetry (version 1.8.2)" ]; then \
-        python3 -m pip uninstall -y poetry poetry-core poetry-plugin-export; \
-        pipx install --force poetry==1.8.2; \
-        echo "Installed Poetry."; \
+install-uv:
+	@if [ "$(shell which uv)" = "" ]; then \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+		source $HOME/.cargo/env; \
+        echo "Installed uv."; \
     fi
+	@uv self update
 
 install-dependencies:
-	@poetry env use python3.11 && poetry install --extras all
+	@uv venv && uv sync --extra default --extra onprem_cpu --extra postgres --extra demo
 
 install-pre-commit:  ## Install pre-commit hooks
-	@poetry run pre-commit install
+	@uv run pre-commit install
 
 lint:  ## Lint the code
-	@poetry run ruff check . --fix
+	@uv run ruff check . --fix
 
 format:  ## Format the code
-	@poetry run ruff format .
+	@uv run ruff format .
 
 type-check:  ## Run type checking
-	@poetry run mypy . \
+	@uv run mypy . \
 		--install-types \
 		--non-interactive \
 		--ignore-missing-imports \
 		--show-error-codes \
 		--check-untyped-defs
 
+check: lint format type-check  ## Run all checks
+
 setup-environment-variables:
-	@poetry run python src/scripts/fix_dot_env_file.py
+	@uv run python src/scripts/fix_dot_env_file.py
 
 setup-environment-variables-non-interactive:
-	@poetry run python src/scripts/fix_dot_env_file.py --non-interactive
+	@uv run python src/scripts/fix_dot_env_file.py --non-interactive
 
 setup-git:
 	@git config --global init.defaultBranch main
@@ -103,16 +82,16 @@ setup-git:
 	@git config --local user.email ${GIT_EMAIL}
 
 test:  ## Run tests
-	@poetry run pytest && poetry run readme-cov
+	@uv run pytest && uv run readme-cov
 
 publish-major:  ## Publish the major version
-	@poetry run python -m src.scripts.versioning --major
+	@uv run python -m src.scripts.versioning --major
 	@echo "Published major version!"
 
 publish-minor:  ## Publish the minor version
-	@poetry run python -m src.scripts.versioning --minor
+	@uv run python -m src.scripts.versioning --minor
 	@echo "Published minor version!"
 
 publish-patch:  ## Publish the patch version
-	@poetry run python -m src.scripts.versioning --patch
+	@uv run python -m src.scripts.versioning --patch
 	@echo "Published patch version!"

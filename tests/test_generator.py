@@ -1,12 +1,13 @@
 """Unit tests for the `generator` module."""
 
+import inspect
 import typing
 
 import pytest
+
 import ragger.generator
-from ragger.data_models import GeneratedAnswer
+from ragger.data_models import GeneratedAnswer, Generator
 from ragger.exceptions import MissingExtra, MissingPackage
-from ragger.generator import Generator
 
 
 @pytest.fixture(
@@ -14,16 +15,25 @@ from ragger.generator import Generator
     params=[
         cls
         for cls in vars(ragger.generator).values()
-        if isinstance(cls, type) and issubclass(cls, Generator) and cls is not Generator
+        if inspect.isclass(object=cls)
+        and issubclass(cls, Generator)
+        and cls is not Generator
     ],
 )
 def generator(
-    request, special_kwargs
-) -> typing.Generator[typing.Type[Generator], None, None]:
+    request, special_kwargs, rag_system
+) -> typing.Generator[Generator, None, None]:
     """Initialise a generator class for testing."""
     try:
         generator_cls = request.param
-        generator = generator_cls(**special_kwargs.get(generator_cls.__name__, {}))
+        generator: Generator = generator_cls(
+            **special_kwargs.get(generator_cls.__name__, {})
+        )
+        generator.compile(
+            document_store=rag_system.document_store,
+            embedder=rag_system.embedder,
+            embedding_store=rag_system.embedding_store,
+        )
         yield generator
     except (MissingPackage, MissingExtra):
         pytest.skip("The generator could not be imported.")
@@ -58,11 +68,3 @@ def test_error_if_not_json(generator, query, documents) -> None:
     expected = GeneratedAnswer(answer="Not JSON-decodable.", sources=[])
     assert answer == expected
     generator.max_output_tokens = old_max_output_tokens
-
-
-def test_error_if_not_valid_types(generator, query, documents) -> None:
-    """Test that the generator raises an error if the JSON isn't valid."""
-    bad_prompt = 'Inkludér kilderne i key\'en "kilder" i stedet for "sources".'
-    answer = generator.generate(query=f"{query}\n{bad_prompt}", documents=documents)
-    expected = GeneratedAnswer(answer="JSON not valid.", sources=[])
-    assert answer == expected

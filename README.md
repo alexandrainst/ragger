@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-71%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-72%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
@@ -23,28 +23,22 @@ Developer(s):
 
 ## Installation
 
-Installation with `pip`:
+Installation with `pip`, `uv`, or `poetry`:
 
 ```bash
-pip install ragger[default]@git+ssh://git@github.com/alexandrainst/ragger.git
+pip install ragger@git+ssh://git@github.com/alexandrainst/ragger.git
+uv add git+ssh://git@github.com/alexandrainst/ragger.git
+poetry add git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
-Installation with `poetry`:
+You can also add additional extras to the installation, such as:
 
-```bash
-poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras default
-```
-
-The `default` extra will make sure that you have all the necessary dependencies for
-the default components (see below). If you want to use other components, you usually
-need to change the extras from `default` to a combination of the following:
-
+- `onprem_cpu` to use anything that requires an on-premises installation, running on a
+  CPU.
+- `onprem_gpu` to use anything that requires an on-premises installation, running on a
+  GPU.
 - `postgres` to use anything PostgreSQL-related.
-- `openai` to use anything OpenAI-related.
-- `vllm` to use the vLLM generator.
-- `e5` to use the E5 embedder.
 - `demo` to use the demo server.
-- `cpu` to force a CPU-installation of torch, to save some disk space.
 
 
 ## Quick Start
@@ -187,8 +181,10 @@ Generators are used to generate answers from the retrieved documents and the que
 These can all be imported from `ragger.generator`.
 
 - `OpenAIGenerator`: A generator that uses the OpenAI Chat API. (default)
+- `GGUFGenerator`: A generator that uses Llama.cpp to wrap any model from the Hugging
+  Face Hub in GGUF format. Optimised for CPU generation.
 - `VllmGenerator`: A generator that uses vLLM to wrap almost any model from the Hugging
-  Face Hub.
+  Face Hub. Note that this requires a GPU to run.
 
 
 ## Custom Components

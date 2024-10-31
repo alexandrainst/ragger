@@ -3,6 +3,7 @@
 import typing
 
 import pytest
+
 import ragger.document_store
 from ragger.data_models import DocumentStore
 
@@ -18,12 +19,17 @@ from ragger.data_models import DocumentStore
     ],
 )
 def document_store(
-    documents, request, special_kwargs
+    documents, request, special_kwargs, rag_system
 ) -> typing.Generator[DocumentStore, None, None]:
     """Initialise a document store for testing."""
     document_store_cls = request.param
-    document_store = document_store_cls(
+    document_store: DocumentStore = document_store_cls(
         **special_kwargs.get(document_store_cls.__name__, {})
+    )
+    document_store.compile(
+        embedder=rag_system.embedder,
+        embedding_store=rag_system.embedding_store,
+        generator=rag_system.generator,
     )
     document_store.add_documents(documents=documents)
     yield document_store

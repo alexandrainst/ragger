@@ -98,7 +98,7 @@ def is_installed(package_name: str) -> bool:
 
 def raise_if_not_installed(
     package_names: list[str],
-    extras_mapping: dict[str, str] | None = None,
+    extra: str | list[str] | None = None,
     installation_alias_mapping: dict[str, str] | None = None,
 ) -> None:
     """Raise an exception if any of the packages are not installed.
@@ -106,9 +106,10 @@ def raise_if_not_installed(
     Args:
         package_names:
             The names of the packages to check for.
-        extras_mapping:
-            A mapping from package names to extras, if the package can be installed with
-            `pip install ragger[EXTRA]`. Can be None if no extras are needed.
+        extra:
+            The name of the extra corresponding to the packages. Can also be a list if
+            the package belongs to either of multiple extras. Can be None if no extra
+            is needed.
         installation_alias_mapping:
             A mapping from package names to installation aliases, if a package is not
             installed with `pip install PACKAGE_NAME`. Can be None if no aliases are
@@ -120,32 +121,21 @@ def raise_if_not_installed(
         MissingPackage:
             If any of the packages are not installed.
     """
-    if extras_mapping is None:
-        extras_mapping = dict()
     if installation_alias_mapping is None:
         installation_alias_mapping = dict()
 
     # Check that all the packages in the mapping are present in the package names
-    assert all(package in package_names for package in extras_mapping)
     assert all(package in package_names for package in installation_alias_mapping)
 
     missing_packages = [
         package for package in package_names if not is_installed(package_name=package)
     ]
     if missing_packages:
-        missing_extras = list(
-            {
-                extras_mapping[package]
-                for package in missing_packages
-                if package in extras_mapping
-            }
-        )
-        if missing_extras:
-            raise MissingExtra(extras=missing_extras)
+        if extra is not None:
+            raise MissingExtra(extra=extra)
         missing_packages = [
             installation_alias_mapping.get(package, package)
             for package in missing_packages
-            if package not in extras_mapping
         ]
         raise MissingPackage(package_names=missing_packages)
 

@@ -21,15 +21,22 @@ class MissingPackage(Exception):
 class MissingExtra(Exception):
     """Exception raised when an extra is missing."""
 
-    def __init__(self, extras: list[str]) -> None:
+    def __init__(self, extra: str | list[str]) -> None:
         """Initialise the exception.
 
         Args:
-            extras:
-                The names of the missing extras.
+            extra:
+                The names of the missing extra, or multiple extras if one of them is
+                needed.
         """
-        self.extras = extras
-        super().__init__(
-            f"Missing extra(s): {', '.join(extras)}. Please install them "
-            f"using , e.g., `pip install ragger[{','.join(extras)}]`."
-        )
+        extra = extra[0] if isinstance(extra, list) and len(extra) == 1 else extra
+        if isinstance(extra, str):
+            super().__init__(
+                f"Missing extra: {extra}. Please install it using , e.g., "
+                f"`pip install ragger[{extra}]`."
+            )
+        else:
+            super().__init__(
+                f"Missing one of the following extras: {', '.join(extra)}. Please "
+                "choose one and install it using , e.g., `pip install ragger[EXTRA]`."
+            )
