@@ -1,6 +1,6 @@
 [project]
 name = "ragger"
-version = "3.0.0"
+version = "3.0.1"
 description = "A repository for general-purpose RAG applications."
 readme = "README.md"
 license = {text = "Proprietary"}
