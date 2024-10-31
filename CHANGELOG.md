@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Added
+-
+
+
 ## [v3.0.1] - 2024-10-31
 ### Fixed
 - Error related to `torch` import when no extras are installed.
