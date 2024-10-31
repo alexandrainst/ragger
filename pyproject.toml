@@ -61,7 +61,7 @@ dev-dependencies = [
 [tool.uv.sources]
 torch = [
     { index = "pytorch-cpu", marker = "extra == 'onprem_cpu'" },
-    { index = "pytorch-cu126", marker = "extra != 'onprem_cpu'" },
+    { index = "pypi", marker = "extra != 'onprem_cpu'" },
 ]
 
 [[tool.uv.index]]
@@ -70,8 +70,9 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
-name = "pytorch-cu126"
-url = "https://download.pytorch.org/whl/cu126"
+name = "pypi"
+url = "https://pypi.org/simple"
+explicit = true
 
 [project.scripts]
 ragger-demo = "ragger.cli:run_demo"

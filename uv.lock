@@ -2108,7 +2108,7 @@ requires-dist = [
     { name = "tiktoken", specifier = ">=0.8.0" },
     { name = "torch", marker = "platform_system == 'Darwin' and extra == 'onprem-cpu'", specifier = ">=2.5.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torch", marker = "platform_system != 'Darwin' and extra == 'onprem-cpu'", specifier = "==2.5+cpu", index = "https://download.pytorch.org/whl/cpu" },
-    { name = "torch", marker = "extra != 'onprem-cpu' and extra == 'onprem-gpu'", specifier = ">=2.5.0", index = "https://download.pytorch.org/whl/cu126" },
+    { name = "torch", marker = "extra != 'onprem-cpu' and extra == 'onprem-gpu'", specifier = ">=2.5.0", index = "https://pypi.org/simple" },
     { name = "torch", marker = "extra == 'onprem-cpu' and extra == 'onprem-gpu'", specifier = ">=2.5.0", index = "https://download.pytorch.org/whl/cpu" },
     { name = "transformers", marker = "extra == 'onprem-cpu'", specifier = ">=4.46.1" },
     { name = "transformers", marker = "extra == 'onprem-gpu'", specifier = ">=4.46.1" },
