@@ -49,8 +49,8 @@ demo = [
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cpu", marker = "extra == 'cpu_pytorch'" },
     { index = "pypi", marker = "extra != 'cpu_pytorch'" },
+    { index = "pytorch-cpu", marker = "extra == 'cpu_pytorch'" },
 ]
 
 [[tool.uv.index]]
