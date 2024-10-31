@@ -48,7 +48,7 @@ install-uv:
 	@uv self update
 
 install-dependencies:
-	@uv venv && uv sync --extra all
+	@uv venv && uv sync --extra default --extra onprem_cpu --extra postgres --extra demo
 
 install-pre-commit:  ## Install pre-commit hooks
 	@uv run pre-commit install

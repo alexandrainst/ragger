@@ -118,8 +118,7 @@ class Demo:
                 The port to use. Defaults to 7860.
         """
         raise_if_not_installed(
-            package_names=["gradio", "huggingface_hub"],
-            extras_mapping=dict(gradio="demo", huggingface_hub="demo"),
+            package_names=["gradio", "huggingface_hub"], extra="demo"
         )
 
         title_mapping = dict(da=DANISH_DEMO_TITLE, en=ENGLISH_DEMO_TITLE)

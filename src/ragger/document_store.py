@@ -302,7 +302,7 @@ class PostgresDocumentStore(DocumentStore):
         """
         raise_if_not_installed(
             package_names=["psycopg2"],
-            extras_mapping=dict(psycopg2="postgres"),
+            extra="postgres",
             installation_alias_mapping=dict(psycopg2="psycopg2-binary"),
         )
 

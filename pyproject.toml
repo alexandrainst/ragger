@@ -18,38 +18,31 @@ dependencies = [
     "pydantic>=2.9.2",
     "python-dotenv>=1.0.1",
     "pyyaml>=6.0.2",
-    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or (extra == 'all' or extra == 'onprem') and extra == 'cpu'",
-    "vllm>=0.1.0; sys_platform != 'darwin' and (extra == 'all' or extra != 'onprem') and extra != 'cpu'",
+    "tiktoken>=0.8.0",
+    "openai>=1.50.0",
 ]
 
 [project.optional-dependencies]
-default = [
-    "tiktoken>=0.8.0",
-    "openai>=1.50.0",
+onprem_cpu = [
+    "sentence_transformers>=3.2.1",
+    "outlines>=0.1.1",
+    "transformers>=4.46.1",
+    "protobuf>=5.28.3",
+    "torch>=2.5.0",
+    "llama_cpp_python>=0.3.1",
+]
+onprem_gpu = [
+    "sentence_transformers>=3.2.1",
+    "outlines>=0.1.1",
+    "transformers>=4.46.1",
+    "protobuf>=5.28.3",
+    "torch>=2.5.0",
+    "vllm>=0.1.0",
 ]
 postgres = [
     "psycopg2-binary>=2.9.10",
 ]
-onprem = [
-    "sentence_transformers>=3.2.1",
-    "outlines>=0.1.1",
-    "transformers>=4.46.1",
-    "protobuf>=5.28.3",
-]
-cpu = [
-    "torch==2.5.0+cpu; sys_platform != 'darwin'",
-]
 demo = [
-    "gradio>=5.4.0",
-]
-all = [
-    "tiktoken>=0.8.0",
-    "openai>=1.50.0",
-    "psycopg2-binary>=2.9.10",
-    "sentence_transformers>=3.2.1",
-    "outlines>=0.1.1",
-    "transformers>=4.46.1",
-    "protobuf>=5.28.3",
     "gradio>=5.4.0",
 ]
 
@@ -66,7 +59,7 @@ dev-dependencies = [
 
 [tool.uv.sources]
 torch = [
-    { index = "pytorch-cpu", marker = "sys_platform != 'darwin' and extra == 'cpu'" },
+    { index = "pytorch-cpu", marker = "extra == 'onprem_cpu'" },
 ]
 
 [[tool.uv.index]]

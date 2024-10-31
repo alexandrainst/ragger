@@ -23,28 +23,22 @@ Developer(s):
 
 ## Installation
 
-Installation with `pip`:
+Installation with `pip`, `uv`, or `poetry`:
 
 ```bash
-pip install ragger[default]@git+ssh://git@github.com/alexandrainst/ragger.git
+pip install ragger@git+ssh://git@github.com/alexandrainst/ragger.git
+uv add git+ssh://git@github.com/alexandrainst/ragger.git
+poetry add git+ssh://git@github.com/alexandrainst/ragger.git
 ```
 
-Installation with `poetry`:
+You can also add additional extras to the installation, such as:
 
-```bash
-poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras default
-```
-
-The `default` extra will make sure that you have all the necessary dependencies for
-the default components (see below). If you want to use other components, you usually
-need to change the extras from `default` to a combination of the following:
-
+- `onprem_cpu` to use anything that requires an on-premises installation, running on a
+  CPU.
+- `onprem_gpu` to use anything that requires an on-premises installation, running on a
+  GPU.
 - `postgres` to use anything PostgreSQL-related.
-- `onprem` to use anything that requires an on-premises installation.
-- `vllm` to use the vLLM generator.
 - `demo` to use the demo server.
-- `cpu` to force a CPU-installation of torch, to save some disk space, used in
-  combination with the other extras.
 
 
 ## Quick Start

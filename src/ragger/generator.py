@@ -174,8 +174,7 @@ class OpenAIGenerator(Generator):
                 Additional keyword arguments to pass to the generation function.
         """
         raise_if_not_installed(
-            package_names=["openai", "tiktoken", "httpx"],
-            extras_mapping=dict(openai="openai", tiktoken="openai", httpx="openai"),
+            package_names=["openai", "tiktoken", "httpx"], extra="openai"
         )
 
         self.model_id = model_id
@@ -470,7 +469,9 @@ class VllmGenerator(OpenAIGenerator):
                 The timeout for the vLLM server to start, in seconds. Only relevant if
                 `host` has been set. Defaults to 60.
         """
-        raise_if_not_installed(package_names=["vllm", "transformers"])
+        raise_if_not_installed(
+            package_names=["vllm", "transformers"], extra="onprem_gpu"
+        )
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
@@ -681,9 +682,7 @@ class GGUFGenerator(Generator):
         raise_if_not_installed(
             package_names=["outlines", "llama_cpp", "transformers"],
             installation_alias_mapping=dict(llama_cpp="llama_cpp_python"),
-            extras_mapping=dict(
-                outlines="onprem", llama_cpp="onprem", transformers="onprem"
-            ),
+            extra="onprem_cpu",
         )
         self.model_id = model_id
         self.quant_type = quant_type
