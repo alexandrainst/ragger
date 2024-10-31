@@ -18,6 +18,8 @@ dependencies = [
     "pydantic>=2.9.2",
     "python-dotenv>=1.0.1",
     "pyyaml>=6.0.2",
+    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or (extra == 'all' or extra == 'onprem') and extra == 'cpu'",
+    "vllm>=0.1.0; sys_platform != 'darwin' and (extra == 'all' or extra != 'onprem') and extra != 'cpu'",
 ]
 
 [project.optional-dependencies]
@@ -33,8 +35,6 @@ onprem = [
     "outlines>=0.1.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
-    "vllm>=0.1.0; sys_platform != 'darwin' and extra != 'cpu'",
 ]
 cpu = [
     "torch==2.5.0+cpu; sys_platform != 'darwin'",
@@ -50,8 +50,6 @@ all = [
     "outlines>=0.1.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "llama_cpp_python>=0.3.1; sys_platform == 'darwin' or extra == 'cpu'",
-    "vllm>=0.1.0; sys_platform != 'darwin' and extra != 'cpu'",
     "gradio>=5.4.0",
 ]
 
