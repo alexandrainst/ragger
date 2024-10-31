@@ -6,7 +6,6 @@ import logging
 import re
 from pathlib import Path
 
-import torch
 import yaml
 
 from .data_models import Document
@@ -75,6 +74,8 @@ def is_link(text: str) -> bool:
 
 def get_device() -> str:
     """Get the device to use for computation."""
+    import torch
+
     if torch.cuda.is_available():
         return "cuda"
     elif torch.backends.mps.is_available():
