@@ -41,6 +41,17 @@ You can also add additional extras to the installation, such as:
 - `demo` to use the demo server.
 
 
+### Development Installation
+
+If you want to install the package for development, you can do so as follows:
+
+```bash
+git clone git@github.com:alexandrainst/ragger.git
+cd ragger
+make install
+```
+
+
 ## Quick Start
 
 _Checkout the `tutorial.ipynb` notebook for a more detailed guide_
