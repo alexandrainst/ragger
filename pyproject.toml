@@ -59,7 +59,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-torch = { index = "pytorch-cpu" }
+torch = { index = "pytorch-cpu", marker = "extra == 'onprem_cpu'" }
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
