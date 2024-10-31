@@ -28,8 +28,6 @@ onprem_cpu = [
     "outlines>=0.1.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "torch==2.5+cpu; platform_system != 'Darwin'",
-    "torch>=2.5.0; platform_system == 'Darwin'",
     "llama_cpp_python>=0.3.1",
 ]
 onprem_gpu = [
@@ -37,7 +35,6 @@ onprem_gpu = [
     "outlines>=0.1.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "torch>=2.5.0",
     "vllm>=0.1.0",
 ]
 postgres = [
@@ -57,22 +54,6 @@ dev-dependencies = [
     "mypy>=1.13.0",
     "nbstripout>=0.7.1",
 ]
-
-[tool.uv.sources]
-torch = [
-    { index = "pytorch-cpu", marker = "extra == 'onprem_cpu'" },
-    { index = "pypi", marker = "extra != 'onprem_cpu'" },
-]
-
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
-name = "pypi"
-url = "https://pypi.org/simple"
-explicit = true
 
 [project.scripts]
 ragger-demo = "ragger.cli:run_demo"
