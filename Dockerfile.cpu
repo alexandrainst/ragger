@@ -10,8 +10,12 @@ RUN apt-get -y update && \
     apt-get clean
 
 # Install Ragger
-# NOTE: Change the `default` extra to the extras you need for your RAG project.
-RUN --mount=type=ssh python3 -m pip install "ragger[default,demo,cpu] @ git+ssh://git@github.com/alexandrainst/ragger.git"
+# NOTE: Change `[demo]` to any other extras you need in your RAG project - see the
+#       readme for a list of all the available extras. Also, remove the CPU-installation
+#       of PyTorch below if you do not need it.
+RUN --mount=type=ssh python3 -m pip install \
+  "ragger[demo] @ git+ssh://git@github.com/alexandrainst/ragger.git" \
+  torch==2.5.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 
 ARG config
 ENV config=$config

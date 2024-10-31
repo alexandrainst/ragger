@@ -174,8 +174,7 @@ class OpenAIGenerator(Generator):
                 Additional keyword arguments to pass to the generation function.
         """
         raise_if_not_installed(
-            package_names=["openai", "tiktoken", "httpx"],
-            extras_mapping=dict(openai="openai", tiktoken="openai", httpx="openai"),
+            package_names=["openai", "tiktoken", "httpx"], extra="openai"
         )
 
         self.model_id = model_id
@@ -470,12 +469,18 @@ class VllmGenerator(OpenAIGenerator):
                 The timeout for the vLLM server to start, in seconds. Only relevant if
                 `host` has been set. Defaults to 60.
         """
-        raise_if_not_installed(package_names=["vllm", "transformers"])
+        raise_if_not_installed(
+            package_names=["vllm", "transformers"], extra="onprem_gpu"
+        )
 
         logging.getLogger("transformers").setLevel(logging.CRITICAL)
 
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-        self.hf_config = AutoConfig.from_pretrained(model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
+        self.hf_config = AutoConfig.from_pretrained(
+            model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         self.gpu_memory_utilization = gpu_memory_utilization
         self.server_start_timeout = server_start_timeout
 
@@ -681,9 +686,7 @@ class GGUFGenerator(Generator):
         raise_if_not_installed(
             package_names=["outlines", "llama_cpp", "transformers"],
             installation_alias_mapping=dict(llama_cpp="llama_cpp_python"),
-            extras_mapping=dict(
-                outlines="onprem", llama_cpp="onprem", transformers="onprem"
-            ),
+            extra="onprem_cpu",
         )
         self.model_id = model_id
         self.quant_type = quant_type
@@ -741,7 +744,9 @@ class GGUFGenerator(Generator):
                 The embedding store to use.
         """
         self.base_model_id = self._get_base_model_id(model_id=self.model_id)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.base_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         assert self.tokenizer is not None
         self.logits_processor = self._get_logits_processor(tokenizer=self.tokenizer)
         self.model = self._load_model(
@@ -924,7 +929,7 @@ class GGUFGenerator(Generator):
         return base_model_tag_candidates[0].split(":")[1]
 
     @staticmethod
-    def _get_logits_processor(tokenizer: PreTrainedTokenizer) -> LogitsProcessor:
+    def _get_logits_processor(tokenizer: "PreTrainedTokenizer") -> "LogitsProcessor":
         """Get the logits processor.
 
         Args:
@@ -950,7 +955,7 @@ class GGUFGenerator(Generator):
         return logits_processor_fn
 
     @staticmethod
-    def _load_model(model_id: str, quant_type: str | None) -> Llama:
+    def _load_model(model_id: str, quant_type: str | None) -> "Llama":
         """Load the model.
 
         Args:

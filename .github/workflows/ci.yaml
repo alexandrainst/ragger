@@ -25,7 +25,7 @@ jobs:
     strategy:
         matrix:
             os: [self-hosted-ubuntu-latest]
-            python-version: ["3.10"]
+            python-version: ["3.11"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -42,26 +42,24 @@ jobs:
           sudo service postgresql start
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
 
-      - name: Install Poetry
-        run: pipx install poetry==1.8.2
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
 
       - name: Install Dependencies
-        run: |
-          poetry env use "${{ matrix.python-version }}"
-          poetry install --extras all --extras cpu
+        run: uv sync --extra onprem_cpu --extra postgres --extra demo
 
-      - name: Fix PyTorch bug
-        run: |
-          poetry remove torch
-          poetry add torch==2.1.1
+      - name: Log installed packages
+        run: uv pip list
 
       - name: Test with pytest
-        run: poetry run pytest
+        run: uv run pytest
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          HUGGINGFACE_HUB_TOKEN: ${{ secrets.HUGGINGFACE_HUB_TOKEN }}

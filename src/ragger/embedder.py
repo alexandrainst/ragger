@@ -51,8 +51,7 @@ class E5Embedder(Embedder):
                 on hardware availability. Defaults to "auto".
         """
         raise_if_not_installed(
-            package_names=["sentence_transformers"],
-            extras_mapping=dict(sentence_transformers="onprem"),
+            package_names=["sentence_transformers"], extra=["onprem_cpu", "onprem_gpu"]
         )
 
         self.embedder_model_id = embedder_model_id
@@ -61,8 +60,12 @@ class E5Embedder(Embedder):
         self.embedder = SentenceTransformer(
             model_name_or_path=self.embedder_model_id, device=self.device
         )
-        self.tokenizer = AutoTokenizer.from_pretrained(self.embedder_model_id)
-        self.model_config = AutoConfig.from_pretrained(self.embedder_model_id)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.embedder_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
+        self.model_config = AutoConfig.from_pretrained(
+            self.embedder_model_id, token=os.getenv("HUGGINGFACE_HUB_TOKEN", True)
+        )
         self.embedding_dim = self.model_config.hidden_size
 
     def embed_documents(self, documents: typing.Iterable[Document]) -> list[Embedding]:
@@ -200,9 +203,7 @@ class OpenAIEmbedder(Embedder):
             max_retries (optional):
                 The maximum number of retries. Defaults to 3.
         """
-        raise_if_not_installed(
-            package_names=["openai"], extras_mapping=dict(openai="openai")
-        )
+        raise_if_not_installed(package_names=["openai"], extra="openai")
 
         self.embedder_model_id = embedder_model_id
         self.api_key = api_key

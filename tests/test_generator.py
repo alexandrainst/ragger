@@ -1,13 +1,13 @@
 """Unit tests for the `generator` module."""
 
+import inspect
 import typing
 
 import pytest
 
 import ragger.generator
-from ragger.data_models import GeneratedAnswer
+from ragger.data_models import GeneratedAnswer, Generator
 from ragger.exceptions import MissingExtra, MissingPackage
-from ragger.generator import Generator
 
 
 @pytest.fixture(
@@ -15,7 +15,9 @@ from ragger.generator import Generator
     params=[
         cls
         for cls in vars(ragger.generator).values()
-        if isinstance(cls, type) and issubclass(cls, Generator) and cls is not Generator
+        if inspect.isclass(object=cls)
+        and issubclass(cls, Generator)
+        and cls is not Generator
     ],
 )
 def generator(

@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 	- `sentence-transformers` from `2.7.0` to `3.2.1`
 	- `gradio` from `4.27.0` to `5.4.0`
 - Removed all upper bounds from dependencies, to future-proof the package.
+- Changed `poetry` dependency backend to `uv`.
+- Replaced `e5` and `vllm` extras with `onprem_cpu` and `onprem_gpu` extras, for when
+  you want to run the RAG system on-premises with a CPU or GPU, respectively.
 
 
 ## [v2.0.0] - 2024-08-21
