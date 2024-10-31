@@ -55,6 +55,9 @@ jobs:
       - name: Install Dependencies
         run: uv sync --extra all --extra cpu
 
+      - name: Log installed packages
+        run: uv pip list
+
       - name: Test with pytest
         run: uv run pytest
         env:
