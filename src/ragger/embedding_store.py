@@ -14,11 +14,11 @@ import numpy as np
 
 from .data_models import (
     DocumentStore,
-    Embedder,
     Embedding,
     EmbeddingStore,
     Generator,
     Index,
+    Retriever,
 )
 from .utils import is_installed, raise_if_not_installed
 
@@ -63,7 +63,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
     def compile(
         self,
         document_store: "DocumentStore",
-        embedder: "Embedder",
+        retriever: "Retriever",
         generator: "Generator",
     ) -> None:
         """Compile the embedding store by adding all embeddings from the document store.
@@ -71,15 +71,17 @@ class NumpyEmbeddingStore(EmbeddingStore):
         Args:
             document_store:
                 The document store to use.
-            embedder:
-                The embedder to use.
+            retriever:
+                The retriever to use.
             generator:
                 The generator to use.
         """
+        assert hasattr(retriever, "embedder"), "The retriever must have an embedder."
+
         documents_not_in_embedding_store = [
             document for document in document_store if document.id not in self
         ]
-        embeddings = embedder.embed_documents(
+        embeddings = retriever.embedder.embed_documents(
             documents=documents_not_in_embedding_store
         )
         self.add_embeddings(embeddings=embeddings)
@@ -124,7 +126,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
             return self
 
         # In case we haven't inferred the embedding dimension yet, we do it now
-        if self.embedding_dim is None or self.embeddings is None:
+        if (
+            self.embedding_dim is None
+            or self.embeddings is None
+            or self.embeddings.size == 0
+        ):
             self.embedding_dim = embeddings[0].embedding.shape[0]
             self._initialise_embedding_matrix()
         assert self.embeddings is not None

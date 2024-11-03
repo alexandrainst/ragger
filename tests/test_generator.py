@@ -30,9 +30,7 @@ def generator(
             **special_kwargs.get(generator_cls.__name__, {})
         )
         generator.compile(
-            document_store=rag_system.document_store,
-            embedder=rag_system.embedder,
-            embedding_store=rag_system.embedding_store,
+            document_store=rag_system.document_store, retriever=rag_system.retriever
         )
         yield generator
     except (MissingPackage, MissingExtra):

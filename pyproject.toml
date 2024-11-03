@@ -43,6 +43,9 @@ postgres = [
 demo = [
     "gradio>=5.4.0",
 ]
+keyword-search = [
+    "rank-bm25>=0.2.2",
+]
 
 [tool.uv]
 dev-dependencies = [

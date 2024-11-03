@@ -66,19 +66,12 @@ class DocumentStore(ABC):
 
     path: Path
 
-    def compile(
-        self,
-        embedder: "Embedder",
-        embedding_store: "EmbeddingStore",
-        generator: "Generator",
-    ) -> None:
-        """Compile the embedder.
+    def compile(self, retriever: "Retriever", generator: "Generator") -> None:
+        """Compile the document store.
 
         Args:
-            embedder:
-                The embedder to use.
-            embedding_store:
-                The embedding store to use.
+            retriever:
+                The retriever to use.
             generator:
                 The generator to use.
         """
@@ -152,6 +145,84 @@ class DocumentStore(ABC):
         return f"{self.__class__.__name__}({len(self):,} documents)"
 
 
+class Retriever(ABC):
+    """An abstract retriever, which retrieves relevant documents for a query."""
+
+    def compile(self, document_store: "DocumentStore", generator: "Generator") -> None:
+        """Compile the retriever.
+
+        Args:
+            document_store:
+                The document store to use.
+            generator:
+                The generator to use.
+        """
+        pass
+
+    @abstractmethod
+    def retrieve(self, query: str) -> list[Index]:
+        """Retrieve relevant documents for a query.
+
+        Args:
+            query:
+                The query to retrieve documents for.
+
+        Returns:
+            A list of document IDs.
+        """
+        ...
+
+    def __repr__(self) -> str:
+        """Return a string representation of the retriever.
+
+        Returns:
+            A string representation of the retriever.
+        """
+        return f"{self.__class__.__name__}()"
+
+
+class Generator(ABC):
+    """An abstract generator of answers from a query and relevant documents."""
+
+    stream: bool
+
+    def compile(self, document_store: "DocumentStore", retriever: "Retriever") -> None:
+        """Compile the generator.
+
+        Args:
+            document_store:
+                The document store to use.
+            retriever:
+                The retriever to use.
+        """
+        pass
+
+    @abstractmethod
+    def generate(
+        self, query: str, documents: list[Document]
+    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
+        """Generate an answer from a query and relevant documents.
+
+        Args:
+            query:
+                The query to answer.
+            documents:
+                The relevant documents.
+
+        Returns:
+            The generated answer.
+        """
+        ...
+
+    def __repr__(self) -> str:
+        """Return a string representation of the generator.
+
+        Returns:
+            A string representation of the generator.
+        """
+        return f"{self.__class__.__name__}()"
+
+
 class Embedder(ABC):
     """An abstract embedder, which embeds documents using a pre-trained model."""
 
@@ -160,7 +231,7 @@ class Embedder(ABC):
     def compile(
         self,
         document_store: "DocumentStore",
-        embedding_store: "EmbeddingStore",
+        retriever: "Retriever",
         generator: "Generator",
     ) -> None:
         """Compile the embedder.
@@ -168,8 +239,8 @@ class Embedder(ABC):
         Args:
             document_store:
                 The document store to use.
-            embedding_store:
-                The embedding store to use.
+            retriever:
+                The retriever to use.
             generator:
                 The generator to use.
         """
@@ -218,16 +289,16 @@ class EmbeddingStore(ABC):
     def compile(
         self,
         document_store: "DocumentStore",
-        embedder: "Embedder",
+        retriever: "Retriever",
         generator: "Generator",
     ) -> None:
-        """Compile the embedder.
+        """Compile the embedding store.
 
         Args:
             document_store:
                 The document store to use.
-            embedder:
-                The embedder to use.
+            retriever:
+                The retriever to use.
             generator:
                 The generator to use.
         """
@@ -319,55 +390,6 @@ class EmbeddingStore(ABC):
             A string representation of the embedding store.
         """
         return f"{self.__class__.__name__}({len(self):,} embeddings)"
-
-
-class Generator(ABC):
-    """An abstract generator of answers from a query and relevant documents."""
-
-    stream: bool
-
-    def compile(
-        self,
-        document_store: "DocumentStore",
-        embedder: "Embedder",
-        embedding_store: "EmbeddingStore",
-    ) -> None:
-        """Compile the embedder.
-
-        Args:
-            document_store:
-                The document store to use.
-            embedder:
-                The embedder to use.
-            embedding_store:
-                The embedding store to use.
-        """
-        pass
-
-    @abstractmethod
-    def generate(
-        self, query: str, documents: list[Document]
-    ) -> GeneratedAnswer | typing.Generator[GeneratedAnswer, None, None]:
-        """Generate an answer from a query and relevant documents.
-
-        Args:
-            query:
-                The query to answer.
-            documents:
-                The relevant documents.
-
-        Returns:
-            The generated answer.
-        """
-        ...
-
-    def __repr__(self) -> str:
-        """Return a string representation of the generator.
-
-        Returns:
-            A string representation of the generator.
-        """
-        return f"{self.__class__.__name__}()"
 
 
 class PersistentSharingConfig(BaseModel):

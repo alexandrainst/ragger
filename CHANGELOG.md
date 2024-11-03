@@ -8,7 +8,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
--
+- Added a new abstract `Retriever` class, generalising the `Embedder` + `EmbeddingStore`
+  combination, and allowing for more flexible retriever implementations. The embedder
+  and embedding stores can still be used, via the `EmbeddingRetriever` retriever.
+- Added new `BM25Retriever`, which uses the BM25 algorithm to retrieve documents. Note
+  that this currently operates in-memory.
+- Added hybrid search through the new `FusionRetriever` retriever, which can combine an
+  arbitrary number of retrievers to search for documents. This currently uses the
+  reciprocal rank fusion method, but it is designed to be extensible to other fusion
+  methods.
+
+### Changed
+- The `RagSystem` class now only takes a `DocumentStore`, `Retriever` and `Generator`
+  instance, where the `Retriever` has replaced the previous `Embedder` and
+  `EmbeddingStore` combination. This allows for more flexible retriever implementations.
 
 
 ## [v3.0.1] - 2024-10-31

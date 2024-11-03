@@ -11,6 +11,7 @@ from .data_models import (
     EmbeddingStore,
     Generator,
     Index,
+    Retriever,
 )
 from .demo import Demo
 from .rag_system import RagSystem

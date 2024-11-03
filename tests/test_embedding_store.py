@@ -6,8 +6,15 @@ import numpy as np
 import pytest
 
 import ragger.embedding_store
-from ragger.data_models import Embedding
+from ragger.data_models import Embedder, Embedding
+from ragger.embedder import E5Embedder
 from ragger.embedding_store import EmbeddingStore
+
+
+@pytest.fixture(scope="module")
+def default_embedder(special_kwargs) -> typing.Generator[Embedder, None, None]:
+    """Initialise the default embedder for testing."""
+    yield E5Embedder(**special_kwargs.get("E5Embedder", {}))
 
 
 @pytest.fixture(scope="module")
@@ -52,7 +59,7 @@ def embedding_store(
     )
     embedding_store.compile(
         document_store=rag_system.document_store,
-        embedder=rag_system.embedder,
+        retriever=rag_system.retriever,
         generator=rag_system.generator,
     )
     yield embedding_store

@@ -20,7 +20,7 @@ from .constants import (
     ENGLISH_SYSTEM_PROMPT,
     ENGLISH_USER_PROMPT,
 )
-from .data_models import Document, GeneratedAnswer, Generator
+from .data_models import Document, GeneratedAnswer, Generator, Retriever
 from .utils import is_installed, raise_if_not_installed
 
 if is_installed(package_name="torch"):
@@ -106,7 +106,7 @@ if typing.TYPE_CHECKING:
     from outlines.processors.structured import JSONLogitsProcessor
     from transformers import AutoConfig, AutoTokenizer, PreTrainedTokenizer
 
-    from .data_models import DocumentStore, Embedder, EmbeddingStore
+    from .data_models import DocumentStore
 
 
 load_dotenv()
@@ -729,21 +729,14 @@ class GGUFGenerator(Generator):
         num_tokens = len(self.tokenizer.encode(prompt))
         return num_tokens > self.max_input_tokens
 
-    def compile(
-        self,
-        document_store: "DocumentStore",
-        embedder: "Embedder",
-        embedding_store: "EmbeddingStore",
-    ) -> None:
+    def compile(self, document_store: "DocumentStore", retriever: "Retriever") -> None:
         """Compile the embedder.
 
         Args:
             document_store:
                 The document store to use.
-            embedder:
-                The embedder to use.
-            embedding_store:
-                The embedding store to use.
+            retriever:
+                The retriever to use.
         """
         self.base_model_id = self._get_base_model_id(model_id=self.model_id)
         self.tokenizer = AutoTokenizer.from_pretrained(
