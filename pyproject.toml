@@ -43,7 +43,7 @@ postgres = [
 demo = [
     "gradio>=5.4.0",
 ]
-keyword-search = [
+keyword_search = [
     "rank-bm25>=0.2.2",
 ]
 

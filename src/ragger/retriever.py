@@ -82,6 +82,13 @@ class EmbeddingRetriever(Retriever):
         )
         return document_ids
 
+    def __repr__(self) -> str:
+        """Return a string representation of the retriever."""
+        return (
+            f"{self.__class__.__name__}"
+            f"(embedder={self.embedder}, embedding_store={self.embedding_store})"
+        )
+
 
 class BM25Retriever(Retriever):
     """A retriever using BM25 to retrieve relevant documents."""

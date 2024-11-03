@@ -52,7 +52,7 @@ install-dependencies:
 		--extra onprem_cpu \
 		--extra postgres \
 		--extra demo \
-		--extra keyword-search
+		--extra keyword_search
 
 install-pre-commit:  ## Install pre-commit hooks
 	@uv run pre-commit install

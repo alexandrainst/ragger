@@ -45,9 +45,15 @@ class RagSystem:
                 The reply to use when no documents are found. If None, a default
                 reply is used, based on the chosen language. Defaults to None.
         """
-        self.document_store: DocumentStore = document_store or JsonlDocumentStore()
-        self.retriever: Retriever = retriever or EmbeddingRetriever()
-        self.generator: Generator = generator or OpenAIGenerator(language=language)
+        self.document_store: DocumentStore = (
+            JsonlDocumentStore() if document_store is None else document_store
+        )
+        self.retriever: Retriever = (
+            EmbeddingRetriever() if retriever is None else retriever
+        )
+        self.generator: Generator = (
+            OpenAIGenerator(language=language) if generator is None else generator
+        )
         self.language = language
 
         no_documents_reply_mapping = dict(

@@ -6,6 +6,7 @@ import pytest
 
 import ragger.document_store
 from ragger.data_models import DocumentStore
+from ragger.document_store import PostgresDocumentStore
 
 
 @pytest.fixture(
@@ -32,6 +33,15 @@ def document_store(
     document_store.add_documents(documents=documents)
     yield document_store
     document_store.remove()
+    drop_table_if_postgres_document_store(document_store=document_store)
+
+
+def drop_table_if_postgres_document_store(document_store: DocumentStore) -> None:
+    """Drop the table if the document store is a PostgresDocumentStore."""
+    if isinstance(document_store, PostgresDocumentStore):
+        with document_store._connect() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DROP TABLE IF EXISTS documents")
 
 
 def test_initialisation(document_store):

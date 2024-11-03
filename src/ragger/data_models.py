@@ -302,7 +302,15 @@ class EmbeddingStore(ABC):
             generator:
                 The generator to use.
         """
-        pass
+        assert hasattr(retriever, "embedder"), "The retriever must have an embedder."
+
+        documents_not_in_embedding_store = [
+            document for document in document_store if document.id not in self
+        ]
+        embeddings = retriever.embedder.embed_documents(
+            documents=documents_not_in_embedding_store
+        )
+        self.add_embeddings(embeddings=embeddings)
 
     @abstractmethod
     def add_embeddings(
@@ -327,11 +335,6 @@ class EmbeddingStore(ABC):
         Returns:
             A list of indices of the nearest neighbours.
         """
-        ...
-
-    @abstractmethod
-    def clear(self) -> None:
-        """Clear all embeddings from the store."""
         ...
 
     @abstractmethod

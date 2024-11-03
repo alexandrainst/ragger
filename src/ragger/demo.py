@@ -288,7 +288,11 @@ class Demo:
                 f"<b><center>{self.description}</b></center>", label="p"
             )
             chatbot = gr.Chatbot(
-                value=[], elem_id="chatbot", bubble_full_width=False, scale=1
+                value=[],
+                elem_id="chatbot",
+                bubble_full_width=False,
+                scale=1,
+                type="tuples",
             )
             with gr.Row():
                 input_box = gr.Textbox(
