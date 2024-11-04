@@ -9,7 +9,6 @@ import ragger.generator
 from ragger.data_models import GeneratedAnswer, Generator
 from ragger.exceptions import MissingExtra, MissingPackage
 
-
 classes = [
     obj
     for obj in vars(ragger.generator).values()
