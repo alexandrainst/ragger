@@ -10,6 +10,22 @@ from ragger.data_models import GeneratedAnswer, Generator
 from ragger.exceptions import MissingExtra, MissingPackage
 
 
+classes = [
+    obj
+    for obj in vars(ragger.generator).values()
+    if isinstance(obj, type) and inspect.isclass(object=obj)
+]
+
+
+generator_classes = list()
+for cls in classes:
+    try:
+        if issubclass(cls, Generator) and cls is not Generator:
+            generator_classes.append(cls)
+    except TypeError as e:
+        raise TypeError(f"{cls} is not a class!")
+
+
 @pytest.fixture(
     scope="module",
     params=[
