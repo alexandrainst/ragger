@@ -22,7 +22,7 @@ for cls in classes:
     try:
         if issubclass(cls, Generator) and cls is not Generator:
             generator_classes.append(cls)
-    except TypeError as e:
+    except TypeError:
         raise TypeError(f"{cls} is not a class!")
 
 
