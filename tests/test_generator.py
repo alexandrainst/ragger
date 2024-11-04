@@ -4,6 +4,7 @@ import inspect
 import typing
 
 import pytest
+from numpy.typing import NDArray
 
 import ragger.generator
 from ragger.data_models import GeneratedAnswer, Generator
@@ -12,7 +13,7 @@ from ragger.exceptions import MissingExtra, MissingPackage
 classes = [
     obj
     for obj in vars(ragger.generator).values()
-    if isinstance(obj, type) and inspect.isclass(object=obj)
+    if isinstance(obj, type) and inspect.isclass(object=obj) and obj is not NDArray
 ]
 
 
