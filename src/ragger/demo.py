@@ -24,7 +24,7 @@ from .constants import (
     ENGLISH_SUBMIT_BUTTON_VALUE,
     ENGLISH_THANK_YOU_FEEDBACK,
 )
-from .data_models import Document, PersistentSharingConfig
+from .data_models import Document, EmbeddingStore, PersistentSharingConfig
 from .generator import OpenAIGenerator
 from .rag_system import RagSystem
 from .utils import format_answer, is_installed, load_config, raise_if_not_installed
@@ -288,7 +288,11 @@ class Demo:
                 f"<b><center>{self.description}</b></center>", label="p"
             )
             chatbot = gr.Chatbot(
-                value=[], elem_id="chatbot", bubble_full_width=False, scale=1
+                value=[],
+                elem_id="chatbot",
+                bubble_full_width=False,
+                scale=1,
+                type="tuples",
             )
             with gr.Row():
                 input_box = gr.Textbox(
@@ -451,11 +455,13 @@ class Demo:
             else:
                 files_to_upload.append(document_store_path)
 
-        if (embedding_store_path := self.rag_system.embedding_store.path) is not None:
-            if embedding_store_path.is_dir():
-                folders_to_upload.append(embedding_store_path)
-            else:
-                files_to_upload.append(embedding_store_path)
+        if hasattr(self.rag_system.retriever, "embedding_store"):
+            embedding_store: EmbeddingStore = self.rag_system.retriever.embedding_store
+            if (embedding_store_path := embedding_store.path) is not None:
+                if embedding_store_path.is_dir():
+                    folders_to_upload.append(embedding_store_path)
+                else:
+                    files_to_upload.append(embedding_store_path)
 
         for path in folders_to_upload + files_to_upload:
             if not path.exists():

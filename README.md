@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-72%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Developer(s):
@@ -163,27 +163,31 @@ imported from `ragger.document_store`.
   separated by newlines.
 
 
-### Embedders
+### Retrievers
 
-Embedders are used to embed documents. These can all be imported from `ragger.embedder`.
+Retrievers are used to retrieve documents related to a query. These can all be imported
+from `ragger.retriever`.
 
-- `OpenAIEmbedder`: An embedder that uses the OpenAI Embeddings API. (default)
-- `E5Embedder`: An embedder that uses an E5 model.
+- `EmbeddingRetriever`: A retriever that uses embeddings to retrieve documents. These
+  embeddings are computed using an embedder, which can be one of the following:
+  - `OpenAIEmbedder`: An embedder that uses the OpenAI Embeddings API. (default)
+  - `E5Embedder`: An embedder that uses an E5 model.
 
+  The embeddings are stored in an embedding store, which can be one of the following:
+  - `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
+	(default)
+  - `PostgresEmbeddingStore`: An embedding store that uses a PostgreSQL database to
+	store embeddings, using the `pgvector` extension. This assumes that the PostgreSQL
+	server is already running, and that the `pgvector` extension is installed. See
+	[here](https://github.com/pgvector/pgvector?tab=readme-ov-file#installation) for
+	more information on how to install the extension.
 
-### Embedding Stores
+- `BM25Retriever`: A retriever that uses BM25 to retrieve documents. This is keyword
+  based and is thus more suitable for keyword-based queries.
 
-Embedding stores are used to store embeddings. Embeddings are represented as objects of
-the `Embedding` data class, which has an `id` and an `embedding` field. These can all be
-imported from `ragger.embedding_store`.
-
-- `NumpyEmbeddingStore`: An embedding store that stores embeddings in a NumPy array.
-  (default)
-- `PostgresEmbeddingStore`: An embedding store that uses a PostgreSQL database to store
-  embeddings, using the `pgvector` extension. This assumes that the PostgreSQL server is
-  already running, and that the `pgvector` extension is installed. See
-  [here](https://github.com/pgvector/pgvector?tab=readme-ov-file#installation) for more
-  information on how to install the extension.
+- `FusionRetriever`: A retriever that fuses the results of multiple retrievers. This
+  can for instance be used to combine the results of the `EmbeddingRetriever` and the
+  `BM25Retriever` to get the best of both worlds (known as "Hybrid Retrieval").
 
 
 ### Generators
@@ -203,8 +207,7 @@ These can all be imported from `ragger.generator`.
 You can also create custom components by subclassing the following classes:
 
 - `DocumentStore`
-- `Embedder`
-- `EmbeddingStore`
+- `Retriever` (and by extension, also `Embedder` and `EmbeddingStore`)
 - `Generator`
 
 These can then simply be added to a `RagSystem`. Here is an example:

@@ -26,7 +26,7 @@ def embedder(
     embedder: Embedder = request.param(**special_kwargs.get(embedder_cls.__name__, {}))
     embedder.compile(
         document_store=rag_system.document_store,
-        embedding_store=rag_system.embedding_store,
+        retriever=rag_system.retriever,
         generator=rag_system.generator,
     )
     yield embedder

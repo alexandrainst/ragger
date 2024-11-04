@@ -6,22 +6,15 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
-from ragger.data_models import (
-    Document,
-    DocumentStore,
-    Embedder,
-    EmbeddingStore,
-    Generator,
-)
+from ragger.data_models import Document, DocumentStore, Generator, Retriever
 from ragger.document_store import JsonlDocumentStore
-from ragger.embedder import OpenAIEmbedder
-from ragger.embedding_store import NumpyEmbeddingStore
 from ragger.generator import OpenAIGenerator
 from ragger.rag_system import RagSystem
+from ragger.retriever import EmbeddingRetriever
 
 
 @pytest.fixture(scope="session")
-def special_kwargs() -> typing.Generator[dict[str, dict[str, str]], None, None]:
+def special_kwargs() -> typing.Generator[dict[str, dict[str, typing.Any]], None, None]:
     """Special keyword arguments for initialising RAG components."""
     yield dict(
         E5Embedder=dict(embedder_model_id="intfloat/multilingual-e5-small"),
@@ -66,17 +59,9 @@ def default_document_store(documents) -> typing.Generator[DocumentStore, None, N
 
 
 @pytest.fixture(scope="session")
-def default_embedder() -> typing.Generator[Embedder, None, None]:
-    """An embedder for testing."""
-    yield OpenAIEmbedder()
-
-
-@pytest.fixture(scope="session")
-def default_embedding_store() -> typing.Generator[EmbeddingStore, None, None]:
-    """An embedding store for testing."""
-    embedding_store = NumpyEmbeddingStore()
-    yield embedding_store
-    embedding_store.clear()
+def default_retriever() -> typing.Generator[Retriever, None, None]:
+    """A retriever for testing."""
+    yield EmbeddingRetriever()
 
 
 @pytest.fixture(scope="session")
@@ -87,12 +72,11 @@ def default_generator() -> typing.Generator[Generator, None, None]:
 
 @pytest.fixture(scope="session")
 def rag_system(
-    default_document_store, default_embedder, default_embedding_store, default_generator
+    default_document_store, default_retriever, default_generator
 ) -> typing.Generator[RagSystem, None, None]:
     """A RAG system for testing."""
     yield RagSystem(
         document_store=default_document_store,
-        embedder=default_embedder,
-        embedding_store=default_embedding_store,
+        retriever=default_retriever,
         generator=default_generator,
     )

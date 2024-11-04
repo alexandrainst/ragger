@@ -2922,6 +2922,9 @@ dependencies = [
 demo = [
     { name = "gradio" },
 ]
+keyword-search = [
+    { name = "rank-bm25" },
+]
 onprem-cpu = [
     { name = "llama-cpp-python" },
     { name = "outlines" },
@@ -2969,6 +2972,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9.2" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "rank-bm25", marker = "extra == 'keyword-search'", specifier = ">=0.2.2" },
     { name = "sentence-transformers", marker = "extra == 'onprem-cpu'", specifier = ">=3.2.1" },
     { name = "sentence-transformers", marker = "extra == 'onprem-gpu'", specifier = ">=3.2.1" },
     { name = "tiktoken", specifier = ">=0.8.0" },
@@ -2989,6 +2993,18 @@ dev = [
     { name = "pytest-cov", specifier = ">=5.0.0" },
     { name = "readme-coverage-badger", specifier = ">=0.1.1" },
     { name = "ruff", specifier = ">=0.7.1" },
+]
+
+[[package]]
+name = "rank-bm25"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/0a/f9579384aa017d8b4c15613f86954b92a95a93d641cc849182467cf0bb3b/rank_bm25-0.2.2.tar.gz", hash = "sha256:096ccef76f8188563419aaf384a02f0ea459503fdf77901378d4fd9d87e5e51d", size = 8347 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/21/f691fb2613100a62b3fa91e9988c991e9ca5b89ea31c0d3152a3210344f9/rank_bm25-0.2.2-py3-none-any.whl", hash = "sha256:7bd4a95571adadfc271746fa146a4bcfd89c0cf731e49c3d1ad863290adbe8ae", size = 8584 },
 ]
 
 [[package]]

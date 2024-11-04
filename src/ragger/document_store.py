@@ -60,6 +60,7 @@ class JsonlDocumentStore(DocumentStore):
 
     def remove(self) -> None:
         """Remove the document store."""
+        self._documents.clear()
         self.path.unlink(missing_ok=True)
 
     def __getitem__(self, index: Index) -> Document:
@@ -500,6 +501,7 @@ class TxtDocumentStore(DocumentStore):
 
     def remove(self) -> None:
         """Remove the document store."""
+        self._documents.clear()
         self.path.unlink(missing_ok=True)
 
     def __getitem__(self, index: Index) -> Document:

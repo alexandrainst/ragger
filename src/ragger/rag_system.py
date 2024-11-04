@@ -9,18 +9,10 @@ from . import embedder as embedder_module
 from . import embedding_store as embedding_store_module
 from . import generator as generator_module
 from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
-from .data_models import (
-    Document,
-    DocumentStore,
-    Embedder,
-    EmbeddingStore,
-    GeneratedAnswer,
-    Generator,
-)
+from .data_models import Document, DocumentStore, GeneratedAnswer, Generator, Retriever
 from .document_store import JsonlDocumentStore
-from .embedder import OpenAIEmbedder
-from .embedding_store import NumpyEmbeddingStore
 from .generator import OpenAIGenerator
+from .retriever import EmbeddingRetriever
 from .utils import format_answer, load_config
 
 logger = logging.getLogger(__package__)
@@ -32,8 +24,7 @@ class RagSystem:
     def __init__(
         self,
         document_store: DocumentStore | None = None,
-        embedder: Embedder | None = None,
-        embedding_store: EmbeddingStore | None = None,
+        retriever: Retriever | None = None,
         generator: Generator | None = None,
         language: typing.Literal["da", "en"] = "da",
         no_documents_reply: str | None = None,
@@ -43,12 +34,10 @@ class RagSystem:
         Args:
             document_store (optional):
                 The document store to use, or None to use the default.
-            embedder (optional):
-                The embedder to use, or None to use the default.
-            embedding_store (optional):
-                The embedding store to use, or None to use the default.
+            retriever (optional):
+                The retriever to use, or None to use the default. Defaults to None.
             generator (optional):
-                The generator to use, or None to use the default.
+                The generator to use, or None to use the default. Defaults to None.
             language (optional):
                 The language to use for the system. Can be "da" (Danish) or "en"
                 (English). Defaults to "da".
@@ -56,20 +45,15 @@ class RagSystem:
                 The reply to use when no documents are found. If None, a default
                 reply is used, based on the chosen language. Defaults to None.
         """
-        # Use defaults if no components are provided
-        if document_store is None:
-            document_store = JsonlDocumentStore()
-        if embedder is None:
-            embedder = OpenAIEmbedder()
-        if embedding_store is None:
-            embedding_store = NumpyEmbeddingStore(embedding_dim=embedder.embedding_dim)
-        if generator is None:
-            generator = OpenAIGenerator(language=language)
-
-        self.document_store = document_store
-        self.embedder = embedder
-        self.embedding_store = embedding_store
-        self.generator = generator
+        self.document_store: DocumentStore = (
+            JsonlDocumentStore() if document_store is None else document_store
+        )
+        self.retriever: Retriever = (
+            EmbeddingRetriever() if retriever is None else retriever
+        )
+        self.generator: Generator = (
+            OpenAIGenerator(language=language) if generator is None else generator
+        )
         self.language = language
 
         no_documents_reply_mapping = dict(
@@ -117,57 +101,16 @@ class RagSystem:
 
         return cls(**kwargs)
 
-    def compile(self, force: bool = False) -> "RagSystem":
-        """Compile the RAG system.
-
-        This builds the underlying embedding store and can be called whenever the data
-        needs to be updated.
-
-        Args:
-            force:
-                Whether to force a recompilation. This deletes the existing embedding
-                store and rebuilds it.
-        """
-        if force:
-            self.embedding_store.clear()
-
-        self.document_store.compile(
-            embedder=self.embedder,
-            embedding_store=self.embedding_store,
-            generator=self.generator,
-        )
-        self.embedder.compile(
-            document_store=self.document_store,
-            embedding_store=self.embedding_store,
-            generator=self.generator,
-        )
-        self.embedding_store.compile(
-            document_store=self.document_store,
-            embedder=self.embedder,
-            generator=self.generator,
+    def compile(self) -> "RagSystem":
+        """Compile the RAG system."""
+        self.document_store.compile(retriever=self.retriever, generator=self.generator)
+        self.retriever.compile(
+            document_store=self.document_store, generator=self.generator
         )
         self.generator.compile(
-            document_store=self.document_store,
-            embedder=self.embedder,
-            embedding_store=self.embedding_store,
+            document_store=self.document_store, retriever=self.retriever
         )
         return self
-
-    def get_relevant_documents(self, query: str) -> list[Document]:
-        """Get the most relevant documents for a query.
-
-        Args:
-            query:
-                The query to find relevant documents for.
-
-        Returns:
-            The most relevant documents.
-        """
-        query_embedding = self.embedder.embed_query(query)
-        nearest_neighbours = self.embedding_store.get_nearest_neighbours(
-            query_embedding
-        )
-        return [self.document_store[i] for i in nearest_neighbours]
 
     def answer(
         self, query: str
@@ -184,8 +127,10 @@ class RagSystem:
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        documents = self.get_relevant_documents(query=query)
+        document_ids = self.retriever.retrieve(query=query)
+        documents = [self.document_store[i] for i in document_ids]
         generated_answer = self.generator.generate(query=query, documents=documents)
+
         if isinstance(generated_answer, typing.Generator):
 
             def streamer() -> typing.Generator[tuple[str, list[Document]], None, None]:
@@ -274,8 +219,7 @@ class RagSystem:
             new_idx += 1
 
         self.document_store.add_documents(documents=document_objects)
-        embeddings = self.embedder.embed_documents(documents=document_objects)
-        self.embedding_store.add_embeddings(embeddings=embeddings)
+        self.compile()
         return self
 
     def __repr__(self) -> str:
@@ -283,7 +227,6 @@ class RagSystem:
         return (
             "RagSystem("
             f"document_store={self.document_store}, "
-            f"embedder={self.embedder}, "
-            f"embedding_store={self.embedding_store}, "
+            f"retriever={self.retriever}, "
             f"generator={self.generator})"
         )

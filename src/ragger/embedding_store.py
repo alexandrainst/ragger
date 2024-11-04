@@ -12,14 +12,7 @@ from typing import Iterable
 
 import numpy as np
 
-from .data_models import (
-    DocumentStore,
-    Embedder,
-    Embedding,
-    EmbeddingStore,
-    Generator,
-    Index,
-)
+from .data_models import Embedding, EmbeddingStore, Index
 from .utils import is_installed, raise_if_not_installed
 
 if is_installed(package_name="psycopg2"):
@@ -59,30 +52,6 @@ class NumpyEmbeddingStore(EmbeddingStore):
         """Initialise the embedding matrix with zeros."""
         if self.embedding_dim is not None:
             self.embeddings = np.zeros((0, self.embedding_dim))
-
-    def compile(
-        self,
-        document_store: "DocumentStore",
-        embedder: "Embedder",
-        generator: "Generator",
-    ) -> None:
-        """Compile the embedding store by adding all embeddings from the document store.
-
-        Args:
-            document_store:
-                The document store to use.
-            embedder:
-                The embedder to use.
-            generator:
-                The generator to use.
-        """
-        documents_not_in_embedding_store = [
-            document for document in document_store if document.id not in self
-        ]
-        embeddings = embedder.embed_documents(
-            documents=documents_not_in_embedding_store
-        )
-        self.add_embeddings(embeddings=embeddings)
 
     @property
     def row_id_to_index(self) -> dict[int, Index]:
@@ -124,7 +93,11 @@ class NumpyEmbeddingStore(EmbeddingStore):
             return self
 
         # In case we haven't inferred the embedding dimension yet, we do it now
-        if self.embedding_dim is None or self.embeddings is None:
+        if (
+            self.embedding_dim is None
+            or self.embeddings is None
+            or self.embeddings.size == 0
+        ):
             self.embedding_dim = embeddings[0].embedding.shape[0]
             self._initialise_embedding_matrix()
         assert self.embeddings is not None
@@ -232,17 +205,13 @@ class NumpyEmbeddingStore(EmbeddingStore):
         logger.info(f"Found nearest neighbours with indices {top_indices}.")
         return nearest_neighbours
 
-    def clear(self) -> None:
-        """Clear all embeddings from the store."""
+    def remove(self) -> None:
+        """Remove the embedding store."""
         if self.embedding_dim is not None:
             self.embeddings = np.zeros(shape=(0, self.embedding_dim))
         self.index_to_row_id = defaultdict()
         self.path.unlink(missing_ok=True)
-        logger.info("Cleared the embedding store.")
-
-    def remove(self) -> None:
-        """Remove the embedding store."""
-        self.path.unlink(missing_ok=True)
+        logger.info("The embedding store has been removed.")
 
     def __getitem__(self, document_id: Index) -> Embedding:
         """Fetch an embedding by its document ID.
@@ -384,6 +353,10 @@ class PostgresEmbeddingStore(EmbeddingStore):
                 )
             """)
             cursor.execute(f"""
+                ALTER TABLE {self.table_name}
+                ADD COLUMN IF NOT EXISTS {self.embedding_column} VECTOR({self.embedding_dim})
+            """)
+            cursor.execute(f"""
                 CREATE INDEX IF NOT EXISTS cosine_hnsw_embedding_idx
                 ON {self.table_name}
                 USING hnsw ({self.embedding_column} vector_cosine_ops)
@@ -420,6 +393,9 @@ class PostgresEmbeddingStore(EmbeddingStore):
         """
         if not embeddings:
             return self
+
+        # Ensure that the table exists
+        self._create_table()
 
         # Ensure that we can access the embeddings multiple times
         embeddings = list(embeddings)
@@ -569,7 +545,7 @@ class PostgresEmbeddingStore(EmbeddingStore):
                     FROM {self.table_name}
                     WHERE {self.embedding_column} IS NOT NULL
                 """)
-            except psycopg2.errors.UndefinedTable:
+            except (psycopg2.errors.UndefinedTable, psycopg2.errors.UndefinedColumn):
                 return 0
             else:
                 result = cursor.fetchone()
@@ -577,22 +553,13 @@ class PostgresEmbeddingStore(EmbeddingStore):
                     return 0
                 return result[0]
 
-    def clear(self) -> None:
+    def remove(self) -> None:
         """Clear all embeddings from the store."""
         with self._connect() as conn:
             cursor = conn.cursor()
             try:
                 cursor.execute(f"""
-                    UPDATE {self.table_name} SET {self.embedding_column} = NULL
+                    ALTER TABLE {self.table_name} DROP COLUMN {self.embedding_column}
                 """)
-            except psycopg2.errors.UndefinedTable:
-                pass
-
-    def remove(self) -> None:
-        """Remove the embedding store."""
-        with self._connect() as conn:
-            cursor = conn.cursor()
-            try:
-                cursor.execute(f"DROP TABLE {self.table_name}")
-            except psycopg2.errors.UndefinedTable:
+            except (psycopg2.errors.UndefinedTable, psycopg2.errors.UndefinedColumn):
                 pass

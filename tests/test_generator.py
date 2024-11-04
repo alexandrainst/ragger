@@ -4,6 +4,7 @@ import inspect
 import typing
 
 import pytest
+from numpy.typing import NDArray
 
 import ragger.generator
 from ragger.data_models import GeneratedAnswer, Generator
@@ -16,6 +17,7 @@ from ragger.exceptions import MissingExtra, MissingPackage
         cls
         for cls in vars(ragger.generator).values()
         if inspect.isclass(object=cls)
+        and cls is not NDArray  # numpy.typing.NDArray is not a class in Python 3.10
         and issubclass(cls, Generator)
         and cls is not Generator
     ],
@@ -30,9 +32,7 @@ def generator(
             **special_kwargs.get(generator_cls.__name__, {})
         )
         generator.compile(
-            document_store=rag_system.document_store,
-            embedder=rag_system.embedder,
-            embedding_store=rag_system.embedding_store,
+            document_store=rag_system.document_store, retriever=rag_system.retriever
         )
         yield generator
     except (MissingPackage, MissingExtra):
