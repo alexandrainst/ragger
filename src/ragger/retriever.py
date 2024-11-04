@@ -151,7 +151,7 @@ class BM25Retriever(Retriever):
         return [self.row_id_to_index[row_id] for row_id, _ in sorted_scores]
 
 
-class FusionRetriever(Retriever):
+class HybridRetriever(Retriever):
     """A retriever that fuses rankings from multiple retrievers."""
 
     def __init__(

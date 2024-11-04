@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   and embedding stores can still be used, via the `EmbeddingRetriever` retriever.
 - Added new `BM25Retriever`, which uses the BM25 algorithm to retrieve documents. Note
   that this currently operates in-memory.
-- Added hybrid search through the new `FusionRetriever` retriever, which can combine an
+- Added hybrid search through the new `HybridRetriever` retriever, which can combine an
   arbitrary number of retrievers to search for documents. This currently uses the
   reciprocal rank fusion method, but it is designed to be extensible to other fusion
   methods.

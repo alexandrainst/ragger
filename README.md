@@ -186,7 +186,7 @@ from `ragger.retriever`.
 - `BM25Retriever`: A retriever that uses BM25 to retrieve documents. This is keyword
   based and is thus more suitable for keyword-based queries.
 
-- `FusionRetriever`: A retriever that fuses the results of multiple retrievers. This
+- `HybridRetriever`: A retriever that fuses the results of multiple retrievers. This
   can for instance be used to combine the results of the `EmbeddingRetriever` and the
   `BM25Retriever` to get the best of both worlds (known as "Hybrid Retrieval").
 
