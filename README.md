@@ -15,10 +15,15 @@ ______________________________________________________________________
 [![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
-Developer(s):
+Author(s):
 
 - Dan Saattrup Nielsen (dan.nielsen@alexandra.dk)
 - Anders Jess Pedersen (anders.j.pedersen@alexandra.dk)
+
+
+Maintainer(s):
+
+- Dan Saattrup Nielsen (dan.nielsen@alexandra.dk)
 
 
 ## Installation
