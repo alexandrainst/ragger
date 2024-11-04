@@ -17,7 +17,7 @@ from ragger.exceptions import MissingExtra, MissingPackage
         cls
         for cls in vars(ragger.generator).values()
         if inspect.isclass(object=cls)
-        and cls is not NDArray
+        and cls is not NDArray  # numpy.typing.NDArray is not a class in Python 3.10
         and issubclass(cls, Generator)
         and cls is not Generator
     ],
