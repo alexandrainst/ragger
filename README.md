@@ -38,6 +38,8 @@ You can also add additional extras to the installation, such as:
 - `onprem_gpu` to use anything that requires an on-premises installation, running on a
   GPU.
 - `postgres` to use anything PostgreSQL-related.
+- `keyword_search` to use the `BM25Retriever` for keyword-based retrieval. Note that
+  this is also required when using `HybridRetriever` with the default configuration.
 - `demo` to use the demo server.
 
 
