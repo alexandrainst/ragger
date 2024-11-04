@@ -19,8 +19,7 @@ from ragger.exceptions import MissingExtra, MissingPackage
             for obj in vars(ragger.generator).values()
             if inspect.isclass(object=cls)
         ]
-        if issubclass(cls, Generator)
-        and cls is not Generator
+        if issubclass(cls, Generator) and cls is not Generator
     ],
 )
 def generator(
