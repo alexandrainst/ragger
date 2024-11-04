@@ -14,8 +14,11 @@ from ragger.exceptions import MissingExtra, MissingPackage
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.generator).values()
-        if inspect.isclass(object=cls)
+        for cls in [
+            obj
+            for obj in vars(ragger.generator).values()
+            if inspect.isclass(object=cls)
+        ]
         and issubclass(cls, Generator)
         and cls is not Generator
     ],
