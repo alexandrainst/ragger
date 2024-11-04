@@ -8,6 +8,7 @@ from . import document_store as document_store_module
 from . import embedder as embedder_module
 from . import embedding_store as embedding_store_module
 from . import generator as generator_module
+from . import retriever as retriever_module
 from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
 from .data_models import Document, DocumentStore, GeneratedAnswer, Generator, Retriever
 from .document_store import JsonlDocumentStore
@@ -82,6 +83,7 @@ class RagSystem:
 
         components = dict(
             document_store=document_store_module,
+            retriever=retriever_module,
             embedder=embedder_module,
             embedding_store=embedding_store_module,
             generator=generator_module,
@@ -92,6 +94,17 @@ class RagSystem:
             assert "name" in config[component], f"Missing 'name' key for {component}."
             component_class = getattr(module, config[component]["name"])
             config[component].pop("name")
+
+            for key in config[component].keys():
+                if key in components:
+                    sub_component_class = getattr(
+                        components[key], config[component][key]["name"]
+                    )
+                    config[component][key].pop("name")
+                    config[component][key] = sub_component_class(
+                        **config[component][key]
+                    )
+
             kwargs[component] = component_class(**config[component])
 
         if "language" in config:

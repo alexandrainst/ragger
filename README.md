@@ -101,13 +101,14 @@ document_store:
   name: JsonlDocumentStore
   <key>: <value>  # For any additional arguments to `JSONLDocumentStore`
 
-embedder:
-  name: OpenAIEmbedder
-  <key>: <value>  # For any additional arguments to `OpenAIEmbedder`
-
-embedding_store:
-  name: NumpyEmbeddingStore
-  <key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
+retriever:
+  name: EmbeddingRetriever
+  embedder:
+	name: OpenAIEmbedder
+	<key>: <value>  # For any additional arguments to `OpenAIEmbedder`
+  embedding_store:
+    name: NumpyEmbeddingStore
+    <key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
 
 generator:
   name: OpenAIGenerator
