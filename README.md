@@ -47,6 +47,15 @@ You can also add additional extras to the installation, such as:
   this is also required when using `HybridRetriever` with the default configuration.
 - `demo` to use the demo server.
 
+Here is an example of how to install with the `onprem_cpu` extra, with `pip`, `uv`, and
+`poetry`, respectively:
+
+```bash
+pip install ragger[onprem_cpu]@git+ssh://git@github.com/alexandrainst/ragger.git
+uv add git+ssh://git@github.com/alexandrainst/ragger.git --extra onprem_cpu
+poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras onprem_cpu
+```
+
 
 ### Development Installation
 
