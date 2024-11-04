@@ -106,8 +106,8 @@ document_store:
 retriever:
   name: EmbeddingRetriever
   embedder:
-	name: OpenAIEmbedder
-	<key>: <value>  # For any additional arguments to `OpenAIEmbedder`
+    name: OpenAIEmbedder
+    <key>: <value>  # For any additional arguments to `OpenAIEmbedder`
   embedding_store:
     name: NumpyEmbeddingStore
     <key>: <value>  # For any additional arguments to `NumpyEmbeddingStore`
