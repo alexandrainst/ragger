@@ -1,4 +1,4 @@
-"""Command-line interface for the `ragger` package."""
+"""Command-line interface for the `alexandrainst_ragger` package."""
 
 import logging
 from pathlib import Path

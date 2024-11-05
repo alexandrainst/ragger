@@ -5,10 +5,10 @@ import typing
 import numpy as np
 import pytest
 
-import ragger.embedding_store
-from ragger.data_models import Embedder, Embedding
-from ragger.embedder import E5Embedder
-from ragger.embedding_store import EmbeddingStore, PostgresEmbeddingStore
+import alexandrainst_ragger.embedding_store
+from alexandrainst_ragger.data_models import Embedder, Embedding
+from alexandrainst_ragger.embedder import E5Embedder
+from alexandrainst_ragger.embedding_store import EmbeddingStore, PostgresEmbeddingStore
 
 
 @pytest.fixture(scope="module")
@@ -36,7 +36,7 @@ def embeddings(default_embedder) -> typing.Generator[list[Embedding], None, None
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.embedding_store).values()
+        for cls in vars(alexandrainst_ragger.embedding_store).values()
         if isinstance(cls, type)
         and issubclass(cls, EmbeddingStore)
         and cls is not EmbeddingStore

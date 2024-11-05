@@ -89,13 +89,19 @@ test:  ## Run tests
 	@uv run pytest && uv run readme-cov
 
 publish-major:  ## Publish the major version
-	@uv run python -m src.scripts.versioning --major
+	@uv run python -m src.scripts.versioning --major \
+		&& uv build \
+		&& uv publish -u __token__ -p ${PYPI_TOKEN}
 	@echo "Published major version!"
 
 publish-minor:  ## Publish the minor version
-	@uv run python -m src.scripts.versioning --minor
+	@uv run python -m src.scripts.versioning --minor \
+		&& uv build \
+		&& uv publish -u __token__ -p ${PYPI_TOKEN}
 	@echo "Published minor version!"
 
 publish-patch:  ## Publish the patch version
-	@uv run python -m src.scripts.versioning --patch
+	@uv run python -m src.scripts.versioning --patch \
+		&& uv build \
+		&& uv publish -u __token__ -p ${PYPI_TOKEN}
 	@echo "Published patch version!"

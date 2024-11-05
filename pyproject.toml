@@ -1,5 +1,5 @@
 [project]
-name = "ragger"
+name = "alexandrainst_ragger"
 version = "3.0.1"
 description = "A repository for general-purpose RAG applications."
 readme = "README.md"
@@ -62,8 +62,8 @@ dev-dependencies = [
 ]
 
 [project.scripts]
-ragger-demo = "ragger.cli:run_demo"
-ragger-compile = "ragger.cli:compile"
+ragger-demo = "alexandrainst_ragger.cli:run_demo"
+ragger-compile = "alexandrainst_ragger.cli:compile"
 
 [tool.ruff]
 target-version = "py311"
@@ -106,7 +106,7 @@ addopts = [
     '--durations=10',
     '--color=yes',
     '--doctest-modules',
-    '--cov=src/ragger',
+    '--cov=src/alexandrainst_ragger',
 ]
 xfail_strict = true
 filterwarnings = [
@@ -121,7 +121,7 @@ filterwarnings = [
 log_cli_level = "info"
 testpaths = [
     "tests",
-    "src/ragger",
+    "src/alexandrainst_ragger",
 ]
 
 [build-system]

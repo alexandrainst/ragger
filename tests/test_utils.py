@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import pytest
 
-from ragger.utils import format_answer, is_link
+from alexandrainst_ragger.utils import format_answer, is_link
 
 
 class TestFormatAnswer:

@@ -1,6 +1,6 @@
-<a href="https://github.com/alexandrainst/ragger">
+<a href="https://github.com/alexandrainst/alexandrainst_ragger">
   <img
-    src="https://github.com/alexandrainst/ragger/raw/main/gfx/alexandra_logo.png"
+    src="https://github.com/alexandrainst/alexandrainst_ragger/raw/main/gfx/alexandra_logo.png"
     width="239"
     height="175"
     align="right"
@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/alexandrainst_ragger/tree/main/tests)
 
 
 Author(s):
@@ -31,9 +31,9 @@ Maintainer(s):
 Installation with `pip`, `uv`, or `poetry`:
 
 ```bash
-pip install ragger@git+ssh://git@github.com/alexandrainst/ragger.git
-uv add git+ssh://git@github.com/alexandrainst/ragger.git
-poetry add git+ssh://git@github.com/alexandrainst/ragger.git
+pip install alexandrainst_ragger
+uv add alexandrainst_ragger
+poetry add alexandrainst_ragger
 ```
 
 You can also add additional extras to the installation, such as:
@@ -51,9 +51,9 @@ Here is an example of how to install with the `onprem_cpu` extra, with `pip`, `u
 `poetry`, respectively:
 
 ```bash
-pip install ragger[onprem_cpu]@git+ssh://git@github.com/alexandrainst/ragger.git
-uv add git+ssh://git@github.com/alexandrainst/ragger.git --extra onprem_cpu
-poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras onprem_cpu
+pip install alexandrainst_ragger[onprem_cpu]
+uv add alexandrainst_ragger --extra onprem_cpu
+poetry add alexandrainst_ragger --extras onprem_cpu
 ```
 
 
@@ -62,8 +62,8 @@ poetry add git+ssh://git@github.com/alexandrainst/ragger.git --extras onprem_cpu
 If you want to install the package for development, you can do so as follows:
 
 ```bash
-git clone git@github.com:alexandrainst/ragger.git
-cd ragger
+git clone git@github.com:alexandrainst/alexandrainst_ragger.git
+cd alexandrainst_ragger
 make install
 ```
 
@@ -75,7 +75,7 @@ _Checkout the `tutorial.ipynb` notebook for a more detailed guide_
 Initialise a RAG system with default settings as follows:
 
 ```python
-from ragger import RagSystem
+from alexandrainst_ragger import RagSystem
 rag_system = RagSystem()
 rag_system.add_documents([
 	"København er hovedstaden i Danmark.",
@@ -91,7 +91,7 @@ The `answer` is then the string answer, and the `supporting_documents` is a list
 You can also start a demo server as follows:
 
 ```python
-from ragger import Demo
+from alexandrainst_ragger import Demo
 demo = Demo(rag_system=rag_system)
 demo.launch()
 ```
@@ -105,8 +105,8 @@ can add them by running `ssh-add`.
 You can run a CPU-based Docker container with a RAG demo with the following commands:
 
 ```bash
-docker build --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cpu .
-docker run --rm -p 7860:7860 ragger
+docker build --ssh default --build-arg config=<config-name> -t alexandrainst_ragger -f Dockerfile.cpu .
+docker run --rm -p 7860:7860 alexandrainst_ragger
 ```
 
 Here `<config-name>` is the name of a YAML or JSON file, with the following format (here
@@ -157,8 +157,8 @@ version installed (which you can check using `nvidia-smi`). After that, we build
 image as follows:
 
 ```bash
-docker build --pull --ssh default --build-arg config=<config-name> -t ragger -f Dockerfile.cuda .
-docker run --gpus 1 --rm -p 7860:7860 ragger
+docker build --pull --ssh default --build-arg config=<config-name> -t alexandrainst_ragger -f Dockerfile.cuda .
+docker run --gpus 1 --rm -p 7860:7860 alexandrainst_ragger
 ```
 
 
@@ -170,7 +170,7 @@ Ragger supports the following components:
 
 These are the databases carrying all the documents. Documents are represented as objects
 of the `Document` data class, which has an `id` and a `text` field. These can all be
-imported from `ragger.document_store`.
+imported from `alexandrainst_ragger.document_store`.
 
 - `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
 - `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
@@ -183,7 +183,7 @@ imported from `ragger.document_store`.
 ### Retrievers
 
 Retrievers are used to retrieve documents related to a query. These can all be imported
-from `ragger.retriever`.
+from `alexandrainst_ragger.retriever`.
 
 - `EmbeddingRetriever`: A retriever that uses embeddings to retrieve documents. These
   embeddings are computed using an embedder, which can be one of the following:
@@ -210,7 +210,7 @@ from `ragger.retriever`.
 ### Generators
 
 Generators are used to generate answers from the retrieved documents and the question.
-These can all be imported from `ragger.generator`.
+These can all be imported from `alexandrainst_ragger.generator`.
 
 - `OpenAIGenerator`: A generator that uses the OpenAI Chat API. (default)
 - `GGUFGenerator`: A generator that uses Llama.cpp to wrap any model from the Hugging
@@ -231,7 +231,7 @@ These can then simply be added to a `RagSystem`. Here is an example:
 
 ```python
 import typing
-from ragger import RagSystem, DocumentStore, Document, Index
+from alexandrainst_ragger import RagSystem, DocumentStore, Document, Index
 
 class InMemoryDocumentStore(DocumentStore):
 	"""A document store that just keeps all documents in memory."""

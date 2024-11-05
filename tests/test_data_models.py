@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field
 
-import ragger.data_models
+import alexandrainst_ragger.data_models
 
 
 def test_all_classes_are_either_pydantic_models_or_abcs():
@@ -13,7 +13,7 @@ def test_all_classes_are_either_pydantic_models_or_abcs():
     accepted_exceptions = [Path, ConfigDict, Field, str]
     classes = [
         cls
-        for cls in vars(ragger.data_models).values()
+        for cls in vars(alexandrainst_ragger.data_models).values()
         if isinstance(cls, type) and cls not in accepted_exceptions
     ]
     for cls in classes:

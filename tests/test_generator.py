@@ -6,16 +6,16 @@ import typing
 import pytest
 from numpy.typing import NDArray
 
-import ragger.generator
-from ragger.data_models import GeneratedAnswer, Generator
-from ragger.exceptions import MissingExtra, MissingPackage
+import alexandrainst_ragger.generator
+from alexandrainst_ragger.data_models import GeneratedAnswer, Generator
+from alexandrainst_ragger.exceptions import MissingExtra, MissingPackage
 
 
 @pytest.fixture(
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.generator).values()
+        for cls in vars(alexandrainst_ragger.generator).values()
         if inspect.isclass(object=cls)
         and cls is not NDArray  # numpy.typing.NDArray is not a class in Python 3.10
         and issubclass(cls, Generator)

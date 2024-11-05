@@ -33,10 +33,11 @@ class MissingExtra(Exception):
         if isinstance(extra, str):
             super().__init__(
                 f"Missing extra: {extra}. Please install it using , e.g., "
-                f"`pip install ragger[{extra}]`."
+                f"`pip install alexandrainst_ragger[{extra}]`."
             )
         else:
             super().__init__(
                 f"Missing one of the following extras: {', '.join(extra)}. Please "
-                "choose one and install it using , e.g., `pip install ragger[EXTRA]`."
+                "choose one and install it using , e.g., `pip install "
+                "alexandrainst_ragger[EXTRA]`."
             )

@@ -9,10 +9,10 @@ RUN apt-get -y update && \
     ssh-keyscan github.com >> ~/.ssh/known_hosts && \
     apt-get clean
 
-# Install Ragger
-# NOTE: Change `[onprem_gpu,demo]` to any other extras you need in your RAG project -
-#       see the readme for a list of all the available extras
-RUN --mount=type=ssh python3 -m pip install "ragger[onprem_gpu,demo] @ git+ssh://git@github.com/alexandrainst/ragger.git"
+# Install the package
+# Change `[onprem_gpu,demo]` to any other extras you need in your RAG project. See the
+# readme for a list of all the available extras
+RUN python3 -m pip install alexandrainst_ragger[onprem_gpu,demo]
 
 ARG config
 ENV config=$config
@@ -27,10 +27,10 @@ RUN if [ -z "$config" ]; then \
 COPY $config $config
 COPY .env .env
 
-# Compile the Ragger library
+# Compile the library
 RUN ragger-compile --config-file $config
 
-# Run the Ragger demo
+# Run the demo
 EXPOSE 7860
 ENV GRADIO_SERVER_NAME="0.0.0.0"
 CMD ragger-demo --config-file $config

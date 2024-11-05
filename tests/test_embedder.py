@@ -5,16 +5,16 @@ import typing
 import numpy as np
 import pytest
 
-import ragger.embedder
-from ragger.data_models import Embedding
-from ragger.embedder import Embedder
+import alexandrainst_ragger.embedder
+from alexandrainst_ragger.data_models import Embedding
+from alexandrainst_ragger.embedder import Embedder
 
 
 @pytest.fixture(
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.embedder).values()
+        for cls in vars(alexandrainst_ragger.embedder).values()
         if isinstance(cls, type) and issubclass(cls, Embedder) and cls is not Embedder
     ],
 )

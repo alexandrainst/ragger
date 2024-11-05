@@ -124,6 +124,97 @@ wheels = [
 ]
 
 [[package]]
+name = "alexandrainst-ragger"
+version = "3.0.1"
+source = { editable = "." }
+dependencies = [
+    { name = "click" },
+    { name = "numpy" },
+    { name = "openai" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "tiktoken" },
+]
+
+[package.optional-dependencies]
+demo = [
+    { name = "gradio" },
+]
+keyword-search = [
+    { name = "rank-bm25" },
+]
+onprem-cpu = [
+    { name = "llama-cpp-python" },
+    { name = "outlines" },
+    { name = "protobuf" },
+    { name = "sentence-transformers" },
+    { name = "transformers" },
+]
+onprem-gpu = [
+    { name = "outlines" },
+    { name = "protobuf" },
+    { name = "sentence-transformers" },
+    { name = "transformers" },
+    { name = "vllm" },
+]
+postgres = [
+    { name = "psycopg2-binary" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipywidgets" },
+    { name = "jupyterlab" },
+    { name = "mypy" },
+    { name = "nbstripout" },
+    { name = "pip" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "readme-coverage-badger" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.7" },
+    { name = "gradio", marker = "extra == 'demo'", specifier = ">=5.4.0" },
+    { name = "llama-cpp-python", marker = "extra == 'onprem-cpu'", specifier = ">=0.3.1" },
+    { name = "numpy", specifier = ">=1.25.0" },
+    { name = "openai", specifier = ">=1.50.0" },
+    { name = "outlines", marker = "extra == 'onprem-cpu'", specifier = ">=0.1.1" },
+    { name = "outlines", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.1" },
+    { name = "protobuf", marker = "extra == 'onprem-cpu'", specifier = ">=5.28.3" },
+    { name = "protobuf", marker = "extra == 'onprem-gpu'", specifier = ">=5.28.3" },
+    { name = "psycopg2-binary", marker = "extra == 'postgres'", specifier = ">=2.9.10" },
+    { name = "pydantic", specifier = ">=2.9.2" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "rank-bm25", marker = "extra == 'keyword-search'", specifier = ">=0.2.2" },
+    { name = "sentence-transformers", marker = "extra == 'onprem-cpu'", specifier = ">=3.2.1" },
+    { name = "sentence-transformers", marker = "extra == 'onprem-gpu'", specifier = ">=3.2.1" },
+    { name = "tiktoken", specifier = ">=0.8.0" },
+    { name = "transformers", marker = "extra == 'onprem-cpu'", specifier = ">=4.46.1" },
+    { name = "transformers", marker = "extra == 'onprem-gpu'", specifier = ">=4.46.1" },
+    { name = "vllm", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ipywidgets", specifier = ">=8.1.5" },
+    { name = "jupyterlab", specifier = ">=4.3.0" },
+    { name = "mypy", specifier = ">=1.13.0" },
+    { name = "nbstripout", specifier = ">=0.7.1" },
+    { name = "pip", specifier = ">=24.3.1" },
+    { name = "pre-commit", specifier = ">=4.0.1" },
+    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
+    { name = "readme-coverage-badger", specifier = ">=0.1.1" },
+    { name = "ruff", specifier = ">=0.7.1" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2902,97 +2993,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/1c/bf8cd66730a866b16db8483286078892b7f6536f8c389fb46e4beba0a970/pyzmq-26.2.0-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:160c7e0a5eb178011e72892f99f918c04a131f36056d10d9c1afb223fc952c2d", size = 794312 },
     { url = "https://files.pythonhosted.org/packages/71/43/91fa4ff25bbfdc914ab6bafa0f03241d69370ef31a761d16bb859f346582/pyzmq-26.2.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2c4a71d5d6e7b28a47a394c0471b7e77a0661e2d651e7ae91e0cab0a587859ca", size = 752775 },
     { url = "https://files.pythonhosted.org/packages/ec/d2/3b2ab40f455a256cb6672186bea95cd97b459ce4594050132d71e76f0d6f/pyzmq-26.2.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:90412f2db8c02a3864cbfc67db0e3dcdbda336acf1c469526d3e869394fe001c", size = 550762 },
-]
-
-[[package]]
-name = "ragger"
-version = "3.0.1"
-source = { editable = "." }
-dependencies = [
-    { name = "click" },
-    { name = "numpy" },
-    { name = "openai" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "pyyaml" },
-    { name = "tiktoken" },
-]
-
-[package.optional-dependencies]
-demo = [
-    { name = "gradio" },
-]
-keyword-search = [
-    { name = "rank-bm25" },
-]
-onprem-cpu = [
-    { name = "llama-cpp-python" },
-    { name = "outlines" },
-    { name = "protobuf" },
-    { name = "sentence-transformers" },
-    { name = "transformers" },
-]
-onprem-gpu = [
-    { name = "outlines" },
-    { name = "protobuf" },
-    { name = "sentence-transformers" },
-    { name = "transformers" },
-    { name = "vllm" },
-]
-postgres = [
-    { name = "psycopg2-binary" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipywidgets" },
-    { name = "jupyterlab" },
-    { name = "mypy" },
-    { name = "nbstripout" },
-    { name = "pip" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "readme-coverage-badger" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.7" },
-    { name = "gradio", marker = "extra == 'demo'", specifier = ">=5.4.0" },
-    { name = "llama-cpp-python", marker = "extra == 'onprem-cpu'", specifier = ">=0.3.1" },
-    { name = "numpy", specifier = ">=1.25.0" },
-    { name = "openai", specifier = ">=1.50.0" },
-    { name = "outlines", marker = "extra == 'onprem-cpu'", specifier = ">=0.1.1" },
-    { name = "outlines", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.1" },
-    { name = "protobuf", marker = "extra == 'onprem-cpu'", specifier = ">=5.28.3" },
-    { name = "protobuf", marker = "extra == 'onprem-gpu'", specifier = ">=5.28.3" },
-    { name = "psycopg2-binary", marker = "extra == 'postgres'", specifier = ">=2.9.10" },
-    { name = "pydantic", specifier = ">=2.9.2" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "rank-bm25", marker = "extra == 'keyword-search'", specifier = ">=0.2.2" },
-    { name = "sentence-transformers", marker = "extra == 'onprem-cpu'", specifier = ">=3.2.1" },
-    { name = "sentence-transformers", marker = "extra == 'onprem-gpu'", specifier = ">=3.2.1" },
-    { name = "tiktoken", specifier = ">=0.8.0" },
-    { name = "transformers", marker = "extra == 'onprem-cpu'", specifier = ">=4.46.1" },
-    { name = "transformers", marker = "extra == 'onprem-gpu'", specifier = ">=4.46.1" },
-    { name = "vllm", marker = "extra == 'onprem-gpu'", specifier = ">=0.1.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipywidgets", specifier = ">=8.1.5" },
-    { name = "jupyterlab", specifier = ">=4.3.0" },
-    { name = "mypy", specifier = ">=1.13.0" },
-    { name = "nbstripout", specifier = ">=0.7.1" },
-    { name = "pip", specifier = ">=24.3.1" },
-    { name = "pre-commit", specifier = ">=4.0.1" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "readme-coverage-badger", specifier = ">=0.1.1" },
-    { name = "ruff", specifier = ">=0.7.1" },
 ]
 
 [[package]]

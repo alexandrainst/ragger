@@ -13,7 +13,7 @@ from .data_models import (
     Index,
     Retriever,
 )
-from .embedder import E5Embedder
+from .embedder import OpenAIEmbedder
 from .embedding_store import NumpyEmbeddingStore
 from .utils import is_installed, raise_if_not_installed
 
@@ -36,7 +36,7 @@ class EmbeddingRetriever(Retriever):
 
     def __init__(
         self,
-        embedder: Embedder = E5Embedder(),
+        embedder: Embedder = OpenAIEmbedder(),
         embedding_store: EmbeddingStore = NumpyEmbeddingStore(),
     ) -> None:
         """Initialise the E5 retriever.

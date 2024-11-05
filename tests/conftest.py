@@ -6,11 +6,16 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
-from ragger.data_models import Document, DocumentStore, Generator, Retriever
-from ragger.document_store import JsonlDocumentStore
-from ragger.generator import OpenAIGenerator
-from ragger.rag_system import RagSystem
-from ragger.retriever import EmbeddingRetriever
+from alexandrainst_ragger.data_models import (
+    Document,
+    DocumentStore,
+    Generator,
+    Retriever,
+)
+from alexandrainst_ragger.document_store import JsonlDocumentStore
+from alexandrainst_ragger.generator import OpenAIGenerator
+from alexandrainst_ragger.rag_system import RagSystem
+from alexandrainst_ragger.retriever import EmbeddingRetriever
 
 
 @pytest.fixture(scope="session")

@@ -4,16 +4,16 @@ import typing
 
 import pytest
 
-import ragger.document_store
-from ragger.data_models import DocumentStore
-from ragger.document_store import PostgresDocumentStore
+import alexandrainst_ragger.document_store
+from alexandrainst_ragger.data_models import DocumentStore
+from alexandrainst_ragger.document_store import PostgresDocumentStore
 
 
 @pytest.fixture(
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.document_store).values()
+        for cls in vars(alexandrainst_ragger.document_store).values()
         if isinstance(cls, type)
         and issubclass(cls, DocumentStore)
         and cls is not DocumentStore

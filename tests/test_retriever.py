@@ -4,15 +4,15 @@ import typing
 
 import pytest
 
-import ragger.embedder
-from ragger.data_models import Retriever
+import alexandrainst_ragger.embedder
+from alexandrainst_ragger.data_models import Retriever
 
 
 @pytest.fixture(
     scope="module",
     params=[
         cls
-        for cls in vars(ragger.retriever).values()
+        for cls in vars(alexandrainst_ragger.retriever).values()
         if isinstance(cls, type) and issubclass(cls, Retriever) and cls is not Retriever
     ],
 )

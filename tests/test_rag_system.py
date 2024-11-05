@@ -6,8 +6,8 @@ import typing
 
 import pytest
 
-from ragger.data_models import Document
-from ragger.rag_system import RagSystem
+from alexandrainst_ragger.data_models import Document
+from alexandrainst_ragger.rag_system import RagSystem
 
 
 @pytest.fixture(scope="module")
