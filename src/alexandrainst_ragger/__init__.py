@@ -15,6 +15,7 @@ from .data_models import (
 )
 from .demo import Demo
 from .rag_system import RagSystem
+from .webui_utils import RaggerPipeline
 
 logging.basicConfig(
     level=logging.INFO,
