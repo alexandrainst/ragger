@@ -25,7 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 onprem_cpu = [
     "sentence_transformers>=3.2.1",
-    "outlines>=0.1.1",
+    "outlines>=0.0.46",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
     "llama_cpp_python>=0.3.1",
