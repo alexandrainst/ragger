@@ -28,7 +28,7 @@ onprem_cpu = [
     "outlines>=0.1.1",
     "transformers>=4.46.1",
     "protobuf>=5.28.3",
-    "llama_cpp_python>=0.2.90",
+    "llama_cpp_python>=0.3.1",
 ]
 onprem_gpu = [
     "sentence_transformers>=3.2.1",
@@ -46,14 +46,6 @@ demo = [
 keyword_search = [
     "rank-bm25>=0.2.2",
 ]
-
-[tool.uv.sources]
-llama_cpp_python = { index = "llama_cpp" }
-
-[[tool.uv.index]]
-name = "llama_cpp"
-url = "https://abetlen.github.io/llama-cpp-python/whl/cpu"
-default = true
 
 [tool.uv]
 dev-dependencies = [
