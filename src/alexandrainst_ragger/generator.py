@@ -967,7 +967,8 @@ class GGUFGenerator(Generator):
             ValueError:
                 If no model with the given quantization type could be found.
         """
-        # Login to the Hugging Face Hub, if a token is available
+        # Login to the Hugging Face Hub, if a token is available, to ensure that we can
+        # access models that are gated
         if os.getenv("HUGGINGFACE_HUB_TOKEN") is not None:
             login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
 
