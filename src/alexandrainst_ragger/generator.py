@@ -950,8 +950,7 @@ class GGUFGenerator(Generator):
 
         return logits_processor_fn
 
-    @staticmethod
-    def _load_model(model_id: str, quant_type: str | None) -> "Llama":
+    def _load_model(self, model_id: str, quant_type: str | None) -> "Llama":
         """Load the model.
 
         Args:
@@ -979,7 +978,9 @@ class GGUFGenerator(Generator):
             )
             logger.info(f"Loading model with quantization type {quant_type!r}...")
             return Llama.from_pretrained(
-                repo_id=model_id, filename=f"*{glob_pattern}.gguf"
+                repo_id=model_id,
+                filename=f"*{glob_pattern}.gguf",
+                n_ctx=self.max_input_tokens + self.max_output_tokens,
             )
         except ValueError as e:
             if "Multiple files found" not in str(e):
