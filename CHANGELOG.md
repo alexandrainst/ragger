@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+### Fixed
+- There was an error where a class was imported during initialisation but it requiring
+  an extra. This has now been resolved.
+
+
 ## [v4.0.0] - 2024-11-05
 ### Added
 - Added a new abstract `Retriever` class, generalising the `Embedder` + `EmbeddingStore`

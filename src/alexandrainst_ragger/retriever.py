@@ -36,8 +36,8 @@ class EmbeddingRetriever(Retriever):
 
     def __init__(
         self,
-        embedder: Embedder = OpenAIEmbedder(),
-        embedding_store: EmbeddingStore = NumpyEmbeddingStore(),
+        embedder: Embedder | None = None,
+        embedding_store: EmbeddingStore | None = None,
     ) -> None:
         """Initialise the E5 retriever.
 
@@ -47,6 +47,10 @@ class EmbeddingRetriever(Retriever):
             embedding_store (optional):
                 The embedding store to use. Defaults to a NumPy embedding store.
         """
+        if embedder is None:
+            embedder = OpenAIEmbedder()
+        if embedding_store is None:
+            embedding_store = NumpyEmbeddingStore()
         self.embedder = embedder
         self.embedding_store = embedding_store
 
@@ -108,7 +112,7 @@ class BM25Retriever(Retriever):
                 A function that preprocesses a text. Defaults to converting the text
                 to lowercase.
         """
-        raise_if_not_installed(package_names=["rank_bm25"], extra="keyword-search")
+        raise_if_not_installed(package_names=["rank_bm25"], extra="keyword_search")
         self.tokenizer = tokenizer
         self.preprocessor = preprocessor
         self.row_id_to_index: dict[int, Index] = defaultdict()
@@ -156,7 +160,7 @@ class HybridRetriever(Retriever):
 
     def __init__(
         self,
-        retrievers: list[Retriever] = [EmbeddingRetriever(), BM25Retriever()],
+        retrievers: list[Retriever] | None = None,
         fusion_method: typing.Literal["reciprocal_rank"] = "reciprocal_rank",
     ) -> None:
         """Initialise the fuser retriever.
@@ -176,7 +180,9 @@ class HybridRetriever(Retriever):
                 Proceedings of the 32nd international ACM SIGIR conference on Research
                 and development in information retrieval. 2009.
         """
-        self.retrievers = retrievers
+        if retrievers is None:
+            retrievers = [EmbeddingRetriever(), BM25Retriever()]
+        self.retrievers: list[Retriever] = retrievers
         self.fusion_method = fusion_method
 
     def compile(self, document_store: "DocumentStore", generator: "Generator") -> None:
