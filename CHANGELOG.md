@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Added upper bound to number of documents to retrieve in `BM25Retriever`.
+- Now correctly uses the Hugging Face Hub for the `GGUFGenerator`.
 
 
 ## [v4.1.0] - 2024-11-05

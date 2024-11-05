@@ -10,6 +10,7 @@ from time import sleep
 
 import numpy as np
 from dotenv import load_dotenv
+from huggingface_hub import login
 from numpy.typing import NDArray
 from pydantic import ValidationError
 from pydantic_core import from_json
@@ -966,6 +967,10 @@ class GGUFGenerator(Generator):
             ValueError:
                 If no model with the given quantization type could be found.
         """
+        # Login to the Hugging Face Hub, if a token is available
+        if os.getenv("HUGGINGFACE_HUB_TOKEN") is not None:
+            login(token=os.getenv("HUGGINGFACE_HUB_TOKEN"))
+
         try:
             glob_pattern = "".join(
                 f"[{char.upper()}{char.lower()}]" if char.isalpha() else char
