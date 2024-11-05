@@ -70,19 +70,21 @@ class EmbeddingRetriever(Retriever):
             document_store=document_store, retriever=self, generator=generator
         )
 
-    def retrieve(self, query: str) -> list[Index]:
+    def retrieve(self, query: str, num_docs: int) -> list[Index]:
         """Retrieve relevant documents for a query.
 
         Args:
             query:
                 The query to retrieve documents for.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of document IDs.
         """
         query_embedding = self.embedder.embed_query(query=query)
         document_ids = self.embedding_store.get_nearest_neighbours(
-            embedding=query_embedding
+            embedding=query_embedding, num_docs=num_docs
         )
         return document_ids
 
@@ -136,12 +138,14 @@ class BM25Retriever(Retriever):
         ]
         self._bm25 = BM25Okapi(corpus=tokenised_corpus)
 
-    def retrieve(self, query: str) -> list[Index]:
+    def retrieve(self, query: str, num_docs: int) -> list[Index]:
         """Retrieve relevant documents for a query.
 
         Args:
             query:
                 The query to retrieve documents for.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of document IDs.
@@ -152,7 +156,7 @@ class BM25Retriever(Retriever):
         tokenised_query = self.tokenizer(self.preprocessor(query))
         scores = self._bm25.get_scores(tokenised_query)
         sorted_scores = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
-        return [self.row_id_to_index[row_id] for row_id, _ in sorted_scores]
+        return [self.row_id_to_index[row_id] for row_id, _ in sorted_scores[:num_docs]]
 
 
 class HybridRetriever(Retriever):
@@ -197,17 +201,22 @@ class HybridRetriever(Retriever):
         for retriever in self.retrievers:
             retriever.compile(document_store=document_store, generator=generator)
 
-    def retrieve(self, query: str) -> list[Index]:
+    def retrieve(self, query: str, num_docs: int) -> list[Index]:
         """Retrieve relevant documents for a query.
 
         Args:
             query:
                 The query to retrieve documents for.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of document IDs.
         """
-        rankings = [retriever.retrieve(query=query) for retriever in self.retrievers]
+        rankings = [
+            retriever.retrieve(query=query, num_docs=num_docs)
+            for retriever in self.retrievers
+        ]
         match self.fusion_method:
             case "reciprocal_rank":
                 return self._reciprocal_rank_fusion(rankings=rankings)

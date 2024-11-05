@@ -173,15 +173,15 @@ class NumpyEmbeddingStore(EmbeddingStore):
         logger.info("Loaded embeddings.")
 
     def get_nearest_neighbours(
-        self, embedding: np.ndarray, num_docs: int = 5
+        self, embedding: np.ndarray, num_docs: int
     ) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
 
         Args:
             embedding:
                 The embedding to find nearest neighbours for.
-            num_docs (optional):
-                The number of documents to retrieve. Defaults to 5.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of indices of the nearest neighbours.
@@ -424,15 +424,15 @@ class PostgresEmbeddingStore(EmbeddingStore):
         return self
 
     def get_nearest_neighbours(
-        self, embedding: np.ndarray, num_docs: int = 5
+        self, embedding: np.ndarray, num_docs: int
     ) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
 
         Args:
             embedding:
                 The embedding to find nearest neighbours for.
-            num_docs (optional):
-                The number of documents to retrieve. Defaults to 5.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of indices of the nearest neighbours.

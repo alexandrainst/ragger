@@ -160,12 +160,14 @@ class Retriever(ABC):
         pass
 
     @abstractmethod
-    def retrieve(self, query: str) -> list[Index]:
+    def retrieve(self, query: str, num_docs: int) -> list[Index]:
         """Retrieve relevant documents for a query.
 
         Args:
             query:
                 The query to retrieve documents for.
+            num_docs:
+                The number of documents to retrieve.
 
         Returns:
             A list of document IDs.
@@ -325,12 +327,16 @@ class EmbeddingStore(ABC):
         ...
 
     @abstractmethod
-    def get_nearest_neighbours(self, embedding: np.ndarray) -> list[Index]:
+    def get_nearest_neighbours(
+        self, embedding: np.ndarray, num_docs: int
+    ) -> list[Index]:
         """Get the nearest neighbours to a given embedding.
 
         Args:
             embedding:
                 The embedding to find nearest neighbours for.
+            num_docs:
+                The number of nearest neighbours to find.
 
         Returns:
             A list of indices of the nearest neighbours.

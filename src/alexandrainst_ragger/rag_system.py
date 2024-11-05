@@ -126,7 +126,7 @@ class RagSystem:
         return self
 
     def answer(
-        self, query: str
+        self, query: str, num_docs: int = 5
     ) -> (
         tuple[str, list[Document]]
         | typing.Generator[tuple[str, list[Document]], None, None]
@@ -136,11 +136,13 @@ class RagSystem:
         Args:
             query:
                 The query to answer.
+            num_docs:
+                The number of source documents to include.
 
         Returns:
             A tuple of the answer and the supporting documents.
         """
-        document_ids = self.retriever.retrieve(query=query)
+        document_ids = self.retriever.retrieve(query=query, num_docs=num_docs)
         documents = [self.document_store[i] for i in document_ids]
         generated_answer = self.generator.generate(query=query, documents=documents)
 
@@ -166,7 +168,9 @@ class RagSystem:
             ]
             return (generated_answer.answer, source_documents)
 
-    def answer_formatted(self, query: str) -> str | typing.Generator[str, None, None]:
+    def answer_formatted(
+        self, query: str, num_docs: int = 5
+    ) -> str | typing.Generator[str, None, None]:
         """Answer a query in a formatted single HTML string.
 
         The string includes both the answer and the supporting documents.
@@ -174,11 +178,13 @@ class RagSystem:
         Args:
             query:
                 The query to answer.
+            num_docs:
+                The number of source documents to include.
 
         Returns:
             The formatted answer.
         """
-        output = self.answer(query)
+        output = self.answer(query=query, num_docs=num_docs)
         if isinstance(output, typing.Generator):
 
             def streamer() -> typing.Generator[str, None, None]:
