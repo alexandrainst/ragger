@@ -4,7 +4,7 @@ import typing
 
 import pytest
 
-import alexandrainst_ragger.embedder
+import alexandrainst_ragger.retriever
 from alexandrainst_ragger.data_models import Retriever
 
 
@@ -36,6 +36,6 @@ def test_initialisation(retriever):
 
 
 def test_retrieve(retriever, query, documents):
-    """Test that the embedder can embed text."""
+    """Test that the retriever can retrieve text."""
     document_ids = retriever.retrieve(query=query, num_docs=5)
     assert document_ids[0] == documents[0].id
