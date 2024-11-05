@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 class JsonlDocumentStore(DocumentStore):
     """A document store that fetches documents from a JSONL file."""
 
-    def __init__(self, path: Path = Path("document-store.jsonl")) -> None:
+    def __init__(self, path: Path | str = Path("document-store.jsonl")) -> None:
         """Initialise the document store.
 
         Args:
@@ -27,7 +27,7 @@ class JsonlDocumentStore(DocumentStore):
                 The path to the JSONL file where the documents are stored. Defaults to
                 "document-store.jsonl".
         """
-        self.path = path
+        self.path = Path(path)
 
         # Ensure the file exists
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -115,7 +115,7 @@ class SqliteDocumentStore(DocumentStore):
 
     def __init__(
         self,
-        path: Path = Path("document-store.sqlite"),
+        path: Path | str = Path("document-store.sqlite"),
         table_name: str = "documents",
         id_column: str = "id",
         text_column: str = "text",
@@ -135,7 +135,7 @@ class SqliteDocumentStore(DocumentStore):
                 The name of the column in the table that stores the document text.
                 Defaults to "text".
         """
-        self.path = path
+        self.path = Path(path)
         self.table_name = table_name
         self.id_column = id_column
         self.text_column = text_column
@@ -463,7 +463,7 @@ class PostgresDocumentStore(DocumentStore):
 class TxtDocumentStore(DocumentStore):
     """A document store that fetches documents from a TXT file."""
 
-    def __init__(self, path: Path = Path("document-store.txt")) -> None:
+    def __init__(self, path: Path | str = Path("document-store.txt")) -> None:
         """Initialise the document store.
 
         Args:
@@ -471,7 +471,7 @@ class TxtDocumentStore(DocumentStore):
                 The path to the TXT file where the documents are stored. Defaults to
                 "document-store.txt".
         """
-        self.path = path
+        self.path = Path(path)
 
         # Ensure the file exists
         self.path.parent.mkdir(parents=True, exist_ok=True)

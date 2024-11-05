@@ -28,7 +28,9 @@ class NumpyEmbeddingStore(EmbeddingStore):
     """An embedding store that fetches embeddings from a NumPy file."""
 
     def __init__(
-        self, embedding_dim: int | None = None, path: Path = Path("embedding-store.zip")
+        self,
+        embedding_dim: int | None = None,
+        path: Path | str = Path("embedding-store.zip"),
     ) -> None:
         """Initialise the NumPy embedding store.
 
@@ -40,7 +42,7 @@ class NumpyEmbeddingStore(EmbeddingStore):
                 The path to the zipfile where the embeddings are stored. Defaults to
                 "embedding-store.zip".
         """
-        self.path = path
+        self.path = Path(path)
         self.embedding_dim = embedding_dim
         self.embeddings: np.ndarray | None = None
         self.index_to_row_id: dict[Index, int] = defaultdict()

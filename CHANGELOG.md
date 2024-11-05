@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Streaming support for the Open WebUI integration.
 - Support for some configuration directly in the Open WebUI frontend, using valves.
 
+### Changed
+- Now allows strings as input in all path arguments.
+
 ### Fixed
 - Added upper bound to number of documents to retrieve in `BM25Retriever`.
 
