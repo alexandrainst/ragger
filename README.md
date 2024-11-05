@@ -1,6 +1,6 @@
-<a href="https://github.com/alexandrainst/alexandrainst_ragger">
+<a href="https://github.com/alexandrainst/ragger">
   <img
-    src="https://github.com/alexandrainst/alexandrainst_ragger/raw/main/gfx/alexandra_logo.png"
+    src="https://github.com/alexandrainst/ragger/raw/main/gfx/alexandra_logo.png"
     width="239"
     height="175"
     align="right"
@@ -12,7 +12,7 @@
 A package for general-purpose RAG applications.
 
 ______________________________________________________________________
-[![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/alexandrainst_ragger/tree/main/tests)
+[![Code Coverage](https://img.shields.io/badge/Coverage-73%25-yellow.svg)](https://github.com/alexandrainst/ragger/tree/main/tests)
 
 
 Author(s):
@@ -62,7 +62,7 @@ poetry add alexandrainst_ragger --extras onprem_cpu
 If you want to install the package for development, you can do so as follows:
 
 ```bash
-git clone git@github.com:alexandrainst/alexandrainst_ragger.git
+git clone git@github.com:alexandrainst/ragger.git
 cd alexandrainst_ragger
 make install
 ```
