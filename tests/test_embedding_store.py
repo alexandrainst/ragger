@@ -81,11 +81,11 @@ def test_get_nearest_neighbours(embedding_store, embeddings):
     drop_table_if_postgres_embedding_store(embedding_store=embedding_store)
     embedding_store.add_embeddings(embeddings=embeddings)
     neighbours = embedding_store.get_nearest_neighbours(
-        embedding=embeddings[0].embedding
+        embedding=embeddings[0].embedding, num_docs=5
     )
     assert neighbours == ["an id", "another id"]
     neighbours = embedding_store.get_nearest_neighbours(
-        embedding=embeddings[1].embedding
+        embedding=embeddings[1].embedding, num_docs=5
     )
     assert neighbours == ["another id", "an id"]
 
