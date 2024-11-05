@@ -149,8 +149,7 @@ keyword-search = [
     { name = "rank-bm25" },
 ]
 onprem-cpu = [
-    { name = "llama-cpp-python", version = "0.2.90", source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/cpu" }, marker = "platform_system != 'Darwin'" },
-    { name = "llama-cpp-python", version = "0.2.90", source = { registry = "https://pypi.org/simple" }, marker = "platform_system == 'Darwin'" },
+    { name = "llama-cpp-python" },
     { name = "outlines" },
     { name = "protobuf" },
     { name = "sentence-transformers" },
@@ -185,8 +184,7 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
     { name = "gradio", marker = "extra == 'demo'", specifier = ">=5.4.0" },
-    { name = "llama-cpp-python", marker = "platform_system == 'Darwin' and extra == 'onprem-cpu'", specifier = ">=0.2.90", index = "https://pypi.org/simple" },
-    { name = "llama-cpp-python", marker = "platform_system != 'Darwin' and extra == 'onprem-cpu'", specifier = ">=0.2.90", index = "https://abetlen.github.io/llama-cpp-python/whl/cpu" },
+    { name = "llama-cpp-python", marker = "extra == 'onprem-cpu'", specifier = ">=0.2.90", index = "https://abetlen.github.io/llama-cpp-python/whl/cpu" },
     { name = "numpy", specifier = ">=1.25.0" },
     { name = "openai", specifier = ">=1.50.0" },
     { name = "outlines", marker = "extra == 'onprem-cpu'", specifier = ">=0.1.1" },
@@ -1495,60 +1493,41 @@ wheels = [
 name = "llama-cpp-python"
 version = "0.2.90"
 source = { registry = "https://abetlen.github.io/llama-cpp-python/whl/cpu" }
-resolution-markers = [
-    "python_full_version < '3.11' and platform_system != 'Darwin'",
-    "python_full_version == '3.11.*' and platform_system != 'Darwin'",
-    "python_full_version == '3.12.*' and platform_system != 'Darwin'",
-    "python_full_version >= '3.13' and platform_system != 'Darwin'",
-]
 dependencies = [
-    { name = "diskcache", marker = "platform_system != 'Darwin'" },
-    { name = "jinja2", marker = "platform_system != 'Darwin'" },
-    { name = "numpy", marker = "platform_system != 'Darwin'" },
-    { name = "typing-extensions", marker = "platform_system != 'Darwin'" },
+    { name = "diskcache" },
+    { name = "jinja2" },
+    { name = "numpy" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-linux_aarch64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-linux_i686.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-linux_x86_64.whl" },
+    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-macosx_10_9_x86_64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-win32.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp310-cp310-win_amd64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-linux_aarch64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-linux_i686.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-linux_x86_64.whl" },
+    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-macosx_10_9_x86_64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-win32.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp311-cp311-win_amd64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-linux_aarch64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-linux_i686.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-linux_x86_64.whl" },
+    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-macosx_10_9_x86_64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-win32.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp312-cp312-win_amd64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp313-cp313-linux_i686.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp313-cp313-linux_x86_64.whl" },
+    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp313-cp313-macosx_10_13_x86_64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp313-cp313-win32.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-cp313-cp313-win_amd64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-pp310-pypy310_pp73-linux_i686.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-pp310-pypy310_pp73-linux_x86_64.whl" },
+    { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-pp310-pypy310_pp73-macosx_10_15_x86_64.whl" },
     { url = "https://github.com/abetlen/llama-cpp-python/releases/download/v0.2.90/llama_cpp_python-0.2.90-pp310-pypy310_pp73-win_amd64.whl" },
 ]
-
-[[package]]
-name = "llama-cpp-python"
-version = "0.2.90"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.11' and platform_system == 'Darwin'",
-    "python_full_version == '3.11.*' and platform_system == 'Darwin'",
-    "python_full_version == '3.12.*' and platform_system == 'Darwin'",
-    "python_full_version >= '3.13' and platform_system == 'Darwin'",
-]
-dependencies = [
-    { name = "diskcache", marker = "platform_system == 'Darwin'" },
-    { name = "jinja2", marker = "platform_system == 'Darwin'" },
-    { name = "numpy", marker = "platform_system == 'Darwin'" },
-    { name = "typing-extensions", marker = "platform_system == 'Darwin'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1f/19/89836022affc1bf470e2485e28872b489254a66fe587155edba731a07112/llama_cpp_python-0.2.90.tar.gz", hash = "sha256:419b041c62dbdb9f7e67883a6ef2f247d583d08417058776be0bff05b4ec9e3d", size = 63762953 }
 
 [[package]]
 name = "markdown-it-py"

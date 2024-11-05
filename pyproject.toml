@@ -48,10 +48,7 @@ keyword_search = [
 ]
 
 [tool.uv.sources]
-llama_cpp_python = [
-    { index = "llama_cpp", marker = "platform_system != 'Darwin'" },
-    { index = "pypi", marker = "platform_system == 'Darwin'" },
-]
+llama_cpp_python = { index = "llama_cpp" }
 
 [[tool.uv.index]]
 name = "llama_cpp"
