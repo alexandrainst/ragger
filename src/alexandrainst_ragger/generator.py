@@ -989,7 +989,9 @@ class GGUFGenerator(Generator):
                 try:
                     logger.info(f"Loading model with quantization type Q{num_bits}*...")
                     return Llama.from_pretrained(
-                        repo_id=model_id, filename=f"*[Qq]{num_bits}*.gguf"
+                        repo_id=model_id,
+                        filename=f"*[Qq]{num_bits}*.gguf",
+                        n_ctx=self.max_input_tokens + self.max_output_tokens,
                     )
                 except ValueError:
                     logger.error(
