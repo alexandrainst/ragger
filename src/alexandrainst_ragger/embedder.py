@@ -20,9 +20,6 @@ if is_installed(package_name="sentence_transformers"):
 if is_installed(package_name="transformers"):
     from transformers import AutoConfig, AutoTokenizer
 
-if is_installed(package_name="rank_bm25"):
-    pass
-
 if typing.TYPE_CHECKING:
     from openai import OpenAI
     from sentence_transformers import SentenceTransformer
