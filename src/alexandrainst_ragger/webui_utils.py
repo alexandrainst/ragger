@@ -12,6 +12,8 @@ from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
 from .generator import OpenAIGenerator
 from .rag_system import RagSystem
 
+logger = logging.getLogger(__package__)
+
 
 class RaggerPipeline:
     """An abstract RAG pipeline using the Ragger package."""
@@ -65,7 +67,7 @@ class RaggerPipeline:
                 The body.
         """
         assert self.rag_system is not None
-        logging.info(f"{body=}")
+        logger.info(f"{body=}")
 
         output = self.rag_system.answer(query=user_message)
 
