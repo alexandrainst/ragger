@@ -1,6 +1,7 @@
 """Pipeline class that can be used to integrate with Open WebUI."""
 
 import collections.abc as c
+import logging
 import os
 from abc import abstractmethod
 
@@ -64,6 +65,7 @@ class RaggerPipeline:
                 The body.
         """
         assert self.rag_system is not None
+        logging.info(f"{body=}")
 
         output = self.rag_system.answer(query=user_message)
 
