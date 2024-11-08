@@ -23,7 +23,6 @@ class RaggerPipeline:
 
         OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY")
         HUGGINGFACE_HUB_TOKEN: str | None = os.getenv("HUGGINGFACE_HUB_TOKEN")
-        STREAM: bool = True
 
     def __init__(self):
         """Initialise the pipeline."""
@@ -42,9 +41,6 @@ class RaggerPipeline:
 
         if self.valves.HUGGINGFACE_HUB_TOKEN is not None:
             login(self.valves.HUGGINGFACE_HUB_TOKEN)
-
-        if hasattr(self.rag_system.generator, "stream"):
-            self.rag_system.generator.stream = self.valves.STREAM
 
     @abstractmethod
     async def on_startup(self):
@@ -67,7 +63,9 @@ class RaggerPipeline:
                 The body.
         """
         assert self.rag_system is not None
-        logger.info(f"{body=}")
+
+        if "stream" in body:
+            self.rag_system.generator.stream = body["stream"]
 
         output = self.rag_system.answer(query=user_message)
 
