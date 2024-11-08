@@ -134,6 +134,8 @@ class OpenAIGenerator(Generator):
         language: typing.Literal["da", "en"] = "da",
         system_prompt: str | None = None,
         prompt: str | None = None,
+        stop_sequence: list[str] = ["</answer>"],
+        seed: int = 4242,
         **additional_generation_kwargs,
     ) -> None:
         """Initialise the OpenAI generator.
@@ -173,6 +175,12 @@ class OpenAIGenerator(Generator):
             prompt (optional):
                 The prompt to use. If None, the default prompt corresponding to
                 the chosen language will be used.
+            stop_sequence (optional):
+                The sequence to stop the generation at. Defaults to ["</answer>"].
+            seed (optional):
+                The seed to use when generating. This is used for MoE models like the
+                gpt-4o, as temperature alone is not enough to control the randomness.
+                Defaults to 4242.
             additional_generation_kwargs (optional):
                 Additional keyword arguments to pass to the generation function.
         """
@@ -191,6 +199,8 @@ class OpenAIGenerator(Generator):
         self.temperature = temperature
         self.stream = stream
         self.language = language
+        self.stop_sequence = stop_sequence
+        self.seed = seed
         self.additional_generation_kwargs = additional_generation_kwargs
 
         # Set the system and user prompts based on the language
@@ -279,8 +289,9 @@ class OpenAIGenerator(Generator):
                         model=self.model_id,
                         max_completion_tokens=self.max_output_tokens,
                         temperature=self.temperature,
-                        stop=["</answer>"],
+                        stop=self.stop_sequence,
                         response_format=GeneratedAnswer,
+                        seed=self.seed,
                         extra_body=self.additional_generation_kwargs,
                     )
                 else:
@@ -289,8 +300,9 @@ class OpenAIGenerator(Generator):
                         model=self.model_id,
                         max_completion_tokens=self.max_output_tokens,
                         temperature=self.temperature,
-                        stop=["</answer>"],
+                        stop=self.stop_sequence,
                         response_format=GeneratedAnswer,
+                        seed=self.seed,
                         extra_body=self.additional_generation_kwargs,
                     )
             except (InternalServerError, APITimeoutError):

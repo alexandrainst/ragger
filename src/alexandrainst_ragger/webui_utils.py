@@ -68,8 +68,18 @@ class RaggerPipeline:
         """
         assert self.rag_system is not None
 
-        if "stream" in body:
-            self.rag_system.generator.stream = body["stream"]
+        # Get generator arguments from the frontend
+        generator_arguments = dict(
+            stream="stream",
+            temperature="temperature",
+            system_prompt="system_prompt",
+            max_tokens="max_output_tokens",
+            stop="stop",
+            seed="seed",
+        )
+        for frontend_arg, backend_arg in generator_arguments.items():
+            if frontend_arg in body and hasattr(self.rag_system.generator, backend_arg):
+                setattr(self.rag_system.generator, backend_arg, body[frontend_arg])
 
         output = self.rag_system.answer(query=user_message)
 
