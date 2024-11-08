@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Streaming support for the Open WebUI integration.
 - Support for some configuration directly in the Open WebUI frontend, using valves.
+- Now allows importing all components directly from `alexandrainst_ragger`.
 
 ### Changed
 - Now allows strings as input in all path arguments.
