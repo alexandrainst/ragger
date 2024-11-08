@@ -48,6 +48,19 @@ DANISH_USER_PROMPT: str = re.sub(
 ).strip()
 
 
+DANISH_SOURCES: str = "Kilder"
+
+
+DANISH_NO_DOCUMENTS_REPLY: str = re.sub(
+    r" +",
+    " ",
+    """
+    Jeg er desværre ikke i stand til at svare på dit spørgsmål ud fra den viden, som
+    jeg har til rådighed. Beklager!
+""",
+).strip()
+
+
 ENGLISH_SYSTEM_PROMPT: str = re.sub(
     r" +",
     " ",
@@ -90,14 +103,7 @@ ENGLISH_USER_PROMPT: str = re.sub(
 ).strip()
 
 
-DANISH_NO_DOCUMENTS_REPLY: str = re.sub(
-    r" +",
-    " ",
-    """
-    Jeg er desværre ikke i stand til at svare på dit spørgsmål ud fra den viden, som
-    jeg har til rådighed. Beklager!
-""",
-).strip()
+ENGLISH_SOURCES: str = "Sources"
 
 
 ENGLISH_NO_DOCUMENTS_REPLY: str = re.sub(

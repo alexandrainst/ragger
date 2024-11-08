@@ -8,7 +8,11 @@ from abc import abstractmethod
 from huggingface_hub import login
 from pydantic import BaseModel
 
-from .constants import DANISH_NO_DOCUMENTS_REPLY, ENGLISH_NO_DOCUMENTS_REPLY
+from .constants import (
+    DANISH_NO_DOCUMENTS_REPLY,
+    DANISH_SOURCES,
+    ENGLISH_NO_DOCUMENTS_REPLY,
+)
 from .generator import OpenAIGenerator
 from .rag_system import RagSystem
 
@@ -78,10 +82,13 @@ class RaggerPipeline:
                 else:
                     return ENGLISH_NO_DOCUMENTS_REPLY
 
+            sources_str = (
+                DANISH_SOURCES if self.rag_system.language == "da" else "Sources"
+            )
             formatted_sources = "\n".join(
                 f"- **{source.id}**\n{source.text}" for source in sources
             )
-            return f"{answer}\n\n### Kilder:\n{formatted_sources}"
+            return f"{answer}\n\n### {sources_str}:\n{formatted_sources}"
 
         def generate():
             assert self.rag_system is not None
