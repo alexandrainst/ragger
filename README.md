@@ -75,8 +75,8 @@ _Checkout the `tutorial.ipynb` notebook for a more detailed guide_
 Initialise a RAG system with default settings as follows:
 
 ```python
-from alexandrainst_ragger import RagSystem
-rag_system = RagSystem()
+import alexandrainst_ragger as air
+rag_system = air.RagSystem()
 rag_system.add_documents([
 	"København er hovedstaden i Danmark.",
 	"Danmark har 5,8 millioner indbyggere.",
@@ -91,8 +91,7 @@ The `answer` is then the string answer, and the `supporting_documents` is a list
 You can also start a demo server as follows:
 
 ```python
-from alexandrainst_ragger import Demo
-demo = Demo(rag_system=rag_system)
+demo = air.Demo(rag_system=rag_system)
 demo.launch()
 ```
 
@@ -169,8 +168,7 @@ Ragger supports the following components:
 ### Document Stores
 
 These are the databases carrying all the documents. Documents are represented as objects
-of the `Document` data class, which has an `id` and a `text` field. These can all be
-imported from `alexandrainst_ragger.document_store`.
+of the `Document` data class, which has an `id` and a `text` field.
 
 - `JsonlDocumentStore`: A document store that reads from a JSONL file. (default)
 - `SqliteDocumentStore`: A document store that uses a SQLite database to store documents.
@@ -182,8 +180,7 @@ imported from `alexandrainst_ragger.document_store`.
 
 ### Retrievers
 
-Retrievers are used to retrieve documents related to a query. These can all be imported
-from `alexandrainst_ragger.retriever`.
+Retrievers are used to retrieve documents related to a query.
 
 - `EmbeddingRetriever`: A retriever that uses embeddings to retrieve documents. These
   embeddings are computed using an embedder, which can be one of the following:
@@ -210,7 +207,6 @@ from `alexandrainst_ragger.retriever`.
 ### Generators
 
 Generators are used to generate answers from the retrieved documents and the question.
-These can all be imported from `alexandrainst_ragger.generator`.
 
 - `OpenAIGenerator`: A generator that uses the OpenAI Chat API. (default)
 - `GGUFGenerator`: A generator that uses Llama.cpp to wrap any model from the Hugging
@@ -230,30 +226,27 @@ You can also create custom components by subclassing the following classes:
 These can then simply be added to a `RagSystem`. Here is an example:
 
 ```python
-import typing
-from alexandrainst_ragger import RagSystem, DocumentStore, Document, Index
-
-class InMemoryDocumentStore(DocumentStore):
+class InMemoryDocumentStore(air.DocumentStore):
 	"""A document store that just keeps all documents in memory."""
 
 	def __init__(self, documents: list[str]):
 		self.documents = [
-			Document(id=str(i), text=text) for i, text in enumerate(documents)
+			air.Document(id=str(i), text=text) for i, text in enumerate(documents)
 		]
 
-	def add_documents(self, documents: typing.Iterable[Document]):
+	def add_documents(self, documents):
 		self.documents.extend(documents)
 
 	def remove(self):
 		self.documents = []
 
-	def __getitem__(self, index: Index) -> str:
+	def __getitem__(self, index: air.Index) -> str:
 		return self.documents[int(index)]
 
-	def __contains__(self, index: Index) -> bool:
+	def __contains__(self, index: air.Index) -> bool:
 		return 0 <= int(index) < len(self.documents)
 
-	def __iter__(self) -> typing.Generator[Document, None, None]:
+	def __iter__(self):
 		yield from self.documents
 
 	def __len__(self) -> int:
@@ -264,6 +257,6 @@ document_store = InMemoryDocumentStore(documents=[
 	"Danmark har 5,8 millioner indbyggere.",
 	"Danmark er medlem af Den Europæiske Union."
 ])
-rag_system = RagSystem(document_store=document_store)
+rag_system = air.RagSystem(document_store=document_store)
 answer, supporting_documents = rag_system.answer("Hvad er hovedstaden i Danmark?")
 ```
